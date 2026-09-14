@@ -472,6 +472,31 @@ static void test_completed_operation_error(Fixture *f, gconstpointer data) {
         g_assert_false(((BluetoothDevice *)devices->pdata[i])->busy);
 }
 
+static void test_external_power(Fixture *f, gconstpointer data) {
+    f->powered = FALSE;
+    notify(f, "/org/bluez/hci0");
+    pump();
+    g_assert_false(bluetooth_service_powered(f->service));
+    f->powered = TRUE;
+    notify(f, "/org/bluez/hci0");
+    pump();
+    g_assert_true(bluetooth_service_powered(f->service));
+    /* Blueman's rfkill event can arrive before BlueZ updates Powered. */
+    struct rfkill_event radio = {.idx = 4, .type = RFKILL_TYPE_BLUETOOTH,
+                                  .op = RFKILL_OP_CHANGE, .soft = 1};
+    write(f->radio_peer, &radio, sizeof(radio));
+    pump();
+    g_assert_false(bluetooth_service_powered(f->service));
+    g_autoptr(GPtrArray) devices = bluetooth_service_get_devices(f->service);
+    g_assert_cmpuint(devices->len, ==, 0);
+    radio.soft = 0;
+    write(f->radio_peer, &radio, sizeof(radio));
+    pump();
+    g_assert_true(bluetooth_service_powered(f->service));
+    g_assert_cmpuint(f->power_calls, ==, 0); /* Observation must not write back. */
+    g_assert_cmpuint(f->errors, ==, 0);
+}
+
 static void test_power_timeout(Fixture *f, gconstpointer data) {
     const char *names[] = {ADAPTER, NULL};
     g_dbus_connection_unregister_object(f->server, f->adapter_registration);
@@ -570,6 +595,7 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);
     g_test_add("/bluetooth/removed-operation", Fixture, NULL, setup, test_removed_operation, teardown);
     g_test_add("/bluetooth/completed-operation-error", Fixture, NULL, setup, test_completed_operation_error, teardown);
+    g_test_add("/bluetooth/external-power", Fixture, NULL, setup, test_external_power, teardown);
     g_test_add("/bluetooth/power-timeout", Fixture, NULL, setup, test_power_timeout, teardown);
     g_test_add("/bluetooth/airplane-reversal", Fixture, NULL, setup, test_airplane_reversal, teardown);
     g_test_add_func("/bluetooth/settings", test_settings);

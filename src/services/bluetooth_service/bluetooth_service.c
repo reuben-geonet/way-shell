@@ -38,6 +38,7 @@ static BluetoothService *global;
 
 static void reconcile_power(BluetoothService *self);
 static gboolean adapter_target(BluetoothService *self, const char *path);
+static gboolean software_blocked(BluetoothService *self);
 
 static gboolean emit_changed(gpointer data) {
     BluetoothService *self = data;
@@ -116,6 +117,7 @@ gboolean bluetooth_service_hardware_blocked(BluetoothService *self) {
 }
 
 gboolean bluetooth_service_powered(BluetoothService *self) {
+    if (software_blocked(self) || bluetooth_service_hardware_blocked(self)) return FALSE;
     GList *list = objects(self);
     gboolean powered = FALSE;
     for (GList *l = list; l; l = l->next) {
@@ -202,6 +204,7 @@ static gint compare_devices(gconstpointer a, gconstpointer b) {
 
 GPtrArray *bluetooth_service_get_devices(BluetoothService *self) {
     GPtrArray *devices = g_ptr_array_new_with_free_func(device_free);
+    if (!bluetooth_service_powered(self)) return devices;
     GList *list = objects(self);
     for (GList *l = list; l; l = l->next) {
         g_autoptr(GDBusInterface) interface =

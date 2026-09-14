@@ -14,6 +14,8 @@ struct _QuickSettingsGridBluetoothButton {
     GtkLabel *placeholder;
     GtkLabel *error;
     GtkButton *settings_button;
+    gboolean last_powered;
+    gboolean last_ready;
 };
 
 typedef struct {
@@ -78,6 +80,10 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
     gboolean busy = bluetooth_service_busy(self->service);
     gboolean ready = bluetooth_service_ready(self->service);
     gboolean blocked = bluetooth_service_hardware_blocked(self->service);
+    if (powered != self->last_powered || (ready && !self->last_ready))
+        gtk_revealer_set_reveal_child(self->menu.banner, FALSE);
+    self->last_powered = powered;
+    self->last_ready = ready;
     g_autoptr(GPtrArray) devices = bluetooth_service_get_devices(self->service);
     g_autoptr(GHashTable) present = g_hash_table_new(g_str_hash, g_str_equal);
     guint connected = 0;
