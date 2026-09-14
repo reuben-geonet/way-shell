@@ -81,6 +81,12 @@ retain the proxy's borrowed variant, own each profile string once, and disconnec
 the proxy before releasing the service. The regression also verifies that a
 released service receives no subsequent property callbacks.
 
+Profile-list changes also replaced the menu's outer container while its
+revealer retained the original, leaving the visible menu stale. A GTK fixture
+reproduces the changed container identity; update its children in place, release
+old option data and disconnect the service on disposal. Native headless checks
+cover inventory replacement, click routing, disappearance and repopulation.
+
 The Wayland baseline's foreign-toplevel state loop used a byte length as an
 element count. A single activated-state event reproduced a heap-buffer overflow
 under AddressSanitizer. Bound iteration by the number of complete 32-bit states

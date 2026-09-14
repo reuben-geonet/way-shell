@@ -16,6 +16,7 @@ gresources.h
 /tests/sway-transport-test
 /tests/niri-test
 /tests/power-profiles-test
+/tests/power-profiles-widgets-test
 /tests/wayland-state-test
 /tests/power-boundary-test
 __pycache__/

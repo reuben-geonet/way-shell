@@ -31,5 +31,11 @@ wayland-state-test: wayland-state.c ../src/services/wayland/foreign_toplevel_ser
 power-boundary-test: power-boundary.c ../src/services/upower_service.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 upower-glib) -o $@
 
+power-profiles-widgets-test: power-profiles-widgets.c \
+  ../src/panel/quick_settings/quick_settings_grid/quick_settings_grid_power_profiles/quick_settings_grid_power_profiles_menu.c \
+  ../src/panel/quick_settings/quick_settings_menu_widget.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) power-profiles-widgets.c ../src/panel/quick_settings/quick_settings_menu_widget.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
+
 clean:
 	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test wayland-state-test power-boundary-test
+	rm -f power-profiles-widgets-test

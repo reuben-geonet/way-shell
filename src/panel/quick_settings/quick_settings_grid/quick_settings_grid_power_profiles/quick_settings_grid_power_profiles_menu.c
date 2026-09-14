@@ -19,7 +19,13 @@ static void on_click(GtkButton *button, MenuOption *self) {
     power_profiles_service_set_profile(pps, self->profile);
 }
 
-MenuOption *new_menu_option(char *profile) {
+static void free_menu_option(gpointer data) {
+    MenuOption *option = data;
+    g_free(option->profile);
+    g_free(option);
+}
+
+static MenuOption *new_menu_option(char *profile) {
     MenuOption *self = g_malloc0(sizeof(MenuOption));
 
     self->profile = g_strdup(profile);
@@ -30,6 +36,9 @@ MenuOption *new_menu_option(char *profile) {
 
     self->button = GTK_BUTTON(gtk_button_new());
     gtk_widget_set_hexpand(GTK_WIDGET(self->button), TRUE);
+
+    g_object_set_data_full(G_OBJECT(self->button), "profile-option", self,
+                           free_menu_option);
 
     // connect button signal
     g_signal_connect(self->button, "clicked", G_CALLBACK(on_click), self);
@@ -58,6 +67,7 @@ enum signals { password_entry_revealed, signals_n };
 typedef struct _QuickSettingsGridPowerProfilesMenu {
     GObject parent_instance;
     QuickSettingsMenuWidget menu;
+    PowerProfilesService *service;
 } QuickSettingsGridPowerProfilesMenu;
 G_DEFINE_TYPE(QuickSettingsGridPowerProfilesMenu,
               quick_settings_grid_power_profiles_menu, G_TYPE_OBJECT);
@@ -71,13 +81,15 @@ static void quick_settings_grid_power_profiles_menu_dispose(GObject *object) {
         QUICK_SETTINGS_GRID_POWER_PROFILES_MENU(object);
 
     // disconnect from signals
-    PowerProfilesService *pps = power_profiles_service_get_global();
-    g_signal_handlers_disconnect_by_func(pps, on_profiles_changed, self);
+    if (self->service)
+        g_signal_handlers_disconnect_by_data(self->service, self);
+    g_clear_object(&self->service);
+    g_clear_object(&self->menu.container);
+    G_OBJECT_CLASS(quick_settings_grid_power_profiles_menu_parent_class)->dispose(object);
 }
 
 static void quick_settings_grid_power_profiles_menu_finalize(GObject *object) {
-    QuickSettingsGridPowerProfilesMenu *self =
-        QUICK_SETTINGS_GRID_POWER_PROFILES_MENU(object);
+    G_OBJECT_CLASS(quick_settings_grid_power_profiles_menu_parent_class)->finalize(object);
 }
 
 static void quick_settings_grid_power_profiles_menu_class_init(
@@ -89,13 +101,7 @@ static void quick_settings_grid_power_profiles_menu_class_init(
 
 static void quick_settings_grid_power_profiles_menu_init_layout(
     QuickSettingsGridPowerProfilesMenu *self) {
-    PowerProfilesService *pps = power_profiles_service_get_global();
-    GArray *profiles = power_profiles_service_get_profiles(pps);
-
-    quick_settings_menu_widget_init(&self->menu, false);
-    gtk_image_set_from_icon_name(self->menu.icon,
-                                 "power-profile-balanced-symbolic");
-    gtk_label_set_text(self->menu.title, "Performance");
+    GArray *profiles = power_profiles_service_get_profiles(self->service);
 
     // for each profile add it to self->menu.options
     for (int i = 0; i < profiles->len; i++) {
@@ -114,17 +120,21 @@ static void on_profiles_changed(PowerProfilesService *pps, GArray *profiles,
         gtk_box_remove(self->menu.options, child);
         child = gtk_widget_get_first_child(GTK_WIDGET(self->menu.options));
     }
-    // init layout again
+    // Update the existing visible menu, retaining its container.
     quick_settings_grid_power_profiles_menu_init_layout(self);
 }
 
 static void quick_settings_grid_power_profiles_menu_init(
     QuickSettingsGridPowerProfilesMenu *self) {
+    self->service = g_object_ref(power_profiles_service_get_global());
+    quick_settings_menu_widget_init(&self->menu, false);
+    g_object_ref_sink(self->menu.container);
+    gtk_image_set_from_icon_name(self->menu.icon, "power-profile-balanced-symbolic");
+    gtk_label_set_text(self->menu.title, "Performance");
     quick_settings_grid_power_profiles_menu_init_layout(self);
 
     // setup signal to power profiles service profiles-changed
-    PowerProfilesService *pps = power_profiles_service_get_global();
-    g_signal_connect(pps, "profiles-changed", G_CALLBACK(on_profiles_changed),
+    g_signal_connect(self->service, "profiles-changed", G_CALLBACK(on_profiles_changed),
                      self);
 }
 

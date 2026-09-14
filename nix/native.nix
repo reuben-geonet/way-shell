@@ -64,6 +64,8 @@
               sh tests/wayland-component.sh target/debug/examples/theme-compat
             cargo build -p way-shell --example sway-compat --frozen --jobs 1
             sh tests/wayland-component.sh target/debug/examples/sway-compat
+            make -C tests power-profiles-widgets-test
+            sh tests/wayland-component.sh tests/power-profiles-widgets-test
             cargo build -p way-shell --example niri-compat --frozen --jobs 1
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
               sh tests/wayland-component.sh target/debug/examples/niri-compat niri
