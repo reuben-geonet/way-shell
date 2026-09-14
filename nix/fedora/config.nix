@@ -33,6 +33,9 @@
       ++ [
         "gpgverify"
         "python3"
+        "rust"
+        "cargo"
+        "clang-devel"
         "libadwaita-devel"
         "gtk4-layer-shell-devel"
         "upower-devel"

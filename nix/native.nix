@@ -15,11 +15,18 @@
           src = config.wayShell.source;
           strictDeps = true;
           enableParallelBuilding = false;
+          cargoDeps = config.wayShell.cargoVendor;
           nativeBuildInputs = with pkgs; [
             pkg-config
             glib
             wayland-scanner
             python3
+            cargo
+            rustc
+            rustfmt
+            clippy
+            rustPlatform.cargoSetupHook
+            rustPlatform.bindgenHook
             # A shell wrapper lets the schema check reuse the exact environment
             # of the installed application with a GLib probe as its executable.
             (wrapGAppsHook4.override { makeWrapper = pkgs.makeShellWrapper; })
@@ -40,11 +47,20 @@
             dconf
           ];
           installFlags = [ "PREFIX=$(out)" ];
+          preBuild = ''
+            cargo build --workspace --frozen --jobs 1
+          '';
           doCheck = true;
           checkTarget = "check";
+          preCheck = ''
+            cargo test --workspace --frozen --jobs 1
+            cargo fmt --all --check
+            cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
+          '';
           postInstall = ''
             glib-compile-schemas "$out/share/glib-2.0/schemas"
             install -Dm644 LICENSE "$out/share/licenses/way-shell/LICENSE"
+            cp -r ${config.wayShell.dependencyLicenses} "$out/share/licenses/way-shell/dependencies"
             substituteInPlace "$out/lib/systemd/user/way-shell.service" \
               --replace-fail /usr/bin/way-shell "$out/bin/way-shell"
           '';

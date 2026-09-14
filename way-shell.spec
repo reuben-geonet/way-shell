@@ -18,6 +18,9 @@ BuildRequires: gtk-doc
 BuildRequires: wayland-devel
 BuildRequires: glib2-devel
 BuildRequires: python3
+BuildRequires: rust >= 1.90
+BuildRequires: cargo >= 1.90
+BuildRequires: clang-devel
 
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(upower-glib)
@@ -62,10 +65,13 @@ matures.
 %setup -q
 
 %build
+export CARGO_BUILD_JOBS=1
+cargo build --workspace --frozen
 # Generated resources and Wayland sources are not safe to build in parallel yet.
 make -j1
 
 %check
+cargo test --workspace --frozen --jobs 1
 make -j1 check
 
 %install
@@ -79,6 +85,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 
 %files
 %license LICENSE
+%license dependency-licenses
 %{_bindir}/way-shell
 %{_bindir}/way-sh
 %{_datadir}/glib-2.0/schemas/org.ldelossa.way-shell.gschema.xml

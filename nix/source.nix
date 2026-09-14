@@ -68,11 +68,14 @@
           && !(lib.hasSuffix ".o" name)
           && !(lib.hasSuffix ".d" name);
       };
-      version = lib.removePrefix "Version: " (
-        lib.findFirst (lib.hasPrefix "Version: ") (throw "way-shell.spec has no Version") (
-          lib.splitString "\n" (builtins.readFile ../way-shell.spec)
-        )
-      );
+      version = let
+        cargoVersion = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;
+        rpmVersion = lib.removePrefix "Version: " (
+          lib.findFirst (lib.hasPrefix "Version: ") (throw "way-shell.spec has no Version") (
+            lib.splitString "\n" (builtins.readFile ../way-shell.spec)
+          )
+        );
+      in assert lib.assertMsg (cargoVersion == rpmVersion) "Cargo and RPM versions disagree"; cargoVersion;
       schemaIds = map (match: builtins.elemAt match 0) (
         builtins.filter builtins.isList (
           builtins.split ''<schema[^>]*id="([^"]+)"'' (
