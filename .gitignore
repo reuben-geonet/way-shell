@@ -10,6 +10,7 @@ gresources.h
 /result-*
 /.vscode/
 /tests/core-test
+/tests/ipc-test
 __pycache__/
 
 # Build outputs

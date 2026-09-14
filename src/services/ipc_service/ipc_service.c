@@ -17,6 +17,7 @@
 #include "../../workspace_switcher/workspace_switcher.h"
 #include "glib-unix.h"
 #include "ipc_commands.h"
+#include "ipc_protocol.h"
 
 #define IPC_SOCK "way-shell.sock"
 
@@ -69,6 +70,7 @@ static gboolean ipc_cmd_volume_up() {
         return false;
     }
     WirePlumberServiceNode *sink = wire_plumber_service_get_default_sink(wp);
+    if (!sink) return false;
     wire_plumber_service_volume_up(wp, sink);
     return true;
 }
@@ -83,6 +85,7 @@ static gboolean ipc_cmd_volume_down() {
         return false;
     }
     WirePlumberServiceNode *sink = wire_plumber_service_get_default_sink(wp);
+    if (!sink) return false;
     wire_plumber_service_volume_down(wp, sink);
     return true;
 }
@@ -94,11 +97,12 @@ static gboolean ipc_cmd_volume_set(IPCVolumeSet *msg) {
         g_critical(
             "ipc_service.c:ipc_cmd_volume_up() failed to get wireplumber "
             "service");
-        return true;
+        return false;
     }
     WirePlumberServiceNode *sink = wire_plumber_service_get_default_sink(wp);
+    if (!sink) return false;
     wire_plumber_service_set_volume(wp, sink, msg->volume);
-    return false;
+    return true;
 }
 
 static gboolean ipc_cmd_volume_mute(IPCVolumeMute *msg) {
@@ -111,6 +115,7 @@ static gboolean ipc_cmd_volume_mute(IPCVolumeMute *msg) {
         return false;
     }
     WirePlumberServiceNode *sink = wire_plumber_service_get_default_sink(wp);
+    if (!sink) return false;
     if (sink->mute)
         wire_plumber_service_volume_unmute(wp, sink);
     else
@@ -521,25 +526,23 @@ static gboolean ipc_command_keyboard_brightness_down() {
 
 static gboolean on_ipc_readable(gint fd, GIOCondition condition,
                                 gpointer user_data) {
-    uint8_t buff[4096];
+    uint8_t buff[8];
     gboolean ret = false;
     struct sockaddr_un saddr = {0};
     socklen_t size = sizeof(struct sockaddr_un);
 
     g_debug("ipc_service.c:on_ipc_readable() received IPC message");
 
-    if (recvfrom(fd, buff, sizeof(buff), 0, (struct sockaddr *)&saddr, &size) ==
-        -1) {
+    ssize_t received = recvfrom(fd, buff, sizeof(buff), MSG_TRUNC | MSG_DONTWAIT,
+                                (struct sockaddr *)&saddr, &size);
+    if (received < 0) {
         g_critical("ipc_service.c:on_ipc_readable() failed to recvfrom()");
         return true;
     }
 
-    // client is an abstract unix socket, debug the client socket's path
-    g_debug("ipc_service.c:on_ipc_readable() received IPC message from %s",
-            &saddr.sun_path[1]);
-    ret = false;
-
-    IPCHeader *hdr = (IPCHeader *)&buff;
+    IPCVolumeSet request;
+    if (!ipc_decode_request(buff, (size_t)received, &request)) goto respond;
+    IPCHeader *hdr = &request.header;
 
     switch (hdr->type) {
         case IPC_CMD_MESSAGE_TRAY_OPEN:
@@ -564,7 +567,7 @@ static gboolean on_ipc_readable(gint fd, GIOCondition condition,
             g_debug(
                 "ipc_service.c:on_ipc_readable() received "
                 "IPC_CMD_VOLUME_SET");
-            ret = ipc_cmd_volume_set((IPCVolumeSet *)hdr);
+            ret = ipc_cmd_volume_set(&request);
             break;
         case IPC_CMD_VOLUME_MUTE:
             g_debug(
@@ -741,14 +744,14 @@ static gboolean on_ipc_readable(gint fd, GIOCondition condition,
             ret = ip_cmd_rename_switcher_toggle();
             break;
         default:
-            goto skip_resp;
             break;
     }
 
-    // set ret as a response back to client, its a simple one byte boolean.
-    sendto(fd, &ret, sizeof(ret), 0, (struct sockaddr *)&saddr, size);
-
-skip_resp:
+respond:;
+    uint8_t response[4];
+    ipc_write_u32(response, ret ? 1 : 0);
+    sendto(fd, response, sizeof(response), MSG_DONTWAIT,
+           (struct sockaddr *)&saddr, size);
     return true;
 }
 
