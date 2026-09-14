@@ -450,6 +450,12 @@ gboolean logind_service_set_idle_inhibit(LogindService *self, gboolean enable) {
         return FALSE;
     }
     g_variant_get(result, "(h)", &fd);
+    if (fd < 0 || fd >= g_unix_fd_list_get_length(fd_list)) {
+        g_warning("Could not acquire idle inhibitor: invalid descriptor index");
+        g_object_unref(fd_list);
+        g_variant_unref(result);
+        return FALSE;
+    }
     self->idle_inhibitor_fd = g_unix_fd_list_get(fd_list, fd, &error);
     g_object_unref(fd_list);
     g_variant_unref(result);

@@ -6,7 +6,7 @@
 static DbusLogin1Manager *manager_fixture;
 static DbusLogin1Session *own_session, *other_session;
 static GSettings *settings_fixture;
-static gboolean deny;
+static gboolean deny, invalid_fd;
 static int reader;
 static DbusLogin1Manager *manager_proxy(GDBusConnection *connection, GDBusProxyFlags flags,
     const char *name, const char *path, GCancellable *cancel, GError **error) {
@@ -37,7 +37,7 @@ static GVariant *inhibit_call(GDBusConnection *connection, const char *name,
     *output = g_unix_fd_list_new();
     int index = g_unix_fd_list_append(*output, fds[1], NULL);
     close(fds[1]);
-    return g_variant_ref_sink(g_variant_new("(h)", index));
+    return g_variant_ref_sink(g_variant_new("(h)", invalid_fd ? 77 : index));
 }
 #define dbus_login1_manager_proxy_new_sync manager_proxy
 #define dbus_login1_session_proxy_new_sync session_proxy
@@ -56,7 +56,7 @@ static LogindService *fixture(gboolean initial) {
     dbus_login1_session_set_state(other_session, "active");
     settings_fixture = g_settings_new("org.ldelossa.way-shell.system");
     g_settings_set_boolean(settings_fixture, "idle-inhibitor", initial);
-    deny = FALSE;
+    deny = invalid_fd = FALSE;
     return g_object_new(LOGIND_SERVICE_TYPE, NULL);
 }
 static void cleanup(LogindService *service) {
@@ -91,6 +91,18 @@ static void handles_denied_request(void) {
     g_assert_false(logind_service_get_idle_inhibit(service));
     cleanup(service);
 }
+static void rejects_invalid_descriptor_index(void) {
+    LogindService *service = fixture(FALSE);
+    invalid_fd = TRUE;
+    g_test_expect_message(NULL, G_LOG_LEVEL_WARNING, "*invalid descriptor index*");
+    g_assert_false(logind_service_set_idle_inhibit(service, TRUE));
+    g_test_assert_expected_messages();
+    g_assert_false(logind_service_get_idle_inhibit(service));
+    char byte;
+    g_assert_cmpint(read(reader, &byte, 1), ==, 0);
+    close(reader);
+    cleanup(service);
+}
 static void applies_initial_setting(void) {
     LogindService *service = fixture(TRUE);
     g_assert_true(logind_service_get_idle_inhibit(service));
@@ -106,5 +118,6 @@ int main(int argc, char **argv) {
     g_test_add_func("/logind/dispose-inhibitor", releases_fd_on_dispose);
     g_test_add_func("/logind/denied-inhibitor", handles_denied_request);
     g_test_add_func("/logind/initial-setting", applies_initial_setting);
+    g_test_add_func("/logind/invalid-descriptor", rejects_invalid_descriptor_index);
     return g_test_run();
 }
