@@ -6,12 +6,13 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test niri-test power-profiles-test wayland-state-test
+check: core-test ipc-test niri-test power-profiles-test wayland-state-test power-boundary-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/niri-test
 	cd .. && tests/power-profiles-test
 	cd .. && tests/wayland-state-test
+	cd .. && tests/power-boundary-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -31,5 +32,8 @@ wayland-state-test: wayland-state.c ../src/services/wayland/foreign_toplevel_ser
   ../src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) wayland-state.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 wayland-client) -o $@
 
+power-boundary-test: power-boundary.c ../src/services/upower_service.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 upower-glib) -o $@
+
 clean:
-	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test wayland-state-test
+	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test wayland-state-test power-boundary-test

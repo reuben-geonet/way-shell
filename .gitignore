@@ -17,6 +17,7 @@ gresources.h
 /tests/niri-test
 /tests/power-profiles-test
 /tests/wayland-state-test
+/tests/power-boundary-test
 __pycache__/
 
 # Build outputs
