@@ -52,7 +52,6 @@
     "perl",
     "pipewire-devel",
     "pkgconf-pkg-config",
-    "power-profiles-daemon",
     "pulseaudio-libs-devel",
     "python3-setuptools",
     "redhat-rpm-config",
@@ -62,6 +61,7 @@
     "systemd",
     "systemd-rpm-macros",
     "tar",
+    "tuned-ppd",
     "unzip",
     "upower",
     "upower-devel",
@@ -316,6 +316,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/d/diffutils-3.12-5.fc44.x86_64.rpm"
     },
     {
+      "sha256": "59e6386d209b23cfb4b7240fc311e21b98aa7e63819460e7aebe3ff79a1e3ba6",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/d/dmidecode-3.6-9.fc44.x86_64.rpm"
+    },
+    {
       "sha256": "d1e30aff11533e3043dbc328fedf21703a7795fb489b195af0405be40183bdf1",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/d/docbook-dtds-1.0-91.fc44.noarch.rpm"
     },
@@ -330,6 +334,10 @@
     {
       "sha256": "3ad401bb60e7da7bdba5c988ddab1724b0fefaaed166833dc4a970af5dc04e51",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/d/docbook-utils-0.6.15-6.fc44.noarch.rpm"
+    },
+    {
+      "sha256": "90b487eae6fbf2636b575eedda6c752b58bd5e4b6b24c7dabcb8d74c6319a1f3",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/d/duktape-2.7.0-11.fc44.x86_64.rpm"
     },
     {
       "sha256": "c57edfc92e067922737924bd8df33b2a3703e9c53c280d86f2ca9286efe936d5",
@@ -366,6 +374,10 @@
     {
       "sha256": "df6adb5e3cd8a95e4df52df726d4400de2765388328c312a7780de07e1130a82",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/e/emacs-filesystem-30.2-2.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "5d2b5b212d14c54327cda76afaab713c6351f3a3c3d7bb1053b8a8b5c94515ac",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/e/ethtool-6.19-1.fc44.x86_64.rpm"
     },
     {
       "sha256": "ff5544dbe56e48b95d6f8bc39dc35b624fc39e1dfe70c486a225ef7c5fdfa211",
@@ -740,6 +752,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/h/harfbuzz-icu-12.3.2-1.fc44.x86_64.rpm"
     },
     {
+      "sha256": "29361f8b4d5d2c41f6ec320deecd3b3e9b40ea08e70caf95c9cb6183338d44b7",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/h/hdparm-9.65-10.fc44.x86_64.rpm"
+    },
+    {
       "sha256": "28894b2ad620f1b525a5de4db3e17d1782ccfe0ac1322c2336070bee1cacf47e",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/h/hicolor-icon-theme-0.18-3.fc44.noarch.rpm"
     },
@@ -754,6 +770,10 @@
     {
       "sha256": "4aa17209cb7f437b68e77701b883b8b9610ba0e7bd5467af164b521930e1f460",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/i/ima-evm-utils-libs-1.6.2-8.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "756b149f3d89a8a1dfb1d91abbb85fc2c9f0775283e4db6848aec356b1c73517",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/i/iproute-6.17.0-2.fc44.x86_64.rpm"
     },
     {
       "sha256": "56e4d850711d11c21fb9f3b2005b54b2b69c4e218399ca50259f9678ea06e007",
@@ -960,6 +980,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/l/libblkid-devel-2.41.3-12.fc44.x86_64.rpm"
     },
     {
+      "sha256": "1c06ae3b08dbfe01d53d65825f5c4b6d593ae71f430759e76ee72f299de7ff3b",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/l/libbpf-1.6.3-1.fc44.x86_64.rpm"
+    },
+    {
       "sha256": "3f678e2c3eadfb559b3f91489cea1118cffe230219366426038a023bb34f5054",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/l/libbrotli-1.2.0-3.fc44.x86_64.rpm"
     },
@@ -1126,6 +1150,10 @@
     {
       "sha256": "eabd33ee5b55d9d2659dc206d616553533be19dec01f463681ad38dc0dab52a8",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/l/liblerc-4.0.0-10.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "58147320637f46f579e9daca75b454f16856bc3ef9107843a6f5d043c634020f",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/l/libmnl-1.0.5-9.fc44.x86_64.rpm"
     },
     {
       "sha256": "1dcdadd3515c2998694c5928eca95e701134aaa0f267eb541ff612759a54fb6c",
@@ -2528,6 +2556,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/policycoreutils-3.10-1.fc44.x86_64.rpm"
     },
     {
+      "sha256": "0a54ed12ad27bb4a0341b07d3dc95d41cd0bdd0ee9ea1f8c4ab0e9e78a43f291",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/polkit-127-2.fc44.2.x86_64.rpm"
+    },
+    {
       "sha256": "de2759d701dd7be8b193a2a0eea614652ac1535a51c5b9ae540d0e4473653e13",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/polkit-devel-127-2.fc44.2.x86_64.rpm"
     },
@@ -2544,8 +2576,8 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/popt-1.19-10.fc44.x86_64.rpm"
     },
     {
-      "sha256": "d16d7fde79936609d931a0553831facfb7d4ac304239eb4d0dda46e2f03a9c75",
-      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/power-profiles-daemon-0.30-3.fc44.x86_64.rpm"
+      "sha256": "aa9bf1e4324bb7f35a9b7700831e613bb65c5c8b7b78565f21111a0eb3ca2515",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/psmisc-23.7-7.fc44.x86_64.rpm"
     },
     {
       "sha256": "90884464488a98f478d93c76b46e48400de7b2fdb0188ec61dc614def78c1f8b",
@@ -2580,8 +2612,24 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-3.14.3-2.fc44.x86_64.rpm"
     },
     {
+      "sha256": "f5ddf23e75d515f31e89d0ad1b0c701dc55b3a9d42ce554dce1b44ef01522a1f",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-dbus-1.4.0-9.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "e3553383160607dd55c11f5c89f490bf3aa6c57af6ba334198f40ffb50538c0f",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-gobject-base-3.56.2-1.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "9f9b9ef27ad2548c9937df05af8612e4bec96421e02a4aa0b439f83559f15f91",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-inotify-0.9.6-43.fc44.noarch.rpm"
+    },
+    {
       "sha256": "130aad43ab0ccca75d52c89d9862701a0c55136cb6b8aba4e34d21d3fd8b2849",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-libs-3.14.3-2.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "1059a26a72519e2337599f5979a3efddf349a08f24dd97260cb3621b91425ed5",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-linux-procfs-0.7.4-2.fc44.noarch.rpm"
     },
     {
       "sha256": "0d13b527b2eec05f5fc7b1b22f48f7f619da93a957d4c2505afd0adf065734de",
@@ -2610,6 +2658,10 @@
     {
       "sha256": "8fe482427ed1df30aa00e5e9ddbfdff293582601fe47d1a8bad72dcca011b781",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-pyparsing-3.1.2-15.fc44.noarch.rpm"
+    },
+    {
+      "sha256": "30b268cfc41f73487e23032d7972ba7ebd6a8e97b2f60eeb6d70f709149a3939",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/python3-pyudev-0.24.4-3.fc44.noarch.rpm"
     },
     {
       "sha256": "8f4b2042d23fc8f602f2882c1fdc0198a6ba61c77fbdba2251250c8219df873c",
@@ -2764,6 +2816,14 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/t/tree-sitter-srpm-macros-0.4.2-2.fc44.noarch.rpm"
     },
     {
+      "sha256": "103e7e8d8c2365cfe068686b8cbfed9644f1c4d711cfff67279080a50af883ac",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/t/tuned-2.27.0-1.fc44.noarch.rpm"
+    },
+    {
+      "sha256": "1d5f0b84cd480f460dad35c9e98aa2e355126bd37dd85d0d39e35b92aa4693a6",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/t/tuned-ppd-2.27.0-1.fc44.noarch.rpm"
+    },
+    {
       "sha256": "4a222031f4a5ce8dbdaaa76e2a25a51eb3fd5b274dc47ac0b30bb6a7fccb5cd4",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/t/tzdata-2026a-1.fc44.noarch.rpm"
     },
@@ -2798,6 +2858,10 @@
     {
       "sha256": "04571657c902501a82776db20e4b0939f4a113bd7fa6ef622c9eb48caac5f714",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/v/vim-filesystem-9.2.240-1.fc44.noarch.rpm"
+    },
+    {
+      "sha256": "11cc77e0ca7ec950c845a797a1334a7ef730d5143679521bb85ff0ec5dd6d7b4",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/v/virt-what-1.27-5.fc44.x86_64.rpm"
     },
     {
       "sha256": "b466a7e3525dbd55f12193b0b24ca913fc3f7c473bb02838af5adbc448c4cd8f",

@@ -31,7 +31,18 @@ for artifact in "$RPM_DIRECTORY"/*.rpm; do
     fi
 done
 test "${#application[@]}" -eq 1
+rpm -q --qf '%{NEVRA}\n' "$POWER_PROVIDER" > "$out/logs/power-provider-before.txt"
+case "$POWER_PROVIDER" in
+    power-profiles-daemon) other_provider=tuned-ppd ;;
+    tuned-ppd) other_provider=power-profiles-daemon ;;
+    *) echo "Unknown power provider: $POWER_PROVIDER" >&2; exit 1 ;;
+esac
+if rpm -q "$other_provider"; then exit 1; fi
+rpm -qp --requires "${application[0]}" | grep -Fx '(power-profiles-daemon or tuned-ppd)'
 rpm -Uvh "${application[0]}"
+rpm -q --qf '%{NEVRA}\n' "$POWER_PROVIDER" > "$out/logs/power-provider-after.txt"
+cmp "$out/logs/power-provider-before.txt" "$out/logs/power-provider-after.txt"
+if rpm -q "$other_provider"; then exit 1; fi
 rpm -q way-shell
 # RPMs also co-own shared directories such as /usr/lib/.build-id. Check all
 # files and symlinks; those shared directories may legitimately remain.
@@ -62,6 +73,8 @@ for executable in way-shell way-sh; do
 done
 
 rpm -e way-shell
+rpm -q --qf '%{NEVRA}\n' "$POWER_PROVIDER" > "$out/logs/power-provider-uninstalled.txt"
+cmp "$out/logs/power-provider-before.txt" "$out/logs/power-provider-uninstalled.txt"
 if rpm -q way-shell; then exit 1; fi
 while IFS= read -r owned; do
     test ! -e "$owned"
