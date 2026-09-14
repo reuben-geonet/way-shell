@@ -13,6 +13,7 @@ gresources.h
 /tests/ipc-test
 /tests/theme-test
 /tests/clock-test
+/tests/sway-transport-test
 __pycache__/
 
 # Build outputs

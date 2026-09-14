@@ -91,41 +91,23 @@ SWAY_CLIENT_ERR sway_client_ipc_connect(gchar *socket_path) {
 }
 
 static int socket_write(int socket_fd, uint8_t *buff, int size) {
-    int n = size;
-    int b = write(socket_fd, buff, n);
-    for (; n > 0; b = write(socket_fd, buff, n)) {
-        if (b < 0) {
-            if (errno == EINTR) continue;
-            if (errno) {
-                g_critical(
-                    "sway_client.c:sway_client_ipc_send() "
-                    "failed to write to socket %d %s.",
-                    errno, strerror(errno));
-                return -SWAY_CLIENT_ERR_SOCKET_WRITE;
-            }
-        }
-        n -= b;
-        b += b;
+    int offset = 0;
+    while (offset < size) {
+        ssize_t written = write(socket_fd, buff + offset, size - offset);
+        if (written < 0 && errno == EINTR) continue;
+        if (written <= 0) return -SWAY_CLIENT_ERR_SOCKET_WRITE;
+        offset += written;
     }
     return size;
 }
 
 static int socket_read(int socket_fd, uint8_t *buff, int size) {
-    int n = size;
-    int b = read(socket_fd, buff, n);
-    for (; n > 0; b = read(socket_fd, buff, n)) {
-        if (b < 0) {
-            if (errno == EINTR) continue;
-            if (errno) {
-                g_critical(
-                    "sway_client.c:sway_client_ipc_send() "
-                    "failed to read from socket %d %s.",
-                    errno, strerror(errno));
-                return -SWAY_CLIENT_ERR_SOCKET_READ;
-            }
-        }
-        n -= b;
-        b += b;
+    int offset = 0;
+    while (offset < size) {
+        ssize_t received = read(socket_fd, buff + offset, size - offset);
+        if (received < 0 && errno == EINTR) continue;
+        if (received <= 0) return -SWAY_CLIENT_ERR_SOCKET_READ;
+        offset += received;
     }
     return size;
 }

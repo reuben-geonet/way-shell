@@ -51,6 +51,12 @@ Repeating a theme command still reloads the CSS. Memory-backed settings tests
 cover external changes and callback cleanup. Embedded CSS remains byte-for-byte
 identical to the baseline, including its existing GTK parser diagnostics.
 
+The Sway stream fixture reproduced incorrect partial reads and writes: the C
+loops advanced a byte count instead of the buffer pointer, and could spin on
+EOF. Advance the buffer by the completed bytes, retry interrupted calls, and
+stop on EOF or a zero-length write. Deterministic two-byte operations cover
+both directions before transferring this contract to Rust.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.
