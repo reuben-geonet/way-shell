@@ -1,6 +1,10 @@
 #!/bin/sh
 # Isolated component smoke test; accepts a compiled Rust example as its argument.
 set -eu
+if [ "${WAY_SHELL_TEST_BUS:-}" != 1 ]; then
+    exec dbus-run-session --config-file=tests/fixtures/session-bus.conf -- \
+        env WAY_SHELL_TEST_BUS=1 sh "$0" "$@"
+fi
 probe=$(realpath "${1:?pass the compiled component probe}")
 runtime=$(mktemp -d /tmp/way-shell-wayland.XXXXXX)
 compositor_pid=
@@ -20,6 +24,7 @@ unset SWAYSOCK WAYLAND_DISPLAY
 cat > "$runtime/sway.conf" <<'EOF'
 output * resolution 800x600
 seat seat0 fallback true
+set $mod Mod4
 EOF
 WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_LIBINPUT_NO_DEVICES=1 \
     sway -c "$runtime/sway.conf" > "$runtime/sway.log" 2>&1 &
@@ -37,4 +42,7 @@ until [ -n "${WAYLAND_DISPLAY:-}" ]; do
     sleep 0.1
 done
 export WAYLAND_DISPLAY GDK_BACKEND=wayland
+for socket in "$runtime"/sway-ipc.*.sock; do
+    if [ -S "$socket" ]; then export SWAYSOCK="$socket"; break; fi
+done
 "$probe"
