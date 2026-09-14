@@ -2,7 +2,7 @@
 
 Name: way-shell
 Version: 0.0.10
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 
@@ -81,5 +81,8 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Tue Sep 15 2026 Way-Shell contributors - 0.0.10-3
+- Fix Bluetooth power transitions, state synchronization, errors, and menu layout.
+
 * Mon May 27 2024 Louis DeLosSantos <louis.delos.deve@gmail.com>
 - Initial packaging
