@@ -39,6 +39,21 @@
             mkdir -p "$out/logs"
             exec > >(tee "$out/logs/build.log") 2>&1
           '';
+          # vmTools' default /tmp/rpmout is on a RAM-backed filesystem.
+          # Keep Cargo artifacts on the sparse guest disk instead.
+          buildPhase = ''
+            runHook preBuild
+            srcName="$(rpmspec --srpm -q --qf '%{source}' *.spec)"
+            cp "$src" "$srcName"
+            rpmout=/var/tmp/way-shell-rpm
+            mkdir -p "$rpmout"/{BUILD,BUILDROOT,SPECS,SOURCES,RPMS,SRPMS}
+            export CARGO_HOME="$rpmout/cargo-home"
+            df -h /tmp "$rpmout"
+            rustc --version
+            cargo --version
+            rpmbuild -vv --define "_topdir $rpmout" -ta "$srcName"
+            runHook postBuild
+          '';
         }
       );
       installations = lib.genAttrs releases (

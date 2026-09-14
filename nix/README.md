@@ -65,6 +65,8 @@ need KVM. Images have a 16 GiB sparse virtual disk; creation and checks use 2 Gi
 and compilation uses 3 GiB. Budget additional host RAM and disk for Nix's
 dependencies. `nix build .#rpms --max-jobs 1 --cores 2` limits local VM build
 resource use. The RPM app uses Nix's configured build limits.
+RPM compilation uses `/var/tmp/way-shell-rpm` on the guest disk; vmTools'
+RAM-backed `/tmp` is too small for the GTK Rust build artifacts.
 
 ## Checks and logs
 
