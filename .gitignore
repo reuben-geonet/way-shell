@@ -19,6 +19,7 @@ gresources.h
 /tests/power-profiles-widgets-test
 /tests/wayland-state-test
 /tests/power-boundary-test
+/tests/logind-test
 __pycache__/
 
 # Build outputs

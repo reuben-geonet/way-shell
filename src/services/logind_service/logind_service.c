@@ -28,7 +28,15 @@ G_DEFINE_TYPE(LogindService, logind_service, G_TYPE_OBJECT);
 
 // stub out dispose, finalize, class_init, and init methods
 static void logind_service_dispose(GObject *gobject) {
-    // Chain-up
+    LogindService *self = LOGIND_SERVICE(gobject);
+    if (self->idle_inhibitor_fd != -1) {
+        close(self->idle_inhibitor_fd);
+        self->idle_inhibitor_fd = -1;
+    }
+    if (self->settings) g_signal_handlers_disconnect_by_data(self->settings, self);
+    g_clear_object(&self->settings);
+    g_clear_object(&self->session);
+    g_clear_object(&self->manager);
     G_OBJECT_CLASS(logind_service_parent_class)->dispose(gobject);
 };
 
@@ -53,8 +61,6 @@ static void logind_service_session_dbus_connect(LogindService *self) {
     int uid = getuid();
     GError *error = NULL;
     GVariant *sessions = NULL;
-    char *session_obj_path = NULL;
-    char *session_id = 0;
 
     dbus_login1_manager_call_list_sessions_sync(self->manager, &sessions, NULL,
                                                 &error);
@@ -65,19 +71,13 @@ static void logind_service_session_dbus_connect(LogindService *self) {
     }
 
     DbusLogin1Session *session = NULL;
-    GVariant *session_variant = NULL;
     GVariantIter *iter;
     g_variant_get(sessions, "a(susso)", &iter);
-    while (g_variant_iter_loop(iter, "@(susso)", &session_variant)) {
-        gchar *id;
-        guint32 sess_uid;
-        gchar *username;
-        gchar *seat;
-        gchar *obj_path;
-        g_variant_get(session_variant, "(susso)", &id, &sess_uid, &username,
-                      &seat, &obj_path);
-
-        if (strlen(seat) == 0) continue;
+    const gchar *id, *username, *seat, *obj_path;
+    guint32 sess_uid;
+    while (g_variant_iter_loop(iter, "(&su&s&s&o)", &id, &sess_uid, &username,
+                               &seat, &obj_path)) {
+        if (sess_uid != (guint32)uid || !*seat) continue;
 
         session = dbus_login1_session_proxy_new_sync(
             self->conn, G_DBUS_PROXY_FLAGS_NONE, "org.freedesktop.login1",
@@ -110,10 +110,7 @@ static void logind_service_session_dbus_connect(LogindService *self) {
         g_error(
             "logind_service.c:logind_service_init(): error: no session found");
 
-    g_debug(
-        "logind_service.c:logind_service_init(): found session id: %s "
-        "session_obj_path: %s",
-        session_id, session_obj_path);
+
 }
 
 static void logind_service_manager_dbus_connect(LogindService *self) {
@@ -145,6 +142,7 @@ static void on_idle_inhibitor_changed(GSettings *settings, gchar *key,
 static void logind_service_init(LogindService *self) {
     g_debug("logind_service.c:logind_service_init():");
 
+    self->idle_inhibitor_fd = -1;
     logind_service_manager_dbus_connect(self);
     logind_service_session_dbus_connect(self);
 
@@ -155,7 +153,7 @@ static void logind_service_init(LogindService *self) {
     g_signal_connect(self->settings, "changed::idle-inhibitor",
                      G_CALLBACK(on_idle_inhibitor_changed), self);
 
-    self->idle_inhibitor_fd = -1;
+    on_idle_inhibitor_changed(self->settings, NULL, self);
 }
 
 gboolean logind_service_can_reboot(LogindService *self) {
@@ -437,19 +435,29 @@ gboolean logind_service_set_idle_inhibit(LogindService *self, gboolean enable) {
         g_variant_new("(ssss)", what, who, why, mode),  // parameters
         G_VARIANT_TYPE("(h)"),                          // response type
         G_DBUS_CALL_FLAGS_NONE,
-        -1,        // timeout
+        2000,      // timeout
         NULL,      // fd list for input
         &fd_list,  // fd list for output
         NULL,      // cancellable
         &error);
 
-    // get fd
+    if (!result || !fd_list || !g_variant_is_of_type(result, G_VARIANT_TYPE("(h)"))) {
+        g_warning("Could not acquire idle inhibitor: %s",
+                  error ? error->message : "invalid descriptor reply");
+        g_clear_error(&error);
+        g_clear_object(&fd_list);
+        g_clear_pointer(&result, g_variant_unref);
+        return FALSE;
+    }
     g_variant_get(result, "(h)", &fd);
-
-    self->idle_inhibitor_fd = g_unix_fd_list_get(fd_list, fd, NULL);
-
+    self->idle_inhibitor_fd = g_unix_fd_list_get(fd_list, fd, &error);
     g_object_unref(fd_list);
     g_variant_unref(result);
+    if (self->idle_inhibitor_fd == -1) {
+        g_warning("Could not acquire idle inhibitor: %s", error->message);
+        g_clear_error(&error);
+        return FALSE;
+    }
 
     g_debug("logind_service.c:logind_service_set_idle_inhibit(): fd: %d",
             self->idle_inhibitor_fd);
