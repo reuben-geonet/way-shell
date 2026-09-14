@@ -17,6 +17,7 @@ BuildRequires: cmake
 BuildRequires: gtk-doc
 BuildRequires: wayland-devel
 BuildRequires: glib2-devel
+BuildRequires: python3
 
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(upower-glib)
@@ -63,6 +64,9 @@ matures.
 %build
 # Generated resources and Wayland sources are not safe to build in parallel yet.
 make -j1
+
+%check
+make -j1 check
 
 %install
 make install DESTDIR=%{buildroot}

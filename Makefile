@@ -31,6 +31,10 @@ OBJS += lib/cmd_tree/cmd_tree.o
 
 all: wlr-protocols gresources way-shell way-sh/way-sh
 
+.PHONY: check
+check: all
+	$(MAKE) -C tests check
+
 way-shell: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) gresources.o $(LIBS)
 

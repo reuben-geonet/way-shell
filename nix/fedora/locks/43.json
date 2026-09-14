@@ -52,6 +52,7 @@
     "pkgconf-pkg-config",
     "power-profiles-daemon",
     "pulseaudio-libs-devel",
+    "python3",
     "redhat-rpm-config",
     "rpm",
     "rpm-build",

@@ -19,6 +19,7 @@
             pkg-config
             glib
             wayland-scanner
+            python3
             # A shell wrapper lets the schema check reuse the exact environment
             # of the installed application with a GLib probe as its executable.
             (wrapGAppsHook4.override { makeWrapper = pkgs.makeShellWrapper; })
@@ -39,6 +40,8 @@
             dconf
           ];
           installFlags = [ "PREFIX=$(out)" ];
+          doCheck = true;
+          checkTarget = "check";
           postInstall = ''
             glib-compile-schemas "$out/share/glib-2.0/schemas"
             install -Dm644 LICENSE "$out/share/licenses/way-shell/LICENSE"

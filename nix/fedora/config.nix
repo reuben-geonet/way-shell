@@ -32,6 +32,7 @@
       pkgs.vmTools.commonFedoraPackages
       ++ [
         "gpgverify"
+        "python3"
         "libadwaita-devel"
         "gtk4-layer-shell-devel"
         "upower-devel"
