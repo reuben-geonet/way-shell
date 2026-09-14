@@ -532,6 +532,28 @@ static void test_airplane_reversal(Fixture *f, gconstpointer data) {
     g_assert_cmpuint(f->errors, ==, 0);
 }
 
+static void test_power_off_cancels_connection(Fixture *f, gconstpointer data) {
+    f->devices[0].connected = FALSE;
+    notify(f, MOUSE);
+    pump();
+    f->delay_connect = TRUE;
+    bluetooth_service_toggle_device(f->service, MOUSE);
+    pump();
+    if (data) {
+        f->powered = FALSE;
+        notify(f, "/org/bluez/hci0");
+    } else {
+        bluetooth_service_set_powered(f->service, FALSE);
+    }
+    pump();
+    g_assert_false(bluetooth_service_powered(f->service));
+    g_dbus_method_invocation_return_dbus_error(f->delayed,
+        "org.bluez.Error.Failed", "Connection canceled by power off");
+    g_clear_object(&f->delayed);
+    pump();
+    g_assert_cmpuint(f->errors, ==, 0);
+}
+
 static void test_settings(void) {
     g_autoptr(GError) error = NULL;
     g_auto(GStrv) argv = bluetooth_settings_parse_command("true 'a b' '$(false)'", &error);
@@ -598,6 +620,8 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/external-power", Fixture, NULL, setup, test_external_power, teardown);
     g_test_add("/bluetooth/power-timeout", Fixture, NULL, setup, test_power_timeout, teardown);
     g_test_add("/bluetooth/airplane-reversal", Fixture, NULL, setup, test_airplane_reversal, teardown);
+    g_test_add("/bluetooth/power-off-cancels-connection", Fixture, NULL, setup, test_power_off_cancels_connection, teardown);
+    g_test_add("/bluetooth/external-off-cancels-connection", Fixture, GINT_TO_POINTER(1), setup, test_power_off_cancels_connection, teardown);
     g_test_add_func("/bluetooth/settings", test_settings);
     g_test_add("/bluetooth/connected-without-profiles", Fixture, NULL, setup, test_connected_without_profiles, teardown);
     g_test_add("/bluetooth/adapter-hotplug", Fixture, NULL, setup, test_adapter_hotplug, teardown);

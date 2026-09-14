@@ -39,6 +39,7 @@ static BluetoothService *global;
 static void reconcile_power(BluetoothService *self);
 static gboolean adapter_target(BluetoothService *self, const char *path);
 static gboolean software_blocked(BluetoothService *self);
+static void prune_operations(BluetoothService *self);
 
 static gboolean emit_changed(gpointer data) {
     BluetoothService *self = data;
@@ -261,6 +262,7 @@ static gboolean read_radios(gint fd, GIOCondition condition, gpointer data) {
             g_hash_table_replace(self->radios, key,
                                  g_memdup2(&event, sizeof(event)));
     }
+    prune_operations(self);
     changed(self);
     if (condition & (G_IO_HUP | G_IO_ERR | G_IO_NVAL)) {
         self->rfkill_watch = 0;
@@ -470,6 +472,16 @@ static void request_power(BluetoothService *self, gboolean powered,
     self->requested_power = powered;
     self->block_after_off = !powered && self->airplane_mode && !self->airplane_override;
     self->power_timeout = g_timeout_add(POWER_TIMEOUT_MS, power_expired, self);
+    if (!powered) {
+        GHashTableIter iter;
+        gpointer key, value;
+        g_hash_table_iter_init(&iter, self->pending);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            if (!strstr(key, "/dev_")) continue;
+            g_cancellable_cancel(value);
+            g_hash_table_iter_remove(&iter);
+        }
+    }
     /* Only enable through rfkill when blocked. Blocking for an ordinary
      * power-off can unplug the adapter and race BlueZ's Properties.Set. */
     if (powered && !targets && software_blocked(self) &&
@@ -567,6 +579,13 @@ static void prune_operations(BluetoothService *self) {
     while (g_hash_table_iter_next(&iter, &key, &value)) {
         g_autoptr(GDBusProxy) proxy = get_proxy(self, key,
             strstr(key, "/dev_") ? DEVICE : ADAPTER);
+        if (proxy && strstr(key, "/dev_")) {
+            g_autofree char *path = string_property(proxy, "Adapter", "");
+            g_autoptr(GDBusProxy) adapter = get_proxy(self, path, ADAPTER);
+            if (!adapter || !boolean_property(adapter, "Powered") ||
+                software_blocked(self) || bluetooth_service_hardware_blocked(self))
+                g_clear_object(&proxy);
+        }
         if (proxy) continue;
         g_cancellable_cancel(value);
         g_hash_table_iter_remove(&iter);
@@ -590,6 +609,7 @@ static void properties_changed(GDBusObjectManagerClient *manager,
                                GDBusObjectProxy *object, GDBusProxy *proxy,
                                GVariant *properties, const char *const *invalid,
                                BluetoothService *self) {
+    prune_operations(self);
     gboolean powered;
     if (self->airplane_mode && !bluetooth_service_busy(self) &&
         !g_strcmp0(g_dbus_proxy_get_interface_name(proxy), ADAPTER) &&
