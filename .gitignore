@@ -8,6 +8,7 @@ gresources.h
 /.cache/
 /result
 /result-*
+/.vscode/
 /tests/core-test
 __pycache__/
 

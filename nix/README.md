@@ -22,6 +22,11 @@ wrapper, schemas and dconf backend. Its systemd user unit invokes that wrapper.
 To use the unit from a profile, link its `lib/systemd/user/way-shell.service`
 into your user unit directory, then run `systemctl --user daemon-reload`.
 
+Start a debugger from `nix develop` so it inherits the native libraries,
+schemas and current session variables, for example `gdb ./way-shell`.
+Local editor configuration belongs in the ignored `.vscode/` directory.
+Do not commit user IDs, machine socket paths or remote debugger addresses.
+
 Way-Shell needs a Sway/Wayland session, a session D-Bus, logind,
 NetworkManager, PipeWire/WirePlumber, UPower and power-profiles-daemon running
 on the host. Nix packaging supplies libraries, not these host services.
