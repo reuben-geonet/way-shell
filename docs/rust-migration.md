@@ -81,6 +81,11 @@ retain the proxy's borrowed variant, own each profile string once, and disconnec
 the proxy before releasing the service. The regression also verifies that a
 released service receives no subsequent property callbacks.
 
+The Wayland baseline's foreign-toplevel state loop used a byte length as an
+element count. A single activated-state event reproduced a heap-buffer overflow
+under AddressSanitizer. Bound iteration by the number of complete 32-bit states
+and reject malformed lengths before replacing this protocol implementation.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

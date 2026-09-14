@@ -382,7 +382,11 @@ static void toplevel_handle_state(
 
     // check if activated
     top_level->activated = FALSE;
-    for (size_t i = 0; i < state->size; i++) {
+    if (state->size % sizeof(uint32_t) != 0) {
+        g_warning("Ignoring malformed foreign-toplevel state array");
+        return;
+    }
+    for (size_t i = 0; i < state->size / sizeof(uint32_t); i++) {
         uint32_t *state_ptr = (uint32_t *)state->data + i;
         if (*state_ptr == ZWLR_FOREIGN_TOPLEVEL_HANDLE_V1_STATE_ACTIVATED) {
             top_level->activated = TRUE;

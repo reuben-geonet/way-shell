@@ -16,6 +16,7 @@ gresources.h
 /tests/sway-transport-test
 /tests/niri-test
 /tests/power-profiles-test
+/tests/wayland-state-test
 __pycache__/
 
 # Build outputs
