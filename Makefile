@@ -30,6 +30,7 @@ GENERATED_SOURCES := $(addsuffix .c,$(DBUS_BASES) $(WAYLAND_BASES))
 GENERATED_HEADERS := $(addsuffix .h,$(DBUS_BASES) $(WAYLAND_BASES))
 SOURCES := $(sort $(shell find src -type f -name '*.c') $(GENERATED_SOURCES))
 OBJS := $(SOURCES:.c=.o) gresources.o
+BRIDGE := target/release/libway_shell_bridge.a
 RESOURCE_FILES := $(shell glib-compile-resources --generate-dependencies gresources.xml)
 
 .PHONY: all check clean install install-gschema dbus-codegen wlr-protocols gresources
@@ -38,8 +39,13 @@ check: all
 	$(CARGO) test -p way-shell-core -p way-sh $(CARGO_BUILD_FLAGS)
 	$(MAKE) -C tests check
 
-way-shell: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+way-shell: $(OBJS) $(BRIDGE)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(BRIDGE) $(LIBS) -ldl -lpthread
+
+.PHONY: bridge
+bridge:
+	$(CARGO) build -p way-shell-bridge --release $(CARGO_BUILD_FLAGS)
+$(BRIDGE): bridge
 
 # Bootstrapping dependencies cover the first build; .d files provide precise
 # header dependencies thereafter. Generated headers precede every C consumer.

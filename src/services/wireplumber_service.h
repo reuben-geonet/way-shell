@@ -1,4 +1,5 @@
 #pragma once
+#include "../rust_bridge.h"
 #include <adwaita.h>
 #include <sys/cdefs.h>
 #include <wireplumber-0.5/wp/wp.h>
@@ -33,34 +34,9 @@ enum WirePlumberServicePortChannel {
         WIRE_PLUMBER_SERVICE_PORT_TFR
     };
 
-    static __always_inline enum WirePlumberServicePortChannel
-    wire_plumber_service_map_port(const char *channel) {
-        if (g_strcmp0(channel, "FL") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_FL;
-        } else if (g_strcmp0(channel, "FR") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_FR;
-        } else if (g_strcmp0(channel, "RL") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_RL;
-        } else if (g_strcmp0(channel, "RR") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_RR;
-        } else if (g_strcmp0(channel, "C") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_C;
-        } else if (g_strcmp0(channel, "LFE") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_LFE;
-        } else if (g_strcmp0(channel, "SL") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_SL;
-        } else if (g_strcmp0(channel, "SR") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_SR;
-        } else if (g_strcmp0(channel, "RHL") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_RHL;
-        } else if (g_strcmp0(channel, "RHR") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_RHR;
-        } else if (g_strcmp0(channel, "TFL") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_TFL;
-        } else if (g_strcmp0(channel, "TFR") == 0) {
-            return WIRE_PLUMBER_SERVICE_PORT_TFR;
-        }
-        return -1;
+static inline enum WirePlumberServicePortChannel
+wire_plumber_service_map_port(const char *channel) {
+    return (enum WirePlumberServicePortChannel)way_shell_channel_index(channel);
 }
 
 // Defines a fixed size array which holds in input or output ports of a
@@ -91,24 +67,6 @@ typedef struct _WirePlumberServiceNodeHeader {
     guint32 id;
     WirePlumberServicePorts ports;
 } WirePlumberServiceNodeHeader;
-
-static inline gdouble volume_from_linear(float vol, gint scale) {
-    if (vol <= 0.0f)
-        return 0.0;
-    else if (scale == SCALE_CUBIC)
-        return cbrt(vol);
-    else
-        return vol;
-}
-
-static inline float volume_to_linear(gdouble vol, gint scale) {
-    if (vol <= 0.0f)
-        return 0.0;
-    else if (scale == SCALE_CUBIC)
-        return vol * vol * vol;
-    else
-        return vol;
-}
 
 // A Pipewire Node inventoried by the WirePlumberService.
 typedef struct WirePlumberServiceNode {

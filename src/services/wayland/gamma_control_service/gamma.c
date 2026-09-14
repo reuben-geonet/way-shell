@@ -83,6 +83,10 @@ static void apply_gamma_control(WaylandGammaControlService *self,
     g_debug("gamma.c:wayland_wlr_gamma_control_apply() called");
     // when we get here we must have the gamma ramp table size known
     if (ctrl->gamma_size == 0) return;
+    if (!way_shell_gamma_supported(ctrl->gamma_size, ctrl->temperature)) {
+        g_warning("gamma: invalid ramp size or temperature");
+        return;
+    }
 
     // get the total size needed for the gamma table.
     size_t table_size = ctrl->gamma_size * 3 * sizeof(uint16_t);
@@ -129,7 +133,13 @@ static void apply_gamma_control(WaylandGammaControlService *self,
         b[i] = value;
     }
 
-    colorramp_fill(r, g, b, ctrl->gamma_size, ctrl->temperature);
+    if (colorramp_fill(r, g, b, ctrl->gamma_size, ctrl->temperature) != 0) {
+        g_warning("gamma: invalid ramp size or temperature");
+        munmap(table, table_size);
+        shm_unlink(shm_name);
+        close(fd);
+        return;
+    }
 
     zwlr_gamma_control_v1_set_gamma(ctrl->control, fd);
 

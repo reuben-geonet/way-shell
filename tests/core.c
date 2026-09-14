@@ -31,6 +31,10 @@ static void channels(void) {
 }
 
 static void gamma_golden(void) {
+    g_assert_cmpint(way_shell_gamma_supported(4, 6500), ==, 1);
+    g_assert_cmpint(way_shell_gamma_supported(0, 6500), ==, 0);
+    g_assert_cmpint(way_shell_gamma_supported(SIZE_MAX, 6500), ==, 0);
+    g_assert_cmpint(way_shell_gamma_supported(256, 999), ==, 0);
     gchar *contents = NULL;
     g_assert_true(g_file_get_contents("tests/fixtures/gamma.tsv", &contents, NULL, NULL));
     g_auto(GStrv) lines = g_strsplit(contents, "\n", -1);
@@ -45,7 +49,7 @@ static void gamma_golden(void) {
         uint16_t r[] = {0, 16384, 32768, 49152};
         uint16_t g[] = {0, 16384, 32768, 49152};
         uint16_t b[] = {0, 16384, 32768, 49152};
-        colorramp_fill(r, g, b, 4, temperature);
+        g_assert_cmpint(colorramp_fill(r, g, b, 4, temperature), ==, 0);
         for (guint i = 0; i < 4; i++) {
             g_assert_cmpuint(r[i], ==, expected[i]);
             g_assert_cmpuint(g[i], ==, expected[i + 4]);

@@ -1,0 +1,16 @@
+[package]
+name = "way-shell-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+way-shell-core.workspace = true
+
+[lints]
+workspace = true
