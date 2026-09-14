@@ -61,7 +61,7 @@ VM builds require usable `/dev/kvm` and `kvm` in Nix's `system-features`.
 Allow both your user and the daemon's build users to use KVM through your
 distribution's device access rules. Verify read/write access to `/dev/kvm`
 and check `nix config show | grep system-features`. Native builds do not
-need KVM. Images have an 8 GiB virtual disk; creation and checks use 2 GiB RAM,
+need KVM. Images have a 16 GiB sparse virtual disk; creation and checks use 2 GiB RAM,
 and compilation uses 3 GiB. Budget additional host RAM and disk for Nix's
 dependencies. `nix build .#rpms --max-jobs 1 --cores 2` limits local VM build
 resource use. The RPM app uses Nix's configured build limits.
