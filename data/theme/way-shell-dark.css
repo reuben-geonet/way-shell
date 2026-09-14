@@ -43,7 +43,7 @@
  * exposes this 'row' node.
  */
 row:hover {
-	background: @transparent
+	background: @transparent;
 }
 
 /*
@@ -606,7 +606,7 @@ label.day-number.today:focus {
 }
 
 #quick-settings #quick-settings-header.#battery-menu scale slider {
-	background: @transparent
+	background: @transparent;
 }
 #quick-settings #quick-settings-header.#battery-menu scale highlight {
 	background: shade(@success, 2);
@@ -938,7 +938,7 @@ label.day-number.today:focus {
 }
 
 #quick-settings.focused .quick-settings-grid-button-toggle.off:active {
-  background-color: shade(@panel-button-active, .5)
+  background-color: shade(@panel-button-active, .5);
 }
 
 
@@ -990,7 +990,7 @@ label.day-number.today:focus {
  * Dialog Overlay
  */
 #dialog-overlay {
-    background: @underlay-background-heavy
+    background: @underlay-background-heavy;
 }
 
 #dialog-overlay #dialog-overlay-container {
