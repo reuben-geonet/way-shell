@@ -26,6 +26,8 @@ BluetoothService *bluetooth_service_get_global(void);
 gboolean bluetooth_service_available(BluetoothService *self);
 gboolean bluetooth_service_ready(BluetoothService *self);
 gboolean bluetooth_service_powered(BluetoothService *self);
+/* Includes the latest user intent while a power change is pending. */
+gboolean bluetooth_service_target_powered(BluetoothService *self);
 gboolean bluetooth_service_busy(BluetoothService *self);
 gboolean bluetooth_service_hardware_blocked(BluetoothService *self);
 /* Caller owns the array and its device snapshots. Sorted like GNOME's menu. */

@@ -144,7 +144,7 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
     gtk_image_set_from_icon_name(self->button.icon,
         busy ? "bluetooth-acquiring-symbolic" :
         powered ? "bluetooth-active-symbolic" : "bluetooth-disabled-symbolic");
-    gtk_widget_set_sensitive(GTK_WIDGET(self->button.toggle), ready && !busy && !blocked);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.toggle), ready && !blocked);
     set_accessible_label(GTK_WIDGET(self->button.toggle),
                          powered ? "Turn Bluetooth off" : "Turn Bluetooth on");
 }
@@ -177,7 +177,7 @@ static void toggle_power(GtkButton *button,
                          QuickSettingsGridBluetoothButton *self) {
     gtk_revealer_set_reveal_child(self->menu.banner, FALSE);
     bluetooth_service_set_powered(self->service,
-                                  !bluetooth_service_powered(self->service));
+                                  !bluetooth_service_target_powered(self->service));
 }
 
 static void launch_settings(GtkButton *button,

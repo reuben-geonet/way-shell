@@ -23,6 +23,7 @@ typedef struct {
     BluetoothService *service;
     GDBusNodeInfo *info;
     gboolean powered;
+    guint power_calls;
     gboolean fail_connect;
     guint calls;
     guint errors;
@@ -156,6 +157,7 @@ static gboolean set_property(GDBusConnection *connection, const char *sender,
                               const char *name, GVariant *value, GError **error,
                               gpointer data) {
     Fixture *f = data;
+    f->power_calls++;
     f->powered = g_variant_get_boolean(value);
     notify(f, path);
     return TRUE;
@@ -312,6 +314,73 @@ static void test_external_override(Fixture *f, gconstpointer data) {
     g_assert_false(f->powered);
 }
 
+static void test_power_cycles(Fixture *f, gconstpointer data) {
+    for (guint i = 0; i < 20; i++) {
+        bluetooth_service_set_powered(f->service, FALSE);
+        pump();
+        g_assert_false(f->powered);
+        bluetooth_service_set_powered(f->service, TRUE);
+        pump();
+        g_assert_true(f->powered);
+        g_assert_false(bluetooth_service_busy(f->service));
+    }
+    /* Fast reversal must preserve the final intent even before a reply. */
+    bluetooth_service_set_powered(f->service, FALSE);
+    bluetooth_service_set_powered(f->service, TRUE);
+    pump();
+    g_assert_true(f->powered);
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 0);
+    guint calls = f->power_calls;
+    bluetooth_service_set_powered(f->service, FALSE);
+    gint64 end = g_get_monotonic_time() + G_TIME_SPAN_SECOND;
+    while (f->power_calls == calls && g_get_monotonic_time() < end)
+        g_main_context_iteration(NULL, FALSE);
+    g_assert_cmpuint(f->power_calls, >, calls);
+    g_assert_true(bluetooth_service_busy(f->service));
+    bluetooth_service_set_powered(f->service, TRUE);
+    pump();
+    g_assert_true(f->powered);
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 0);
+    /* Ordinary off must not tear the USB controller down through rfkill. */
+    struct rfkill_event radio;
+    g_assert_cmpint(read(f->radio_peer, &radio, sizeof(radio)), ==, -1);
+}
+
+static void test_delayed_adapter(Fixture *f, gconstpointer data) {
+    const char *names[] = {ADAPTER, NULL};
+    g_dbus_connection_unregister_object(f->server, f->adapter_registration);
+    f->adapter_registration = 0;
+    g_dbus_connection_emit_signal(f->server, NULL, "/",
+        "org.freedesktop.DBus.ObjectManager", "InterfacesRemoved",
+        g_variant_new("(o^as)", "/org/bluez/hci0", names), NULL);
+    struct rfkill_event radio = {.idx = 4, .type = RFKILL_TYPE_BLUETOOTH,
+                                  .op = RFKILL_OP_CHANGE, .soft = 1};
+    write(f->radio_peer, &radio, sizeof(radio));
+    pump();
+    bluetooth_service_set_powered(f->service, TRUE);
+    g_assert_true(bluetooth_service_busy(f->service));
+    pump();
+    g_assert_cmpint(read(f->radio_peer, &radio, sizeof(radio)), ==, sizeof(radio));
+    g_assert_cmpuint(radio.soft, ==, 0);
+    /* The unblocked adapter arrives later, initially powered off. */
+    radio.idx = 4;
+    radio.op = RFKILL_OP_CHANGE;
+    write(f->radio_peer, &radio, sizeof(radio));
+    f->powered = FALSE;
+    f->adapter_registration = g_dbus_connection_register_object(f->server,
+        "/org/bluez/hci0", f->info->interfaces[1], &vtable, f, NULL, NULL);
+    g_dbus_connection_emit_signal(f->server, NULL, "/",
+        "org.freedesktop.DBus.ObjectManager", "InterfacesAdded",
+        g_variant_new("(o@a{sa{sv}})", "/org/bluez/hci0",
+                       interfaces(f, "/org/bluez/hci0")), NULL);
+    pump();
+    g_assert_true(f->powered);
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 0);
+}
+
 static void test_radio(Fixture *f, gconstpointer data) {
     struct rfkill_event radio = {.idx = 4, .type = RFKILL_TYPE_BLUETOOTH,
                                   .op = RFKILL_OP_CHANGE, .hard = 1};
@@ -324,7 +393,7 @@ static void test_radio(Fixture *f, gconstpointer data) {
     radio.hard = 0;
     write(f->radio_peer, &radio, sizeof(radio));
     pump();
-    bluetooth_service_set_powered(f->service, FALSE);
+    bluetooth_service_set_airplane_mode(f->service, TRUE);
     pump();
     g_assert_cmpint(read(f->radio_peer, &radio, sizeof(radio)), ==, sizeof(radio));
     g_assert_cmpuint(radio.type, ==, RFKILL_TYPE_BLUETOOTH);
@@ -367,6 +436,41 @@ static void test_connected_without_profiles(Fixture *f, gconstpointer data) {
     BluetoothDevice *mouse = devices->pdata[0];
     g_assert_cmpstr(mouse->path, ==, MOUSE);
     g_assert_true(mouse->connected);
+}
+
+static void test_power_timeout(Fixture *f, gconstpointer data) {
+    const char *names[] = {ADAPTER, NULL};
+    g_dbus_connection_unregister_object(f->server, f->adapter_registration);
+    f->adapter_registration = 0;
+    g_dbus_connection_emit_signal(f->server, NULL, "/",
+        "org.freedesktop.DBus.ObjectManager", "InterfacesRemoved",
+        g_variant_new("(o^as)", "/org/bluez/hci0", names), NULL);
+    pump();
+    bluetooth_service_set_powered(f->service, TRUE);
+    g_assert_true(bluetooth_service_busy(f->service));
+    gint64 end = g_get_monotonic_time() + 6 * G_TIME_SPAN_SECOND;
+    while (bluetooth_service_busy(f->service) && g_get_monotonic_time() < end)
+        pump();
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 1);
+    /* An unsuccessful attempt must not leave the next click disabled. */
+    bluetooth_service_set_powered(f->service, FALSE);
+    pump();
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 1);
+}
+
+static void test_airplane_reversal(Fixture *f, gconstpointer data) {
+    bluetooth_service_set_airplane_mode(f->service, TRUE);
+    gint64 end = g_get_monotonic_time() + G_TIME_SPAN_SECOND;
+    while (!f->power_calls && g_get_monotonic_time() < end)
+        g_main_context_iteration(NULL, FALSE);
+    g_assert_cmpuint(f->power_calls, ==, 1);
+    bluetooth_service_set_airplane_mode(f->service, FALSE);
+    pump();
+    g_assert_true(f->powered);
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_cmpuint(f->errors, ==, 0);
 }
 
 static void test_settings(void) {
@@ -426,8 +530,12 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/connection", Fixture, NULL, setup, test_connection, teardown);
     g_test_add("/bluetooth/airplane", Fixture, NULL, setup, test_airplane, teardown);
     g_test_add("/bluetooth/external-override", Fixture, NULL, setup, test_external_override, teardown);
+    g_test_add("/bluetooth/power-cycles", Fixture, NULL, setup, test_power_cycles, teardown);
+    g_test_add("/bluetooth/delayed-adapter", Fixture, NULL, setup, test_delayed_adapter, teardown);
     g_test_add("/bluetooth/radio", Fixture, NULL, setup, test_radio, teardown);
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);
+    g_test_add("/bluetooth/power-timeout", Fixture, NULL, setup, test_power_timeout, teardown);
+    g_test_add("/bluetooth/airplane-reversal", Fixture, NULL, setup, test_airplane_reversal, teardown);
     g_test_add_func("/bluetooth/settings", test_settings);
     g_test_add("/bluetooth/connected-without-profiles", Fixture, NULL, setup, test_connected_without_profiles, teardown);
     g_test_add("/bluetooth/adapter-hotplug", Fixture, NULL, setup, test_adapter_hotplug, teardown);

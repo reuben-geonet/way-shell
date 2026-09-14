@@ -9,6 +9,7 @@
 #define ADAPTER "org.bluez.Adapter1"
 #define DEVICE "org.bluez.Device1"
 #define OPERATION_TIMEOUT_MS 30000
+#define POWER_TIMEOUT_MS 5000
 
 struct _BluetoothService {
     GObject parent_instance;
@@ -22,6 +23,10 @@ struct _BluetoothService {
     int rfkill_fd;
     guint rfkill_watch;
     guint changed_idle;
+    guint power_timeout;
+    gboolean requested_power;
+    gboolean block_after_off;
+    GHashTable *power_targets; /* optional per-adapter Airplane Mode restoration */
     gboolean airplane_mode;
     gboolean airplane_override;
 };
@@ -31,9 +36,12 @@ enum { CHANGED, OPERATION_ERROR, N_SIGNALS };
 static guint signals[N_SIGNALS];
 static BluetoothService *global;
 
+static void reconcile_power(BluetoothService *self);
+
 static gboolean emit_changed(gpointer data) {
     BluetoothService *self = data;
     self->changed_idle = 0;
+    reconcile_power(self);
     g_signal_emit(self, signals[CHANGED], 0);
     return G_SOURCE_REMOVE;
 }
@@ -120,11 +128,28 @@ gboolean bluetooth_service_powered(BluetoothService *self) {
 }
 
 gboolean bluetooth_service_busy(BluetoothService *self) {
+    if (self->power_timeout) return TRUE;
     GHashTableIter iter;
     gpointer key;
     g_hash_table_iter_init(&iter, self->pending);
     while (g_hash_table_iter_next(&iter, &key, NULL)) {
         if (!strstr(key, "/dev_")) return TRUE;
+    }
+    return FALSE;
+}
+
+gboolean bluetooth_service_target_powered(BluetoothService *self) {
+    return self->power_timeout ? self->requested_power
+                               : bluetooth_service_powered(self);
+}
+
+static gboolean software_blocked(BluetoothService *self) {
+    GHashTableIter iter;
+    gpointer value;
+    g_hash_table_iter_init(&iter, self->radios);
+    while (g_hash_table_iter_next(&iter, NULL, &value)) {
+        struct rfkill_event *event = value;
+        if (event->soft) return TRUE;
     }
     return FALSE;
 }
@@ -243,6 +268,35 @@ static gboolean read_radios(gint fd, GIOCondition condition, gpointer data) {
     return G_SOURCE_CONTINUE;
 }
 
+static void finish_power(BluetoothService *self, gboolean success) {
+    g_clear_handle_id(&self->power_timeout, g_source_remove);
+    g_clear_pointer(&self->power_targets, g_hash_table_unref);
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, self->pending);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        if (strstr(key, "/dev_")) continue;
+        g_cancellable_cancel(value);
+        g_hash_table_iter_remove(&iter);
+    }
+    /* Power down gracefully before a platform rfkill switch can remove
+     * the controller. Normal Bluetooth toggles leave the USB device up. */
+    if (success && self->block_after_off && self->rfkill_fd >= 0)
+        success = write_radio(self, RFKILL_OP_CHANGE_ALL, 0, TRUE);
+    self->block_after_off = FALSE;
+    changed(self);
+}
+
+static gboolean power_expired(gpointer data) {
+    BluetoothService *self = data;
+    self->power_timeout = 0;
+    finish_power(self, FALSE);
+    report_error(self, !bluetooth_service_ready(self)
+        ? "The Bluetooth service is unavailable"
+        : "Bluetooth did not respond. Check that the adapter is available.");
+    return G_SOURCE_REMOVE;
+}
+
 typedef struct {
     BluetoothService *service;
     GDBusProxy *proxy;
@@ -284,6 +338,7 @@ static void operation_finished(GObject *source, GAsyncResult *result,
         g_autofree char *message =
             g_strdup_printf("%s: %s", op->description, error->message);
         report_error(self, message);
+        if (!strstr(op->path, "/dev_")) finish_power(self, FALSE);
     }
     changed(self);
     g_object_unref(op->proxy);
@@ -321,7 +376,8 @@ static void call(BluetoothService *self, GDBusProxy *proxy, const char *method,
     op->method = g_strdup(method);
     op->parameters = parameters ? g_variant_ref_sink(parameters) : NULL;
     op->enabling = enabling;
-    op->deadline = g_get_monotonic_time() + OPERATION_TIMEOUT_MS * 1000LL;
+    op->deadline = g_get_monotonic_time() +
+        (strstr(path, "/dev_") ? OPERATION_TIMEOUT_MS : POWER_TIMEOUT_MS) * 1000LL;
     g_hash_table_replace(self->pending, g_strdup(path),
                          g_object_ref(op->cancel));
     perform_call(op);
@@ -337,7 +393,48 @@ static void adapter_power(BluetoothService *self, GDBusProxy *adapter,
          powered);
 }
 
-static void set_powered(BluetoothService *self, gboolean powered) {
+static gboolean adapter_target(BluetoothService *self, const char *path) {
+    return self->power_targets
+        ? GPOINTER_TO_INT(g_hash_table_lookup(self->power_targets, path)) == 2
+        : self->requested_power;
+}
+
+static void reconcile_power(BluetoothService *self) {
+    if (!self->power_timeout || !bluetooth_service_ready(self)) return;
+    GList *list = objects(self);
+    gboolean complete = TRUE;
+    guint adapters = 0;
+    for (GList *l = list; l; l = l->next) {
+        const char *path = g_dbus_object_get_object_path(l->data);
+        g_autoptr(GDBusInterface) adapter =
+            g_dbus_object_get_interface(l->data, ADAPTER);
+        if (!adapter || (self->power_targets &&
+            !g_hash_table_contains(self->power_targets, path))) continue;
+        adapters++;
+        gboolean target = adapter_target(self, path);
+        if (boolean_property(G_DBUS_PROXY(adapter), "Powered") != target) {
+            complete = FALSE;
+            if (!g_hash_table_contains(self->pending, path))
+                adapter_power(self, G_DBUS_PROXY(adapter), target);
+        }
+    }
+    g_list_free_full(list, g_object_unref);
+    /* Unblocking can take seconds to bring an adapter back. Keep the
+     * user's intent until ObjectManager announces it, with a finite timeout. */
+    if (self->requested_power && (!adapters ||
+        (!self->power_targets && software_blocked(self)))) complete = FALSE;
+    /* A previous request may still be executing on BlueZ. Serialize a
+     * reversal behind its reply rather than cancelling an in-flight Set. */
+    GHashTableIter iter;
+    gpointer key;
+    g_hash_table_iter_init(&iter, self->pending);
+    while (g_hash_table_iter_next(&iter, &key, NULL))
+        if (!strstr(key, "/dev_")) complete = FALSE;
+    if (complete) finish_power(self, TRUE);
+}
+
+static void request_power(BluetoothService *self, gboolean powered,
+                           GHashTable *targets) {
     if (powered && bluetooth_service_hardware_blocked(self)) {
         report_error(self, "Bluetooth is disabled by a hardware switch");
         return;
@@ -346,15 +443,24 @@ static void set_powered(BluetoothService *self, gboolean powered) {
         report_error(self, "The Bluetooth service is unavailable");
         return;
     }
-    if (self->rfkill_fd >= 0 && g_hash_table_size(self->radios))
-        write_radio(self, RFKILL_OP_CHANGE_ALL, 0, !powered);
-    GList *list = objects(self);
-    for (GList *l = list; l; l = l->next) {
-        g_autoptr(GDBusInterface) adapter =
-            g_dbus_object_get_interface(l->data, ADAPTER);
-        if (adapter) adapter_power(self, G_DBUS_PROXY(adapter), powered);
+    g_clear_handle_id(&self->power_timeout, g_source_remove);
+    g_clear_pointer(&self->power_targets, g_hash_table_unref);
+    self->power_targets = targets ? g_hash_table_ref(targets) : NULL;
+    self->requested_power = powered;
+    self->block_after_off = !powered && self->airplane_mode && !self->airplane_override;
+    self->power_timeout = g_timeout_add(POWER_TIMEOUT_MS, power_expired, self);
+    /* Only enable through rfkill when blocked. Blocking for an ordinary
+     * power-off can unplug the adapter and race BlueZ's Properties.Set. */
+    if (powered && !targets && software_blocked(self) &&
+        !write_radio(self, RFKILL_OP_CHANGE_ALL, 0, FALSE)) {
+        finish_power(self, FALSE);
+        return;
     }
-    g_list_free_full(list, g_object_unref);
+    changed(self);
+}
+
+static void set_powered(BluetoothService *self, gboolean powered) {
+    request_power(self, powered, NULL);
 }
 
 void bluetooth_service_set_powered(BluetoothService *self, gboolean powered) {
@@ -401,6 +507,7 @@ void bluetooth_service_set_airplane_mode(BluetoothService *self,
         if (bluetooth_service_available(self)) set_powered(self, FALSE);
     } else {
         if (!self->airplane_override) {
+            self->block_after_off = FALSE;
             GHashTableIter iter;
             gpointer key, value;
             /* CHANGE_ALL also sets the default for subsequently plugged-in
@@ -416,12 +523,16 @@ void bluetooth_service_set_airplane_mode(BluetoothService *self,
                 if (g_hash_table_contains(self->radios, key))
                     write_radio(self, RFKILL_OP_CHANGE, GPOINTER_TO_UINT(key),
                                  GPOINTER_TO_INT(value) - 1);
+            GHashTable *targets = g_hash_table_new_full(g_str_hash, g_str_equal,
+                                                        g_free, NULL);
+            gboolean any_powered = FALSE;
             g_hash_table_iter_init(&iter, self->restore_power);
             while (g_hash_table_iter_next(&iter, &key, &value)) {
-                g_autoptr(GDBusProxy) adapter = get_proxy(self, key, ADAPTER);
-                if (adapter)
-                    adapter_power(self, adapter, GPOINTER_TO_INT(value) - 1);
+                g_hash_table_insert(targets, g_strdup(key), value);
+                if (GPOINTER_TO_INT(value) == 2) any_powered = TRUE;
             }
+            if (g_hash_table_size(targets)) request_power(self, any_powered, targets);
+            g_hash_table_unref(targets);
         }
         g_hash_table_remove_all(self->restore_power);
         g_hash_table_remove_all(self->restore_blocks);
@@ -490,6 +601,8 @@ static void manager_ready(GObject *source, GAsyncResult *result, gpointer data) 
 static void bluetooth_service_dispose(GObject *object) {
     BluetoothService *self = BLUETOOTH_SERVICE(object);
     g_cancellable_cancel(self->initialization);
+    g_clear_handle_id(&self->power_timeout, g_source_remove);
+    g_clear_pointer(&self->power_targets, g_hash_table_unref);
     if (self->changed_idle) g_source_remove(self->changed_idle);
     self->changed_idle = 0;
     if (self->rfkill_watch) g_source_remove(self->rfkill_watch);
