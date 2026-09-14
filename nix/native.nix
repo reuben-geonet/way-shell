@@ -52,12 +52,15 @@
             cargo build --workspace --frozen --jobs 1
           '';
           doCheck = true;
-          nativeCheckInputs = [ pkgs.pipewire ];
+          nativeCheckInputs = [ pkgs.pipewire pkgs.sway pkgs.dbus ];
           checkTarget = "check";
           preCheck = ''
             cargo test --workspace --frozen --jobs 1
             cargo build -p way-shell --example audio-compat --frozen --jobs 1
             sh tests/audio-compat.sh target/debug/examples/audio-compat
+            cargo build -p way-shell --example theme-compat --frozen --jobs 1
+            FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
+              dbus-run-session -- sh tests/wayland-component.sh target/debug/examples/theme-compat
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

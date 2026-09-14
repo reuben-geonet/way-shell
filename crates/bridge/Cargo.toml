@@ -11,6 +11,10 @@ crate-type = ["staticlib"]
 
 [dependencies]
 way-shell-core.workspace = true
+way-shell = { path = "../shell" }
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
 
 [lints]
 workspace = true

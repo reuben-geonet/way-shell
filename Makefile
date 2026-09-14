@@ -29,14 +29,13 @@ WAYLAND_BASES := src/services/wayland/wlr-foreign-toplevel-management-unstable-v
 GENERATED_SOURCES := $(addsuffix .c,$(DBUS_BASES) $(WAYLAND_BASES))
 GENERATED_HEADERS := $(addsuffix .h,$(DBUS_BASES) $(WAYLAND_BASES))
 SOURCES := $(sort $(shell find src -type f -name '*.c') $(GENERATED_SOURCES))
-OBJS := $(SOURCES:.c=.o) gresources.o
+OBJS := $(SOURCES:.c=.o)
 BRIDGE := target/release/libway_shell_bridge.a
-RESOURCE_FILES := $(shell glib-compile-resources --generate-dependencies gresources.xml)
 
-.PHONY: all check clean install install-gschema dbus-codegen wlr-protocols gresources
+.PHONY: all check clean install install-gschema dbus-codegen wlr-protocols
 all: way-shell cli
 check: all
-	$(CARGO) test -p way-shell-core -p way-sh $(CARGO_BUILD_FLAGS)
+	$(CARGO) test --workspace $(CARGO_BUILD_FLAGS)
 	$(MAKE) -C tests check
 
 way-shell: $(OBJS) $(BRIDGE)
@@ -49,7 +48,7 @@ $(BRIDGE): bridge
 
 # Bootstrapping dependencies cover the first build; .d files provide precise
 # header dependencies thereafter. Generated headers precede every C consumer.
-$(OBJS): | $(GENERATED_HEADERS) gresources.h
+$(OBJS): | $(GENERATED_HEADERS)
 $(GENERATED_SOURCES:.c=.o): %.o: %.c %.h
 
 # GNU Make grouped targets regenerate both outputs if either one is absent.
@@ -76,11 +75,6 @@ $(WAYLAND_BASES:%=%.c): src/services/wayland/%.c: data/wlr-protocols/unstable/%.
 
 dbus-codegen: $(addsuffix .c,$(DBUS_BASES)) $(addsuffix .h,$(DBUS_BASES))
 wlr-protocols: $(addsuffix .c,$(WAYLAND_BASES)) $(addsuffix .h,$(WAYLAND_BASES))
-gresources: gresources.o gresources.h
-
-gresources.c gresources.h &: gresources.xml $(RESOURCE_FILES)
-	glib-compile-resources --generate-source --target gresources.c gresources.xml
-	glib-compile-resources --generate-header --target gresources.h gresources.xml
 
 .PHONY: cli
 cli:

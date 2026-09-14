@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "../../../gresources.h"
+#include "../../resources.h"
 #include "../../activities/activities.h"
 #include "../../app_switcher/app_switcher.h"
 #include "../../output_switcher/output_switcher.h"
@@ -184,7 +184,7 @@ static gboolean ipc_cmd_dump_dark_theme() {
     // dump dark theme gresource back to file
     gchar *dark_theme_path =
         g_build_filename(config_dir, "way-shell-dark.css", NULL);
-    GResource *res = gresources_get_resource();
+    GResource *res = way_shell_get_resource();
     GBytes *dark_theme_bytes = g_resource_lookup_data(
         res, "/org/ldelossa/way-shell/data/theme/way-shell-dark.css", 0, NULL);
     gsize size;
@@ -212,7 +212,7 @@ static gboolean ipc_cmd_dump_light_theme() {
     gchar *light_theme_path =
         g_build_filename(config_dir, "way-shell-light.css", NULL);
 
-    GResource *res = gresources_get_resource();
+    GResource *res = way_shell_get_resource();
     GBytes *light_theme_bytes = g_resource_lookup_data(
         res, "/org/ldelossa/way-shell/data/theme/way-shell-light.css", 0, NULL);
     gsize size;

@@ -44,6 +44,13 @@ the following minute without emitting the boundary it had just reached. Emit
 that update immediately and release the temporary timestamp. The deterministic
 test advances from 12:34:59 to 12:35:00 without waiting on real time.
 
+The Rust theme service keeps `changed::light-theme` as a one-way observation:
+one setting change produces one `theme-changed` signal and one hook invocation.
+The C observer wrote the same setting through its setter, duplicating updates.
+Repeating a theme command still reloads the CSS. Memory-backed settings tests
+cover external changes and callback cleanup. Embedded CSS remains byte-for-byte
+identical to the baseline, including its existing GTK parser diagnostics.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

@@ -2,7 +2,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#include "../gresources.h"
+#include "resources.h"
 #include "./activities/activities.h"
 #include "./app_switcher/app_switcher.h"
 #include "./dialog_overlay/dialog_overlay.h"
@@ -63,8 +63,9 @@ static void activate(AdwApplication *app, gpointer user_data) {
     configure_signal_handler();
 
     // CSS Theme is embedded as a GResource
-    GResource *resource = gresources_get_resource();
-    g_resources_register(resource);
+    if (!way_shell_get_resource()) {
+        g_error("failed to register application resources");
+    }
 
     global = ADW_APPLICATION_WINDOW(
         adw_application_window_new(GTK_APPLICATION(app)));
@@ -210,6 +211,7 @@ int main(int argc, char *argv[]) {
     status = g_application_run(G_APPLICATION(app), argc, argv);
 
     g_object_unref(app);
+    way_shell_rust_shutdown();
 
     g_info("main.c: application exited with status: %d", status);
     return status;
