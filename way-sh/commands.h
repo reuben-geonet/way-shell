@@ -1,4 +1,7 @@
 #include "../lib/cmd_tree/include/cmd_tree.h"
+#include <stdbool.h>
+#include <endian.h>
+#include <sys/socket.h>
 
 #define IPC_SEND_MSG(way_ctx, msg)                                 \
     struct sockaddr *addr = NULL;                                  \
@@ -11,8 +14,20 @@
     ret = sendto(way_ctx->client_sock, &msg, sizeof(msg), 0, addr, \
                  sizeof(addr_un))
 
-#define IPC_RECV_MSG(way_ctx, addr, bool) \
-    recvfrom(way_ctx->client_sock, bool, sizeof(bool), 0, addr, 0)
+/* The server sends a four-byte gboolean, not a C bool or a pointer. */
+static inline int way_sh_receive(int fd, bool *response) {
+    uint32_t wire_response = 0;
+    *response = false;
+    ssize_t size = recvfrom(fd, &wire_response, sizeof(wire_response),
+                            MSG_TRUNC, NULL, NULL);
+    if (size != sizeof(wire_response) || le32toh(wire_response) > 1)
+        return -1;
+    *response = le32toh(wire_response) == 1;
+    return 0;
+}
+
+#define IPC_RECV_MSG(way_ctx, addr, response) \
+    way_sh_receive(way_ctx->client_sock, response)
 
 typedef struct _ctx {
     char *server_socket_path;
