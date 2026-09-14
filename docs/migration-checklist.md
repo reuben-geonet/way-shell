@@ -20,7 +20,7 @@ a claim that the complete migration is ready to install.
 - [x] 14. Migrate settings and theme handling to Rust.
 - [x] 15. Migrate clock scheduling to Rust.
 - [x] 16. Migrate the Sway backend to Rust.
-- [ ] 17. Migrate the Niri backend to Rust.
+- [x] 17. Migrate the Niri backend to Rust.
 - [ ] 18. Migrate Wayland connection and protocol ownership to Rust.
 - [ ] 19. Migrate UPower integration to Rust.
 - [ ] 20. Migrate logind session actions and inhibitors to Rust.
@@ -66,7 +66,8 @@ a claim that the complete migration is ready to install.
 - [ ] Native and Fedora package matrix for the theme port (`1955558`): native
       smoke test exposed a missing private D-Bus configuration; fixed in
       `a034a65`. Rerun with the Sway port to cover subsequent changes.
-- [ ] Full matrix covering the clock and subsequent service ports.
+- [ ] Full matrix covering clock/Sway (`709d126`): interrupted for the requested reboot during Fedora compilation. Native application and Sway/theme smoke checks passed; the separate schema check and RPM matrix must rerun.
+- [x] Niri development environment, private socket fixtures, real workspace/window actions and layer-window smoke checks.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -76,3 +77,12 @@ a claim that the complete migration is ready to install.
 
 The laptop package has not been changed. Intermediate RPMs remain release 1 and
 are verification artifacts, not the final upgrade.
+
+## Current work
+
+Resumed from the durable checkpoint. Niri's C backend is replaced with the Rust
+service and a thin C vtable adapter. The separate Wayland state-array, battery
+90% icon and power-profile notification bugs are regression-tested commits.
+Wayland, UPower and power-profile service integration is underway; logind and
+brightness are being developed against fixtures. The full RPM matrix remains
+a required acceptance gate, and the installed laptop shell remains unchanged.

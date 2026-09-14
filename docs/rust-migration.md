@@ -155,3 +155,18 @@ metadata and provider first. Activate through the existing launch method,
 avoid duplicate instances, inspect startup logs and verify installed behavior.
 Record commit, artifacts, installed version and actual test results. Do not
 install an intermediate migration package as the completed migration.
+
+## Niri migration verification
+
+The Rust backend owns separate asynchronous command/event streams, preserves
+64-bit workspace IDs, applies workspace events atomically and refreshes output
+inventory on topology changes. Rejected actions leave the connection usable;
+malformed replies close both streams and reconnect. C widgets retain owned
+snapshots through the shared adapter. The old Niri client and C fixture are
+removed after their Rust fixtures pass.
+
+The private Niri compositor check verifies literal names, focus, stable IDs,
+regular GTK window movement and cleanup. Layer-window/theme cycles also pass
+on Niri. Both native checks and nix develop provide Niri and the explicit Mesa
+EGL provider needed for software rendering. Real hardware and final package
+verification remain separate gates.

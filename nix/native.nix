@@ -52,8 +52,9 @@
             cargo build --workspace --frozen --jobs 1
           '';
           doCheck = true;
-          nativeCheckInputs = [ pkgs.pipewire pkgs.sway pkgs.dbus ];
+          nativeCheckInputs = [ pkgs.pipewire pkgs.sway pkgs.niri pkgs.dbus ];
           checkTarget = "check";
+          WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
           preCheck = ''
             cargo test --workspace --frozen --jobs 1
             cargo build -p way-shell --example audio-compat --frozen --jobs 1
@@ -63,6 +64,11 @@
               sh tests/wayland-component.sh target/debug/examples/theme-compat
             cargo build -p way-shell --example sway-compat --frozen --jobs 1
             sh tests/wayland-component.sh target/debug/examples/sway-compat
+            cargo build -p way-shell --example niri-compat --frozen --jobs 1
+            FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
+              sh tests/wayland-component.sh target/debug/examples/niri-compat niri
+            FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
+              sh tests/wayland-component.sh target/debug/examples/theme-compat niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

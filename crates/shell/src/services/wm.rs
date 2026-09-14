@@ -9,14 +9,25 @@ use std::{
     time::Duration,
 };
 use way_shell_core::{
-    sway,
+    niri, sway,
     wm::{Action, Output, Workspace},
 };
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Backend {
+    #[default]
+    Sway,
+    Niri,
+}
 
 mod imp {
     use super::*;
     #[derive(Default)]
     pub struct WindowManager {
+        pub backend: Cell<Backend>,
+        pub event_connection: RefCell<Option<Connection>>,
+        pub event_decoder: RefCell<niri::Decoder>,
+        pub command_decoder: RefCell<niri::Decoder>,
         pub path: OnceCell<PathBuf>,
         pub config: OnceCell<PathBuf>,
         pub settings: RefCell<Option<(gio::Settings, glib::SignalHandlerId)>>,
@@ -52,6 +63,9 @@ mod imp {
             if let Some(retry) = self.retry.borrow_mut().take() {
                 retry.abort();
             }
+            if let Some(connection) = self.event_connection.borrow_mut().take() {
+                connection.close();
+            }
             if let Some(connection) = self.connection.borrow_mut().take() {
                 connection.close();
             }
@@ -76,13 +90,41 @@ impl WindowManager {
         path: PathBuf,
         config: PathBuf,
     ) -> Result<Self, String> {
+        Self::with_settings(Backend::Sway, settings, path, config)
+    }
+
+    pub fn niri() -> Result<Self, String> {
+        Self::niri_with_settings(
+            super::settings::open("org.ldelossa.way-shell.window-manager")
+                .map_err(|e| e.to_string())?,
+            std::env::var_os("NIRI_SOCKET")
+                .ok_or("NIRI_SOCKET is not set")?
+                .into(),
+            glib::user_config_dir().join("way-shell"),
+        )
+    }
+    pub fn niri_with_settings(
+        settings: gio::Settings,
+        path: PathBuf,
+        config: PathBuf,
+    ) -> Result<Self, String> {
+        Self::with_settings(Backend::Niri, settings, path, config)
+    }
+    fn with_settings(
+        backend: Backend,
+        settings: gio::Settings,
+        path: PathBuf,
+        config: PathBuf,
+    ) -> Result<Self, String> {
         let service: Self = glib::Object::new();
+        service.imp().backend.set(backend);
         service.imp().path.set(path).unwrap();
         service.imp().config.set(config).unwrap();
         let weak = service.downgrade();
         let handler =
             settings.connect_changed(Some("sort-workspaces-alphabetical"), move |_, _| {
                 if let Some(service) = weak.upgrade()
+                    && service.imp().backend.get() == Backend::Sway
                     && let Err(error) = service.request(sway::WORKSPACES, b"")
                 {
                     glib::g_warning!("way-shell", "Could not refresh Sway workspaces: {error}");
@@ -104,7 +146,10 @@ impl WindowManager {
     }
 
     pub fn perform(&self, action: &Action) -> Result<(), String> {
-        self.request(sway::COMMAND, sway::command(action)?.as_bytes())
+        match self.imp().backend.get() {
+            Backend::Sway => self.request(sway::COMMAND, sway::command(action)?.as_bytes()),
+            Backend::Niri => self.niri_request(&niri::command(action)?),
+        }
     }
 
     fn request(&self, kind: u32, payload: &[u8]) -> Result<(), String> {
@@ -118,6 +163,9 @@ impl WindowManager {
     }
 
     fn connect(&self) -> Result<(), String> {
+        if self.imp().backend.get() == Backend::Niri {
+            return self.connect_niri();
+        }
         self.imp().decoder.replace(sway::Decoder::default());
         let weak = self.downgrade();
         let lost = self.downgrade();
@@ -147,9 +195,13 @@ impl WindowManager {
     fn disconnected(&self, error: String) {
         glib::g_warning!(
             "way-shell",
-            "Sway IPC at {}: {error}; reconnecting",
+            "{:?} IPC at {}: {error}; reconnecting",
+            self.imp().backend.get(),
             self.imp().path.get().unwrap().display()
         );
+        if let Some(connection) = self.imp().event_connection.borrow_mut().take() {
+            connection.close();
+        }
         if let Some(connection) = self.imp().connection.borrow_mut().take() {
             connection.close();
         }
@@ -173,6 +225,134 @@ impl WindowManager {
             });
             self.imp().retry.replace(Some(retry));
         }
+    }
+
+    fn niri_request(&self, request: &serde_json::Value) -> Result<(), String> {
+        let connection = self
+            .imp()
+            .connection
+            .borrow()
+            .clone()
+            .ok_or("Niri is disconnected")?;
+        connection.send(niri::encode(request))
+    }
+    fn connect_niri(&self) -> Result<(), String> {
+        self.imp().command_decoder.replace(niri::Decoder::default());
+        self.imp().event_decoder.replace(niri::Decoder::default());
+        let weak = self.downgrade();
+        let lost = self.downgrade();
+        let connection = Connection::connect(
+            self.imp().path.get().unwrap(),
+            move |bytes| {
+                if let Some(service) = weak.upgrade() {
+                    let values = service.imp().command_decoder.borrow_mut().push(bytes)?;
+                    for value in values {
+                        service.niri_response(value)?;
+                    }
+                }
+                Ok(())
+            },
+            move |error| {
+                if let Some(service) = lost.upgrade() {
+                    service.disconnected(error);
+                }
+            },
+        )?;
+        self.imp().connection.replace(Some(connection));
+        let weak = self.downgrade();
+        let lost = self.downgrade();
+        let events = Connection::connect(
+            self.imp().path.get().unwrap(),
+            move |bytes| {
+                if let Some(service) = weak.upgrade() {
+                    let values = service.imp().event_decoder.borrow_mut().push(bytes)?;
+                    for value in values {
+                        service.niri_event(value)?;
+                    }
+                }
+                Ok(())
+            },
+            move |error| {
+                if let Some(service) = lost.upgrade() {
+                    service.disconnected(error);
+                }
+            },
+        )?;
+        events.send(niri::encode(&serde_json::json!("EventStream")))?;
+        self.imp().event_connection.replace(Some(events));
+        Ok(())
+    }
+    fn niri_response(&self, value: serde_json::Value) -> Result<(), String> {
+        // A rejected action leaves the connection usable. A malformed reply
+        // loses the protocol contract and requires a fresh subscription.
+        let reply = serde_json::from_value::<Result<niri::Response, String>>(value)
+            .map_err(|error| format!("Invalid Niri reply: {error}"))?;
+        match reply {
+            Ok(niri::Response::Handled) => (),
+            Ok(niri::Response::Workspaces(values)) => {
+                self.imp()
+                    .workspaces
+                    .replace(values.into_iter().map(Into::into).collect());
+                self.niri_workspaces_changed();
+            }
+            Ok(niri::Response::Outputs(outputs)) => {
+                self.imp().outputs.replace(outputs.into_values().collect());
+                self.niri_outputs_changed();
+            }
+            Err(error) => {
+                glib::g_warning!("way-shell", "Niri request failed: {error}");
+            }
+        }
+        Ok(())
+    }
+    fn niri_event(&self, value: serde_json::Value) -> Result<(), String> {
+        if !self.imp().ready.get() {
+            if !matches!(niri::response(value)?, niri::Response::Handled) {
+                return Err("Niri rejected the event subscription".into());
+            }
+            self.imp().ready.set(true);
+            self.emit_by_name::<()>("connection-changed", &[&true]);
+            return Ok(());
+        }
+        let event = niri::event(value)?;
+        if matches!(event, niri::Event::Other) {
+            return Ok(());
+        }
+        let outputs_changed = matches!(event, niri::Event::WorkspacesChanged { .. });
+        let updated = niri::update(&mut self.imp().workspaces.borrow_mut(), event);
+        if updated {
+            self.niri_workspaces_changed();
+        } else {
+            self.niri_request(&serde_json::json!("Workspaces"))?;
+        }
+        // Niri has no dedicated output event. Workspace topology changes cover
+        // output addition/removal; request the authoritative output inventory.
+        if outputs_changed {
+            self.niri_request(&serde_json::json!("Outputs"))?;
+        }
+        Ok(())
+    }
+    fn niri_workspaces_changed(&self) {
+        self.imp()
+            .workspaces
+            .borrow_mut()
+            .sort_by_key(|workspace| workspace.num);
+        self.emit_by_name::<()>("workspaces-changed", &[]);
+        self.niri_outputs_changed();
+    }
+    fn niri_outputs_changed(&self) {
+        {
+            let workspaces = self.imp().workspaces.borrow();
+            for output in self.imp().outputs.borrow_mut().iter_mut() {
+                output.current_workspace = workspaces
+                    .iter()
+                    .find(|workspace| {
+                        workspace.visible && workspace.output.as_deref() == Some(&output.name)
+                    })
+                    .map(|workspace| workspace.name.clone());
+            }
+        }
+        self.emit_by_name::<()>("outputs-changed", &[]);
     }
 
     fn setting(&self, key: &str) -> bool {

@@ -70,7 +70,7 @@
             <summary>The window manager backend to use (default: sway)</summary>
             <description>
 			Instructs Way-Shell which window manager to use.
-			Currently supported options are "sway".
+			Currently supported options are "sway" and "niri".
 
 			Changing this setting requires a restart to take effect.
             </description>

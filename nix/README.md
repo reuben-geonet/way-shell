@@ -8,7 +8,7 @@ Check ordinary-user access with `nix store info --store daemon`.
 
 ```sh
 nix develop                  # Tools, dependencies, GDB and local schemas
-make -j1                     # Generated files currently require serial builds
+make -j2                     # Temporary C/Rust application build
 ./way-shell --help
 nix build                    # Native Nix package, linked at result
 nix build .#way-shell         # Explicit native package
@@ -27,12 +27,14 @@ schemas and current session variables, for example `gdb ./way-shell`.
 Local editor configuration belongs in the ignored `.vscode/` directory.
 Do not commit user IDs, machine socket paths or remote debugger addresses.
 
-Way-Shell needs a Sway/Wayland session, a session D-Bus, logind,
-NetworkManager, PipeWire/WirePlumber, UPower and power-profiles-daemon running
+Way-Shell supports Sway and Niri Wayland sessions, with a session D-Bus, logind,
+NetworkManager, PipeWire/WirePlumber, UPower and a power-profile provider running
 on the host. Nix packaging supplies libraries, not these host services.
 Persistent settings also require the dconf D-Bus service, normally supplied
 by the host desktop.
 Use the Sway configuration in the main README, including `way-sh` on PATH.
+Niri selects its backend through the existing window-manager setting and
+`NIRI_SOCKET` environment variable. Both compositors are available in `nix develop`.
 Other desktops such as GNOME may already own the notification and status
 notifier D-Bus names Way-Shell uses. A successful `--help` check does not test
 desktop startup or guarantee compatibility with those sessions.
@@ -80,6 +82,29 @@ nix flake check --no-update-lock-file \
 systemd command and `--help`. `native-schemas` uses the installed wrapper's
 environment, isolated data directories and GLib's memory settings backend to
 discover and read every project schema.
+
+The native build also runs Rust protocol fixtures and real compositor smoke
+tests for both Sway and Niri. Sway runs headless; Niri runs as a nested compositor
+inside that private Sway with Mesa software rendering. Niri probes connect to
+Niri's own sockets and exercise literal workspace names, stable identifiers,
+focus, GTK window movement and layer-shell surfaces. Neither test imports
+environment variables into the desktop session or launches the installed shell.
+
+To run these checks locally:
+
+```sh
+nix develop
+cargo build -p way-shell --examples --locked
+sh tests/wayland-component.sh target/debug/examples/sway-compat sway
+sh tests/wayland-component.sh target/debug/examples/niri-compat niri
+sh tests/wayland-component.sh target/debug/examples/theme-compat niri
+```
+
+The development shell and native check supply `WAY_SHELL_TEST_EGL_VENDOR` to
+select the pinned Mesa EGL provider. If Niri reports `Egl(DisplayNotSupported)`,
+run the probe through this environment. These software-rendered checks cover
+compositor integration; real multi-output, input and hardware testing remains
+part of the migration acceptance checks.
 
 Each generated `rpm-fedora-VERSION` check builds an RPM with Fedora tools,
 installs it in a fresh copy of the cached image with dependency checks and

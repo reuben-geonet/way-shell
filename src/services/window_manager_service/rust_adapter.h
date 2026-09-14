@@ -5,6 +5,7 @@
 typedef void (*WayShellWmNotify)(void *data, GPtrArray *snapshot);
 /* Rust owns the handle; callbacks borrow data until free disconnects them. */
 void *way_shell_wm_new_sway(WayShellWmNotify workspaces, WayShellWmNotify outputs, void *data);
+void *way_shell_wm_new_niri(WayShellWmNotify workspaces, WayShellWmNotify outputs, void *data);
 void way_shell_wm_free(void *handle);
 /* Owned array references; entries stay valid while an array reference is held. */
 GPtrArray *way_shell_wm_workspaces(void *handle);

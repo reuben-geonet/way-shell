@@ -217,7 +217,28 @@ pub unsafe extern "C" fn way_shell_wm_new_sway(
 }
 
 /// # Safety
-/// A non-null handle is live and owned, returned by way_shell_wm_new_sway.
+/// Callbacks and their borrowed data remain valid until way_shell_wm_free.
+/// All calls and destruction occur on the application thread.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn way_shell_wm_new_niri(
+    workspaces: Option<Notify>,
+    outputs: Option<Notify>,
+    data: *mut c_void,
+) -> *mut c_void {
+    catch_unwind(AssertUnwindSafe(|| match WindowManager::niri() {
+        Ok(service) => {
+            Box::into_raw(Box::new(Manager::new(service, workspaces, outputs, data))).cast()
+        }
+        Err(error) => {
+            glib::g_warning!("way-shell", "Could not initialize Niri: {error}");
+            std::ptr::null_mut()
+        }
+    }))
+    .unwrap_or(std::ptr::null_mut())
+}
+
+/// # Safety
+/// A non-null handle is live and owned, returned by either compositor constructor.
 /// This consumes it; no calls or callbacks may use it afterward.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn way_shell_wm_free(handle: *mut c_void) {
