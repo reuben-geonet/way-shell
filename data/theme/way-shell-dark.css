@@ -826,6 +826,29 @@ label.day-number.today:focus {
   margin: 6px;
 }
 
+/* Bluetooth uses the shared quick settings menu and theme colors. */
+#quick-settings-menu #options-container .quick-settings-menu-option-bluetooth image,
+#quick-settings-menu #options-container .quick-settings-menu-option-bluetooth label {
+  padding-left: 7px;
+  padding-right: 4px;
+}
+
+#quick-settings-menu .bluetooth-action {
+  opacity: 0.55;
+}
+
+#quick-settings-menu .bluetooth-placeholder {
+  margin: 24px 16px;
+}
+
+#quick-settings-menu .bluetooth-separator {
+  margin: 8px 16px;
+}
+
+#quick-settings-menu .bluetooth-settings {
+  margin: 0 4px 4px;
+}
+
 .failure-banner {
   background-color: @failure;
   font-size: 20px;

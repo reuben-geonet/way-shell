@@ -3,10 +3,12 @@
 #include <adwaita.h>
 
 #include "../../../services/brightness_service/brightness_service.h"
+#include "../../../services/bluetooth_service/bluetooth_service.h"
 #include "../../../services/logind_service/logind_service.h"
 #include "../../../services/network_manager_service.h"
 #include "../../../services/power_profiles_service/power_profiles_service.h"
 #include "./quick_settings_grid_airplane_mode_button.h"
+#include "./quick_settings_grid_bluetooth.h"
 #include "./quick_settings_grid_night_light/quick_settings_grid_night_light.h"
 #include "./quick_settings_grid_power_profiles/quick_settings_grid_power_profiles.h"
 #include "./quick_settings_grid_vpn/quick_settings_grid_vpn.h"
@@ -35,6 +37,7 @@ typedef struct _QuickSettingsGrid {
     GPtrArray *managed_network_devices;
     gboolean has_vpn;
     gboolean compacting;
+    QuickSettingsGridBluetoothButton *bluetooth;
 } QuickSettingsGrid;
 
 G_DEFINE_TYPE(QuickSettingsGrid, quick_settings_grid, G_TYPE_OBJECT);
@@ -158,6 +161,22 @@ static void quick_settings_grid_add_button(QuickSettingsGrid *self,
     quick_settings_grid_cluster_add_button(cluster, side, button);
 }
 
+static void on_bluetooth_changed(BluetoothService *service,
+                                  QuickSettingsGrid *self) {
+    gboolean available = bluetooth_service_available(service);
+    if (available && !self->bluetooth) {
+        self->bluetooth = quick_settings_grid_bluetooth_button_init(service);
+        quick_settings_grid_add_button(self,
+            (QuickSettingsGridButton *)self->bluetooth);
+    } else if (!available && self->bluetooth) {
+        QuickSettingsGridButton *button = (QuickSettingsGridButton *)self->bluetooth;
+        gtk_revealer_set_reveal_child(button->revealer, FALSE);
+        quick_settings_grid_cluster_remove_button(button->cluster, button);
+        quick_settings_grid_bluetooth_button_free(self->bluetooth);
+        self->bluetooth = NULL;
+    }
+}
+
 static void on_network_manager_change(NetworkManagerService *nm,
                                       QuickSettingsGrid *self) {
     const GPtrArray *devices = network_manager_service_get_devices(nm);
@@ -233,6 +252,8 @@ static void quick_settings_grid_dispose(GObject *gobject) {
     NetworkManagerService *nm = network_manager_service_get_global();
     g_signal_handlers_disconnect_by_func(nm, on_network_manager_change, self);
 
+    g_signal_handlers_disconnect_by_data(bluetooth_service_get_global(), self);
+
     // free clusters
     for (int i = 0; i < self->clusters->len; i++) {
         QuickSettingsGridCluster *cluster =
@@ -270,6 +291,10 @@ static void quick_settings_grid_init_layout(QuickSettingsGrid *self) {
     NetworkManagerService *nm = network_manager_service_get_global();
 
     on_network_manager_change(nm, self);
+
+    on_bluetooth_changed(bluetooth_service_get_global(), self);
+    g_signal_connect(bluetooth_service_get_global(), "changed",
+                      G_CALLBACK(on_bluetooth_changed), self);
 
     // Determine if we need a VPN button.
     if (network_manager_has_vpn(nm)) on_vpn_added(nm, NULL, 0, self);
@@ -330,6 +355,8 @@ static void quick_settings_grid_init_layout(QuickSettingsGrid *self) {
 void quick_settings_grid_reinitialize(QuickSettingsGrid *self) {
     // reset to false so we check if we need a VPN button again.
     self->has_vpn = false;
+    g_signal_handlers_disconnect_by_data(bluetooth_service_get_global(), self);
+    self->bluetooth = NULL;
 
     // destroy signals
     NetworkManagerService *nm = network_manager_service_get_global();

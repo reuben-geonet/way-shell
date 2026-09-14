@@ -2,7 +2,7 @@
 
 Name: way-shell
 Version: 0.0.10
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 

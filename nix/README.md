@@ -74,6 +74,12 @@ systemd command and `--help`. `native-schemas` uses the installed wrapper's
 environment, isolated data directories and GLib's memory settings backend to
 discover and read every project schema.
 
+The `bluetooth` check exercises BlueZ discovery of known devices, power and
+connection changes, radio blocks, Airplane Mode restoration, daemon restarts,
+adapter removal, and the settings launcher using a private D-Bus and simulated
+hardware. For a local run, use `make test-bluetooth` in the development shell.
+Bluetooth requires BlueZ on the host; the settings launcher defaults to Blueman.
+
 Each generated `rpm-fedora-VERSION` check builds an RPM with Fedora tools,
 installs it in a fresh copy of the cached image with dependency checks and
 scriptlets enabled, checks all schemas and both executable loaders/libraries,

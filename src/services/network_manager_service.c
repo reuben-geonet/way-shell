@@ -1,4 +1,5 @@
 #include "network_manager_service.h"
+#include "bluetooth_service/bluetooth_service.h"
 
 #include <NetworkManager.h>
 #include <adwaita.h>
@@ -138,6 +139,9 @@ static void on_changed(NMClient *client, GParamSpec *spec,
 static void on_networking_enabled_changed(NMClient *client, GParamSpec *_,
                                           NetworkManagerService *self) {
     gboolean enabled = nm_client_networking_get_enabled(client);
+
+    BluetoothService *bluetooth = bluetooth_service_get_global();
+    if (bluetooth) bluetooth_service_set_airplane_mode(bluetooth, !enabled);
 
     // emit signals
     if (enabled) {

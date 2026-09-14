@@ -4,6 +4,7 @@
 
 #include "../quick_settings.h"
 #include "./quick_settings_grid_airplane_mode_button.h"
+#include "./quick_settings_grid_bluetooth.h"
 #include "./quick_settings_grid_idle_inhibitor.h"
 #include "./quick_settings_grid_night_light/quick_settings_grid_night_light.h"
 #include "./quick_settings_grid_power_profiles/quick_settings_grid_power_profiles.h"
@@ -216,6 +217,10 @@ void quick_settings_grid_button_free(QuickSettingsGridButton *self) {
         case QUICK_SETTINGS_BUTTON_VPN:
             quick_settings_grid_vpn_button_free(
                 (QuickSettingsGridVPNButton *)self);
+            break;
+        case QUICK_SETTINGS_BUTTON_BLUETOOTH:
+            quick_settings_grid_bluetooth_button_free(
+                (QuickSettingsGridBluetoothButton *)self);
             break;
     }
 }

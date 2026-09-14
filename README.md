@@ -101,6 +101,30 @@ support the following keybinds.
 | DownArrow  | previous item |
 | Esc | Clear search, close widget if search is empty |
 
+### Bluetooth
+
+Quick settings provides a Bluetooth power toggle and a menu for connecting and
+disconnecting paired or trusted audio, input, and MIDI devices. BlueZ must be
+running on the host; no GNOME session services are required. The active desktop
+session should have access to `/dev/rfkill` to change software radio blocks.
+Hardware radio blocks cannot be overridden by software.
+
+**Bluetooth Settings** opens Blueman (`blueman-manager`) for discovery, pairing,
+and removing devices. Install Blueman separately, or select another manager:
+
+```sh
+gsettings set org.ldelossa.way-shell.system bluetooth-settings-command 'your-manager --option'
+gsettings reset org.ldelossa.way-shell.system bluetooth-settings-command
+```
+
+The value is an executable with optional quoted arguments, without shell
+expansion. Changes apply on the next click; a missing manager produces an error
+in the menu. Bluetooth power and connections work independently of that manager.
+
+Airplane Mode also turns Bluetooth off and restores its previous state when
+leaving. Explicit Bluetooth changes during Airplane Mode take precedence over
+restoration. Restoration is remembered for the lifetime of the shell process.
+
 ### Integrating with SwayFX
 
 The [SwayFX](https://github.com/WillPower3309/swayfx) project provides some extra eye candy for Sway.
@@ -144,7 +168,7 @@ Feel free to adjust these to your liking.
 - [x] CLI interface (way-sh)
 - [x] Media Player integration (control DBus announced media players)
 - [x] Keyboard backlight detection, OSD, and quick settings button
-- [ ] Bluetooth integration (pair with discoverable bluetooth devices)
+- [x] Bluetooth quick settings (power, connect/disconnect, pairing through an external manager)
 - [x] Themeing (provide CSS override directory, light/dark theme switch button, and allow a script to be ran after the theme is switched)
 - [ ] Figure out proper rpm and deb packaging
 - [ ] Lock Screen (Wayland protocol based) implementation

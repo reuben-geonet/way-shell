@@ -12,6 +12,7 @@
 #include "./panel/panel.h"
 #include "./rename_switcher/rename_switcher.h"
 #include "./services/brightness_service/brightness_service.h"
+#include "./services/bluetooth_service/bluetooth_service.h"
 #include "./services/clock_service.h"
 #include "./services/dbus_service.h"
 #include "./services/ipc_service/ipc_service.h"
@@ -77,6 +78,9 @@ static void activate(AdwApplication *app, gpointer user_data) {
     if (dbus_service_global_init() != 0) {
         g_error("main.c: activate(): failed to initialize dbus service.");
     }
+
+    bluetooth_service_global_init(
+        dbus_service_get_system_bus(dbus_service_get_global()));
 
     if (clock_service_global_init() != 0) {
         g_error("main.c: activate(): failed to initialize clock service.");

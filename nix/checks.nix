@@ -25,6 +25,21 @@
           release: output: lib.nameValuePair "rpm-fedora-${release}" output
         ) config.wayShell.verified
         // {
+          bluetooth = pkgs.runCommand "way-shell-bluetooth-check" {
+            nativeBuildInputs = [ pkgs.gcc pkgs.pkg-config pkgs.glib pkgs.dbus ];
+            buildInputs = [ pkgs.glib ];
+          } ''
+            mkdir -p "$out" schemas
+            cp ${../data/org.ldelossa.way-shell.gschema.xml} schemas/
+            glib-compile-schemas --strict schemas
+            $CC -g -Wall ${../tests/bluetooth.c} \
+              ${../src/services/bluetooth_service/bluetooth_service.c} \
+              ${../src/services/bluetooth_service/bluetooth_settings.c} \
+              -I${../src/services/bluetooth_service} \
+              -o bluetooth-test $(pkg-config --cflags --libs gio-2.0 gio-unix-2.0)
+            GSETTINGS_SCHEMA_DIR="$PWD/schemas" GSETTINGS_BACKEND=memory \
+              ./bluetooth-test > "$out/tests.txt"
+          '';
           native-package = pkgs.runCommand "way-shell-native-package-check" { } ''
             set -x
             mkdir -p "$out"

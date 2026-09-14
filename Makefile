@@ -31,6 +31,14 @@ OBJS += lib/cmd_tree/cmd_tree.o
 
 all: wlr-protocols gresources way-shell way-sh/way-sh
 
+.PHONY: test-bluetooth
+test-bluetooth:
+	mkdir -p .cache/bluetooth-tests/schemas
+	cp data/org.ldelossa.way-shell.gschema.xml .cache/bluetooth-tests/schemas/
+	glib-compile-schemas --strict .cache/bluetooth-tests/schemas
+	$(CC) -g -Wall -Isrc/services/bluetooth_service tests/bluetooth.c src/services/bluetooth_service/bluetooth_service.c src/services/bluetooth_service/bluetooth_settings.c -o .cache/bluetooth-tests/test $$(pkg-config --cflags --libs gio-2.0 gio-unix-2.0)
+	GSETTINGS_SCHEMA_DIR=$(CURDIR)/.cache/bluetooth-tests/schemas GSETTINGS_BACKEND=memory .cache/bluetooth-tests/test
+
 way-shell: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) gresources.o $(LIBS)
 
