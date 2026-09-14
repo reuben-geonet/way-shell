@@ -51,9 +51,12 @@
             cargo build --workspace --frozen --jobs 1
           '';
           doCheck = true;
+          nativeCheckInputs = [ pkgs.pipewire ];
           checkTarget = "check";
           preCheck = ''
             cargo test --workspace --frozen --jobs 1
+            cargo build -p way-shell --example audio-compat --frozen --jobs 1
+            sh tests/audio-compat.sh target/debug/examples/audio-compat
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

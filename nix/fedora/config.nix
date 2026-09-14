@@ -43,6 +43,7 @@
         "json-glib-devel"
         "NetworkManager-libnm-devel"
         "pipewire-devel"
+        "pipewire"
         "pulseaudio-libs-devel"
         "wayland-devel"
         "wayland-protocols-devel"

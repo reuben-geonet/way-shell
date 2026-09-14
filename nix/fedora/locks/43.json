@@ -50,6 +50,7 @@
     "meson",
     "patch",
     "perl",
+    "pipewire",
     "pipewire-devel",
     "pkgconf-pkg-config",
     "power-profiles-daemon",
@@ -334,6 +335,10 @@
     {
       "sha256": "730a429717587ef4e114bf9b1e57f25ebd856c40ef8e47f6dc3ab4075ea392a1",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/docbook-utils-0.6.15-3.fc43.noarch.rpm"
+    },
+    {
+      "sha256": "1fdf70cd1f02cdbf01ae5712304d299b00a8d746f3cf284d7add8db460555e10",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/duktape-2.7.0-10.fc43.x86_64.rpm"
     },
     {
       "sha256": "2d744cfea651fe2d7cebea428bc05aa11b10687b1e3e7e802305e0da3a5a99e6",
@@ -2508,6 +2513,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/perl-vmsish-1.04-520.fc43.noarch.rpm"
     },
     {
+      "sha256": "8a7b9cc1774358829a0d0be8c0076a3bf225f635450504762f79423b64e3850b",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/pipewire-1.4.8-2.fc43.x86_64.rpm"
+    },
+    {
       "sha256": "429f443698e32fbfe4dd951ff7e11b21d12c7d0d5ba2aa1459086190475e7a52",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/pipewire-devel-1.4.8-2.fc43.x86_64.rpm"
     },
@@ -2534,6 +2543,10 @@
     {
       "sha256": "4ae294440b9d8e8ae7477ee1ae0ff6e0f7faec4ec307fdef082004795aedae78",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/pkgconf-pkg-config-2.3.0-3.fc43.x86_64.rpm"
+    },
+    {
+      "sha256": "98400f18e3e4960e95d9118397401f4e72a2f5462edbde1914a17c5beb6d33e9",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/polkit-126-6.fc43.x86_64.rpm"
     },
     {
       "sha256": "973d5aa8053d28560659fb385603264622f582bdebf1251ad64031e651d8a9dc",
@@ -2670,6 +2683,10 @@
     {
       "sha256": "5419f4b90e8a24b1523fa31ba72fafb418ed18ff95ebc35e5c4c5150c7e07822",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/r/rpm-sign-libs-6.0.0-1.fc43.x86_64.rpm"
+    },
+    {
+      "sha256": "383ae51960e9ad685766e71a07ce2d9ce5cd0a0c69fb07d4f833849f221bbe45",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/r/rtkit-0.11-69.fc43.x86_64.rpm"
     },
     {
       "sha256": "0aedf43898f970c52f6799a0d056cb396ccdfa38842fa2c66c90dfb6d1e01a73",

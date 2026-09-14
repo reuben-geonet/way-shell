@@ -21,6 +21,7 @@ BuildRequires: python3
 BuildRequires: rust >= 1.90
 BuildRequires: cargo >= 1.90
 BuildRequires: clang-devel
+BuildRequires: pipewire
 
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(upower-glib)
@@ -72,6 +73,8 @@ make -j1
 
 %check
 cargo test --workspace --frozen --jobs 1
+cargo build -p way-shell --example audio-compat --frozen --jobs 1
+sh tests/audio-compat.sh target/debug/examples/audio-compat
 make -j1 check
 
 %install

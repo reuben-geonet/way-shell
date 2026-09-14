@@ -52,6 +52,7 @@
     "pam",
     "patch",
     "perl",
+    "pipewire",
     "pipewire-devel",
     "pkgconf-pkg-config",
     "pulseaudio-libs-devel",
@@ -2600,6 +2601,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/perl-vmsish-1.04-523.fc44.noarch.rpm"
     },
     {
+      "sha256": "5e98ff2f686dd2bfc70e20294f155d2772923e8d9460b4c797f81ad0f7ee4e90",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/pipewire-1.6.2-1.fc44.x86_64.rpm"
+    },
+    {
       "sha256": "a05f5169792cc16b52f2d42edea3bedcfa3868920a8b4b4e82e6fcd877f0d662",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/pipewire-devel-1.6.2-1.fc44.x86_64.rpm"
     },
@@ -2798,6 +2803,10 @@
     {
       "sha256": "2f6e07254e84ee6cbc9ac91e5ad8d3a6ccf64ba90d07a4140d8e34c8b5a20cd3",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/r/rpm-sign-libs-6.0.1-2.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "b7cba2e7c6853e3f233a1614e06e864aa4f21ea36aada41614fd57ce5f4e0bc8",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/r/rtkit-0.11-70.fc44.x86_64.rpm"
     },
     {
       "sha256": "129947bc39221bfee6a03ba81530d84b116d70583f1767cb783eeb5a31760232",
