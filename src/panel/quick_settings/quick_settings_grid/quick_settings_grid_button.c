@@ -168,10 +168,12 @@ void quick_settings_grid_button_set_toggled(QuickSettingsGridButton *self,
                                             gboolean toggled) {
     if (toggled) {
         gtk_widget_remove_css_class(GTK_WIDGET(self->toggle), "off");
-        gtk_widget_remove_css_class(GTK_WIDGET(self->reveal_button), "off");
+        if (self->reveal_button)
+            gtk_widget_remove_css_class(GTK_WIDGET(self->reveal_button), "off");
     } else {
         gtk_widget_add_css_class(GTK_WIDGET(self->toggle), "off");
-        gtk_widget_add_css_class(GTK_WIDGET(self->reveal_button), "off");
+        if (self->reveal_button)
+            gtk_widget_add_css_class(GTK_WIDGET(self->reveal_button), "off");
     }
 }
 
