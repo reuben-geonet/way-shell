@@ -12,6 +12,7 @@ DEPS := libadwaita-1 \
 		wireplumber-0.5 \
 		json-glib-1.0 \
 		libnm \
+		libpipewire-0.3 \
 		libpulse \
 		libpulse-simple \
 		libpulse-mainloop-glib \
@@ -21,7 +22,10 @@ DEPS := libadwaita-1 \
 CFLAGS += $(shell pkg-config --cflags $(DEPS)) -g3 -Wall
 LIBS := $(LDFLAGS) "-lm"
 LIBS += $(shell pkg-config --libs $(DEPS))
-SOURCES := $(shell find src/ -type f -name "*.c")
+# Include generated sources even before the first invocation of wayland-scanner.
+WAYLAND_SOURCES := src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.c \
+		src/services/wayland/wlr-gamma-control-unstable-v1.c
+SOURCES := $(sort $(shell find src/ -type f -name "*.c") $(WAYLAND_SOURCES))
 OBJS := $(patsubst %.c, %.o, $(SOURCES))
 OBJS += lib/cmd_tree/cmd_tree.o
 
