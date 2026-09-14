@@ -1,4 +1,5 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
+mod clock;
 mod theme;
 use std::{
     ffi::{CStr, c_char},
