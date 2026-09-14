@@ -229,6 +229,9 @@ QuickSettingsGridBluetoothButton *quick_settings_grid_bluetooth_button_init(Blue
     gtk_widget_set_vexpand(GTK_WIDGET(self->menu.scroll), FALSE);
     self->placeholder = GTK_LABEL(gtk_label_new(NULL));
     gtk_label_set_wrap(self->placeholder, TRUE);
+    /* GtkRevealer still contributes its child's natural width while closed.
+     * Wrap the padded placeholder instead of widening the entire grid. */
+    gtk_label_set_max_width_chars(self->placeholder, 20);
     gtk_label_set_justify(self->placeholder, GTK_JUSTIFY_CENTER);
     gtk_widget_add_css_class(GTK_WIDGET(self->placeholder), "bluetooth-placeholder");
     gtk_box_append(self->menu.options_container, GTK_WIDGET(self->placeholder));
