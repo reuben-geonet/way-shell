@@ -131,6 +131,10 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
         ? g_strdup_printf("%u Connected", connected) : g_strdup(single_name);
     gtk_label_set_text(self->button.subtitle, subtitle ? subtitle : "");
     gtk_widget_set_visible(GTK_WIDGET(self->button.subtitle), subtitle != NULL);
+    /* Center the text block against the taller icon for both one and two
+     * lines, without making the whole button expand vertically. */
+    gtk_widget_set_valign(gtk_widget_get_parent(GTK_WIDGET(self->button.title)),
+                          GTK_ALIGN_CENTER);
     if (subtitle)
         gtk_widget_add_css_class(GTK_WIDGET(self->button.toggle), "with-subtitle");
     else
