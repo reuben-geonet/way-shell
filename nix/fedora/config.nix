@@ -5,12 +5,16 @@
   releases = {
     "43" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os";
+      powerProvider = "power-profiles-daemon";
+      extraPackages = [ "power-profiles-daemon" ];
     };
     "44" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os";
+      powerProvider = "tuned-ppd";
       # The pinned closure generator does not resolve RPM's conditional
       # requirements; image validation identified these additional providers.
       extraPackages = [
+        "tuned-ppd"
         "python3-setuptools"
         "rpm-plugin-selinux"
         "pam"
@@ -46,7 +50,6 @@
         "NetworkManager"
         "wireplumber"
         "upower"
-        "power-profiles-daemon"
         "systemd"
         "dbus-broker"
         "cmake-rpm-macros"

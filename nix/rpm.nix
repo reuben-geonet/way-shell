@@ -43,6 +43,7 @@
             }
             ''
               export RPM_DIRECTORY=${builds.${release}}/rpms/fedora-${release}-x86_64
+              export POWER_PROVIDER=${cfg.fedora.releases.${release}.powerProvider}
               export SCHEMA_PROBE_SOURCE=${./tests/schema-probe.c}
               export EXPECTED_SCHEMAS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.schemaIds)}
               source ${./tests/fedora-install.sh}
