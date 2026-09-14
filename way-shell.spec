@@ -4,10 +4,10 @@ Name: way-shell
 Version: 0.0.10
 Release: 1%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
-License: MIT
+License: GPL-2.0-only
 
 URL: https://github.com/ldelossa/way-shell
-Source0: https://github.com/ldelossa/way-shell/archive/refs/tags/v0.0.10.tar.gz
+Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: gcc
 BuildRequires: make
@@ -23,6 +23,7 @@ BuildRequires: pkgconfig(upower-glib)
 BuildRequires: pkgconfig(wireplumber-0.5)
 BuildRequires: pkgconfig(json-glib-1.0)
 BuildRequires: pkgconfig(libnm)
+BuildRequires: pkgconfig(libpipewire-0.3)
 BuildRequires: pkgconfig(libpulse)
 BuildRequires: pkgconfig(libpulse-simple)
 BuildRequires: pkgconfig(libpulse-mainloop-glib)
@@ -57,10 +58,11 @@ Currently Way-Shell only supports Sway but this will change as the project
 matures.
 
 %prep
-%setup -n way-shell-0.0.10
+%setup -q
 
 %build
-make %{?_smp_mflags}
+# Generated resources and Wayland sources are not safe to build in parallel yet.
+make -j1
 
 %install
 make install DESTDIR=%{buildroot}
@@ -72,6 +74,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 glib-compile-schemas %{_datadir}/glib-2.0/schemas
 
 %files
+%license LICENSE
 %{_bindir}/way-shell
 %{_bindir}/way-sh
 %{_datadir}/glib-2.0/schemas/org.ldelossa.way-shell.gschema.xml
