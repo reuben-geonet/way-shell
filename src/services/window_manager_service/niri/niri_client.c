@@ -154,6 +154,7 @@ GPtrArray *niri_client_get_workspaces(GIOChannel *channel) {
         JsonObject *ws_obj = json_node_get_object(ws_node);
         WMWorkspace *ws = g_new0(WMWorkspace, 1);
 
+        ws->num = json_object_get_int_member(ws_obj, "idx");
         JsonNode *name_node = json_object_get_member(ws_obj, "name");
         if (name_node && JSON_NODE_HOLDS_VALUE(name_node)) {
             ws->name = g_strdup(json_node_get_string(name_node));
@@ -178,12 +179,12 @@ GPtrArray *niri_client_get_workspaces(GIOChannel *channel) {
 
         JsonNode *is_active_node = json_object_get_member(ws_obj, "is_active");
         if (is_active_node && JSON_NODE_HOLDS_VALUE(is_active_node)) {
-            ws->focused = json_node_get_boolean(is_active_node);
+            ws->visible = json_node_get_boolean(is_active_node);
         }
 
         JsonNode *is_focused_node = json_object_get_member(ws_obj, "is_focused");
         if (is_focused_node && JSON_NODE_HOLDS_VALUE(is_focused_node)) {
-            ws->visible = json_node_get_boolean(is_focused_node);
+            ws->focused = json_node_get_boolean(is_focused_node);
         }
 
         JsonNode *is_urgent_node = json_object_get_member(ws_obj, "is_urgent");
@@ -237,6 +238,17 @@ GPtrArray *niri_client_get_outputs(GIOChannel *channel) {
     }
     JsonObject *root_obj = json_node_get_object(root);
 
+    JsonNode *ok = json_object_get_member(root_obj, "Ok");
+    JsonNode *entries = ok && JSON_NODE_HOLDS_OBJECT(ok)
+        ? json_object_get_member(json_node_get_object(ok), "Outputs") : NULL;
+    if (!entries || !JSON_NODE_HOLDS_OBJECT(entries)) {
+        g_warning("Niri did not return an Outputs object");
+        g_object_unref(parser);
+        g_free(response_json);
+        return NULL;
+    }
+    root_obj = json_node_get_object(entries);
+
     // Iterate over output names (keys in the object)
     GPtrArray *outputs = g_ptr_array_new_with_free_func(g_free);
     GList *output_names = json_object_get_members(root_obj);
@@ -274,74 +286,62 @@ GPtrArray *niri_client_get_outputs(GIOChannel *channel) {
     return outputs;
 }
 
-int niri_client_focus_workspace(GIOChannel *channel, const gchar *workspace_name) {
-    g_debug("niri_client.c:niri_client_focus_workspace() workspace: %s", workspace_name);
+/* JSON strings are encoded by json-glib, never inserted verbatim. */
+static gchar *json_string(const gchar *value) {
+    JsonNode *node = json_node_new(JSON_NODE_VALUE);
+    json_node_set_string(node, value);
+    gchar *json = json_to_string(node, FALSE);
+    json_node_free(node);
+    return json;
+}
 
-    gchar *request;
-    // For niri, we use WorkspaceReferenceArg which can be index or name
-    // If workspace_name is numeric, use it as index, otherwise use as name
-    if (g_ascii_isdigit(workspace_name[0])) {
-        // Use as index
-        request = g_strdup_printf("{\"Action\":{\"FocusWorkspace\":{\"reference\":{\"Index\":%s}}}}", workspace_name);
-    } else {
-        // Use as name
-        request = g_strdup_printf("{\"Action\":{\"FocusWorkspace\":{\"reference\":{\"Name\":\"%s\"}}}}", workspace_name);
+static gchar *workspace_reference(const gchar *name) {
+    if (!name || !*name) return NULL;
+    gboolean numeric = TRUE;
+    for (const gchar *p = name; *p; p++) numeric &= g_ascii_isdigit(*p);
+    if (numeric) {
+        guint64 index;
+        if (!g_ascii_string_to_unsigned(name, 10, 1, 255, &index, NULL)) return NULL;
+        return g_strdup_printf("{\"Index\":%" G_GUINT64_FORMAT "}", index);
     }
-    gchar *response = nullptr;
+    g_autofree gchar *encoded = json_string(name);
+    return g_strdup_printf("{\"Name\":%s}", encoded);
+}
 
-    int result = niri_client_send_request(channel, request, &response);
-
-    g_free(request);
-    g_free(response);
-    return result;
+int niri_client_focus_workspace(GIOChannel *channel, const gchar *workspace_name) {
+    g_autofree gchar *reference = workspace_reference(workspace_name);
+    if (!reference) return -1;
+    g_autofree gchar *request = g_strdup_printf(
+        "{\"Action\":{\"FocusWorkspace\":{\"reference\":%s}}}", reference);
+    g_autofree gchar *response = NULL;
+    return niri_client_send_request(channel, request, &response);
 }
 
 int niri_client_move_window_to_workspace(GIOChannel *channel, const gchar *workspace_name) {
-    g_debug("niri_client.c:niri_client_move_window_to_workspace() workspace: %s", workspace_name);
-
-    gchar *request;
-    // For niri, we use WorkspaceReferenceArg which can be index or name
-    // If workspace_name is numeric, use it as index, otherwise use as name
-    if (g_ascii_isdigit(workspace_name[0])) {
-        // Use as index
-        request = g_strdup_printf("{\"Action\":{\"MoveWindowToWorkspace\":{\"window_id\":null,\"reference\":{\"Index\":%s},\"focus\":false}}}", workspace_name);
-    } else {
-        // Use as name
-        request = g_strdup_printf("{\"Action\":{\"MoveWindowToWorkspace\":{\"window_id\":null,\"reference\":{\"Name\":\"%s\"},\"focus\":false}}}", workspace_name);
-    }
-    gchar *response = nullptr;
-
-    int result = niri_client_send_request(channel, request, &response);
-
-    g_free(request);
-    g_free(response);
-    return result;
+    g_autofree gchar *reference = workspace_reference(workspace_name);
+    if (!reference) return -1;
+    g_autofree gchar *request = g_strdup_printf(
+        "{\"Action\":{\"MoveWindowToWorkspace\":{\"window_id\":null,\"reference\":%s,\"focus\":false}}}", reference);
+    g_autofree gchar *response = NULL;
+    return niri_client_send_request(channel, request, &response);
 }
 
 int niri_client_rename_current_workspace(GIOChannel *channel, const gchar *new_name) {
-    g_debug("niri_client.c:niri_client_rename_workspace() new_name: %s", new_name);
-
-    gchar *request = g_strdup_printf("{\"Action\":{\"SetWorkspaceName\":{\"name\":\"%s\",\"workspace\":null}}}", new_name);
-    gchar *response = nullptr;
-
-    int result = niri_client_send_request(channel, request, &response);
-
-    g_free(request);
-    g_free(response);
-    return result;
+    if (!new_name || !*new_name) return -1;
+    g_autofree gchar *encoded = json_string(new_name);
+    g_autofree gchar *request = g_strdup_printf(
+        "{\"Action\":{\"SetWorkspaceName\":{\"name\":%s,\"workspace\":null}}}", encoded);
+    g_autofree gchar *response = NULL;
+    return niri_client_send_request(channel, request, &response);
 }
 
 int niri_client_move_workspace_to_output(GIOChannel *channel, const gchar *output_name) {
-    g_debug("niri_client.c:niri_client_move_workspace_to_output() output: %s", output_name);
-
-    gchar *request = g_strdup_printf("{\"Action\":{\"MoveWorkspaceToMonitor\":{\"output\":\"%s\",\"reference\":null}}}", output_name);
-    gchar *response = nullptr;
-
-    int result = niri_client_send_request(channel, request, &response);
-
-    g_free(request);
-    g_free(response);
-    return result;
+    if (!output_name || !*output_name) return -1;
+    g_autofree gchar *encoded = json_string(output_name);
+    g_autofree gchar *request = g_strdup_printf(
+        "{\"Action\":{\"MoveWorkspaceToMonitor\":{\"output\":%s,\"reference\":null}}}", encoded);
+    g_autofree gchar *response = NULL;
+    return niri_client_send_request(channel, request, &response);
 }
 
 int niri_client_subscribe_events(GIOChannel *channel) {

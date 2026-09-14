@@ -6,9 +6,10 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test
+check: core-test ipc-test niri-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
+	cd .. && tests/niri-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -17,5 +18,8 @@ core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/servic
 ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_service/ipc_protocol.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) ipc.c $(LDFLAGS) $(LDLIBS) -o $@
 
+niri-test: niri.c ../src/services/window_manager_service/niri/niri_client.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS) -o $@
+
 clean:
-	rm -f core-test ipc-test theme-test clock-test sway-transport-test
+	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test

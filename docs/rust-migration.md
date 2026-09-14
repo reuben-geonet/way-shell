@@ -67,6 +67,14 @@ Sway IPC quote removal differs from shell escaping. Urgency clearing no longer
 requests focus. C retains only its temporary signal/vtable adapter and owned
 snapshots until the widgets migrate.
 
+Niri fixtures reproduced three independent baseline problems: named workspaces
+lost their index and swapped focus/visibility, output discovery treated the
+`Ok` response envelope as an output, and names starting with digits or containing
+quotes produced invalid action JSON. The C fixes preserve every workspace's
+index, map active to visible and focused to focused, unwrap `Ok.Outputs`, and
+encode strings with json-glib. Only complete integers in 1..255 become index
+references. Rust transfers the same fixtures and adds stable-ID references.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

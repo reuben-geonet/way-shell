@@ -14,6 +14,7 @@ gresources.h
 /tests/theme-test
 /tests/clock-test
 /tests/sway-transport-test
+/tests/niri-test
 __pycache__/
 
 # Build outputs
