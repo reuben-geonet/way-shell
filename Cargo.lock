@@ -1293,6 +1293,7 @@ name = "way-sh"
 version = "0.0.10"
 dependencies = [
  "clap",
+ "serde_json",
  "way-shell-core",
 ]
 

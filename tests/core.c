@@ -2,32 +2,9 @@
 #include <glib.h>
 #include <string.h>
 
-#include "../lib/cmd_tree/include/cmd_tree.h"
 #include "../src/services/wireplumber_service.h"
 #include "../src/services/wayland/gamma_control_service/colorramp.h"
 #include "../src/services/window_manager_service/sway/sway_client.h"
-
-static void command_tree(void) {
-    cmd_tree_node_t root = {0}, volume = {.name = "volume"},
-                    set = {.name = "set"}, mute = {.name = "mute"};
-    cmd_tree_node_t *found = NULL;
-    char *args[] = {"volume", "set", "0.5"};
-    g_assert_cmpint(cmd_tree_node_add_child(NULL, &set), ==, -1);
-    g_assert_cmpint(cmd_tree_node_add_child(&root, &volume), ==, 1);
-    g_assert_cmpint(cmd_tree_node_add_child(&volume, &set), ==, 1);
-    g_assert_cmpint(cmd_tree_node_add_child(&volume, &mute), ==, 1);
-    g_assert_cmpint(cmd_tree_search(&root, 3, args, &found), ==, 1);
-    g_assert_true(found == &set);
-    g_assert_cmpuint(found->argc, ==, 1);
-    g_assert_cmpstr(found->argv[0], ==, "0.5");
-    args[1] = "mute";
-    g_assert_cmpint(cmd_tree_search(&root, 2, args, &found), ==, 1);
-    g_assert_true(found == &mute);
-    g_assert_cmpuint(found->argc, ==, 0);
-    g_assert_cmpint(cmd_tree_search(&root, 0, NULL, &found), ==, 1);
-    g_assert_true(found == &root);
-    g_assert_cmpint(cmd_tree_search(NULL, 0, NULL, &found), ==, -1);
-}
 
 static void volume_scaling(void) {
     g_assert_cmpfloat(volume_from_linear(-1, SCALE_CUBIC), ==, 0);
@@ -117,7 +94,6 @@ static void sway_outputs(void) {
 
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
-    g_test_add_func("/commands/lookup-and-consumption", command_tree);
     g_test_add_func("/audio/volume-scaling", volume_scaling);
     g_test_add_func("/audio/channel-map", channels);
     g_test_add_func("/gamma/golden", gamma_golden);

@@ -67,6 +67,7 @@ matures.
 
 %build
 export CARGO_BUILD_JOBS=1
+export CARGO_BUILD_FLAGS=--frozen
 cargo build --workspace --frozen
 # Generated resources and Wayland sources are not safe to build in parallel yet.
 make -j1
@@ -75,7 +76,7 @@ make -j1
 cargo test --workspace --frozen --jobs 1
 cargo build -p way-shell --example audio-compat --frozen --jobs 1
 sh tests/audio-compat.sh target/debug/examples/audio-compat
-make -j1 check
+make -j1 check CARGO_BUILD_FLAGS=--frozen
 
 %install
 make install DESTDIR=%{buildroot}

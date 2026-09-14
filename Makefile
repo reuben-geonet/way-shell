@@ -4,6 +4,8 @@ SCHEMADIR ?= $(PREFIX)/share/glib-2.0/schemas
 USERUNITDIR ?= $(PREFIX)/lib/systemd/user
 
 CC := gcc
+CARGO ?= cargo
+CARGO_BUILD_FLAGS ?= --locked
 # gtk4-layer-shell must precede GTK/Wayland in the dynamic loader's search.
 DEPS := gtk4-layer-shell-0 libadwaita-1 upower-glib wireplumber-0.5 \
         json-glib-1.0 libnm libpipewire-0.3 libpulse libpulse-simple \
@@ -27,12 +29,13 @@ WAYLAND_BASES := src/services/wayland/wlr-foreign-toplevel-management-unstable-v
 GENERATED_SOURCES := $(addsuffix .c,$(DBUS_BASES) $(WAYLAND_BASES))
 GENERATED_HEADERS := $(addsuffix .h,$(DBUS_BASES) $(WAYLAND_BASES))
 SOURCES := $(sort $(shell find src -type f -name '*.c') $(GENERATED_SOURCES))
-OBJS := $(SOURCES:.c=.o) lib/cmd_tree/cmd_tree.o gresources.o
+OBJS := $(SOURCES:.c=.o) gresources.o
 RESOURCE_FILES := $(shell glib-compile-resources --generate-dependencies gresources.xml)
 
 .PHONY: all check clean install install-gschema dbus-codegen wlr-protocols gresources
-all: way-shell way-sh/way-sh
+all: way-shell cli
 check: all
+	$(CARGO) test -p way-shell-core -p way-sh $(CARGO_BUILD_FLAGS)
 	$(MAKE) -C tests check
 
 way-shell: $(OBJS)
@@ -73,23 +76,21 @@ gresources.c gresources.h &: gresources.xml $(RESOURCE_FILES)
 	glib-compile-resources --generate-source --target gresources.c gresources.xml
 	glib-compile-resources --generate-header --target gresources.h gresources.xml
 
-# Let the sub-make track CLI inputs even when its executable already exists.
-.PHONY: way-sh/way-sh
-way-sh/way-sh: lib/cmd_tree/cmd_tree.o
-	$(MAKE) -C way-sh
+.PHONY: cli
+cli:
+	$(CARGO) build -p way-sh --release $(CARGO_BUILD_FLAGS)
 
 install-gschema:
 	glib-compile-schemas $(DESTDIR)$(SCHEMADIR)
 install:
 	install -D ./way-shell $(DESTDIR)$(BINDIR)/way-shell
-	install -D ./way-sh/way-sh $(DESTDIR)$(BINDIR)/way-sh
+	install -D target/release/way-sh $(DESTDIR)$(BINDIR)/way-sh
 	install -D data/org.ldelossa.way-shell.gschema.xml $(DESTDIR)$(SCHEMADIR)/org.ldelossa.way-shell.gschema.xml
 	install -D -m 0644 contrib/systemd/way-shell.service $(DESTDIR)$(USERUNITDIR)/way-shell.service
 
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(GENERATED_SOURCES) $(GENERATED_HEADERS)
 	rm -f way-shell gresources.c gresources.h
-	$(MAKE) -C way-sh clean
 	$(MAKE) -C tests clean
 
 -include $(OBJS:.o=.d)

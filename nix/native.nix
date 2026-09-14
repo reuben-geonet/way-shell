@@ -16,6 +16,7 @@
           strictDeps = true;
           enableParallelBuilding = false;
           cargoDeps = config.wayShell.cargoVendor;
+          CARGO_BUILD_FLAGS = "--frozen";
           nativeBuildInputs = with pkgs; [
             pkg-config
             glib

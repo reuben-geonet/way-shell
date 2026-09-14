@@ -9,5 +9,8 @@ license.workspace = true
 way-shell-core.workspace = true
 clap.workspace = true
 
+[dev-dependencies]
+serde_json.workspace = true
+
 [lints]
 workspace = true
