@@ -122,6 +122,7 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
         if (!g_hash_table_contains(present, key)) g_hash_table_iter_remove(&iter);
 
     gtk_widget_set_visible(GTK_WIDGET(self->placeholder), !devices->len);
+    gtk_widget_set_visible(GTK_WIDGET(self->menu.scroll), devices->len > 0);
     gtk_label_set_text(self->placeholder,
         !ready ? "Bluetooth service unavailable" :
         blocked ? "Bluetooth is disabled by a hardware switch" :
@@ -199,6 +200,10 @@ QuickSettingsGridBluetoothButton *quick_settings_grid_bluetooth_button_init(Blue
     self->settings = g_settings_new("org.ldelossa.way-shell.system");
     self->rows = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, row_free);
     quick_settings_menu_widget_init(&self->menu, TRUE);
+    /* This menu sizes to its devices; the shared menu defaults to filling
+     * the available height, leaving an empty viewport/footer gap. */
+    gtk_widget_set_vexpand(GTK_WIDGET(self->menu.container), FALSE);
+    gtk_widget_set_vexpand(GTK_WIDGET(self->menu.options_container), FALSE);
     quick_settings_menu_widget_set_title(&self->menu, "Bluetooth");
     quick_settings_menu_widget_set_icon(&self->menu, "bluetooth-active-symbolic");
     gtk_scrolled_window_set_min_content_height(self->menu.scroll, 0);
