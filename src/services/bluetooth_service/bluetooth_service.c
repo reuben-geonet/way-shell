@@ -183,7 +183,8 @@ GPtrArray *bluetooth_service_get_devices(BluetoothService *self) {
         if (!interface) continue;
         GDBusProxy *proxy = G_DBUS_PROXY(interface);
         if ((!boolean_property(proxy, "Paired") &&
-             !boolean_property(proxy, "Trusted")) || !connectable(proxy))
+             !boolean_property(proxy, "Trusted")) ||
+            (!boolean_property(proxy, "Connected") && !connectable(proxy)))
             continue;
         g_autofree char *adapter_path = string_property(proxy, "Adapter", "");
         g_autoptr(GDBusProxy) adapter = get_proxy(self, adapter_path, ADAPTER);

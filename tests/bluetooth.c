@@ -357,6 +357,18 @@ static void test_owner_and_removal(Fixture *f, gconstpointer data) {
     g_assert_cmpuint(devices->len, ==, 2);
 }
 
+static void test_connected_without_profiles(Fixture *f, gconstpointer data) {
+    /* Reconnecting LE devices can report Connected before UUID discovery. */
+    f->devices[0].uuid = "";
+    notify(f, MOUSE);
+    pump();
+    g_autoptr(GPtrArray) devices = bluetooth_service_get_devices(f->service);
+    g_assert_cmpuint(devices->len, ==, 2);
+    BluetoothDevice *mouse = devices->pdata[0];
+    g_assert_cmpstr(mouse->path, ==, MOUSE);
+    g_assert_true(mouse->connected);
+}
+
 static void test_settings(void) {
     g_autoptr(GError) error = NULL;
     g_auto(GStrv) argv = bluetooth_settings_parse_command("true 'a b' '$(false)'", &error);
@@ -417,6 +429,7 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/radio", Fixture, NULL, setup, test_radio, teardown);
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);
     g_test_add_func("/bluetooth/settings", test_settings);
+    g_test_add("/bluetooth/connected-without-profiles", Fixture, NULL, setup, test_connected_without_profiles, teardown);
     g_test_add("/bluetooth/adapter-hotplug", Fixture, NULL, setup, test_adapter_hotplug, teardown);
     int result = g_test_run();
     g_test_dbus_down(bus);
