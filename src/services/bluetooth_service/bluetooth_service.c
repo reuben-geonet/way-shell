@@ -32,11 +32,12 @@ struct _BluetoothService {
 };
 
 G_DEFINE_TYPE(BluetoothService, bluetooth_service, G_TYPE_OBJECT)
-enum { CHANGED, OPERATION_ERROR, N_SIGNALS };
+enum { CHANGED, OPERATION_ERROR, OPERATION_SUCCEEDED, N_SIGNALS };
 static guint signals[N_SIGNALS];
 static BluetoothService *global;
 
 static void reconcile_power(BluetoothService *self);
+static gboolean adapter_target(BluetoothService *self, const char *path);
 
 static gboolean emit_changed(gpointer data) {
     BluetoothService *self = data;
@@ -284,6 +285,7 @@ static void finish_power(BluetoothService *self, gboolean success) {
     if (success && self->block_after_off && self->rfkill_fd >= 0)
         success = write_radio(self, RFKILL_OP_CHANGE_ALL, 0, TRUE);
     self->block_after_off = FALSE;
+    if (success) g_signal_emit(self, signals[OPERATION_SUCCEEDED], 0);
     changed(self);
 }
 
@@ -319,13 +321,24 @@ static void operation_finished(GObject *source, GAsyncResult *result,
     g_autoptr(GError) error = NULL;
     g_autoptr(GVariant) reply =
         g_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, &error);
+    gboolean power = !g_strcmp0(g_dbus_proxy_get_interface_name(op->proxy), ADAPTER);
+    g_autoptr(GDBusProxy) current = get_proxy(self, op->path, power ? ADAPTER : DEVICE);
+    gboolean relevant = current == op->proxy && bluetooth_service_ready(self) &&
+        g_hash_table_lookup(self->pending, op->path) == op->cancel &&
+        !g_cancellable_is_cancelled(op->cancel);
+    gboolean superseded = power && self->power_timeout &&
+        adapter_target(self, op->path) != op->enabling;
+    gboolean target = power ? op->enabling : !g_strcmp0(op->method, "Connect");
+    gboolean reached = current &&
+        boolean_property(current, power ? "Powered" : "Connected") == target;
     /* BlueZ can still be processing an rfkill unblock when Powered is set.
      * Retry only that transient error; the UI stays busy throughout. */
     g_autofree char *remote = error ? g_dbus_error_get_remote_error(error) : NULL;
-    if (op->enabling && op->retries++ < 10 &&
+    if (power && relevant && !superseded && !reached && op->retries++ < 40 &&
         g_get_monotonic_time() < op->deadline &&
         !g_cancellable_is_cancelled(op->cancel) &&
-        (!g_strcmp0(remote, "org.bluez.Error.NotReady") ||
+        (!g_strcmp0(remote, "org.bluez.Error.InProgress") ||
+         !g_strcmp0(remote, "org.bluez.Error.NotReady") ||
          (!g_strcmp0(remote, "org.bluez.Error.Failed") &&
           (strstr(error->message, "Blocked") || strstr(error->message, "blocked"))))) {
         g_timeout_add(100, perform_call, op);
@@ -333,12 +346,17 @@ static void operation_finished(GObject *source, GAsyncResult *result,
     }
     if (g_hash_table_lookup(self->pending, op->path) == op->cancel)
         g_hash_table_remove(self->pending, op->path);
-    if (error && !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
+    /* A vanished/replaced object cannot report an error for the current
+     * device. PropertiesChanged is also authoritative when a late method
+     * reply claims failure after the requested state was reached. */
+    if (error && relevant && !superseded && !reached) {
         g_dbus_error_strip_remote_error(error);
         g_autofree char *message =
             g_strdup_printf("%s: %s", op->description, error->message);
         report_error(self, message);
-        if (!strstr(op->path, "/dev_")) finish_power(self, FALSE);
+        if (power) finish_power(self, FALSE);
+    } else if (relevant && !superseded && (!error || reached)) {
+        g_signal_emit(self, signals[OPERATION_SUCCEEDED], 0);
     }
     changed(self);
     g_object_unref(op->proxy);
@@ -539,14 +557,29 @@ void bluetooth_service_set_airplane_mode(BluetoothService *self,
     }
 }
 
+static void prune_operations(BluetoothService *self) {
+    GHashTableIter iter;
+    gpointer key, value;
+    g_hash_table_iter_init(&iter, self->pending);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        g_autoptr(GDBusProxy) proxy = get_proxy(self, key,
+            strstr(key, "/dev_") ? DEVICE : ADAPTER);
+        if (proxy) continue;
+        g_cancellable_cancel(value);
+        g_hash_table_iter_remove(&iter);
+    }
+}
+
 static void object_changed(GDBusObjectManager *manager, GDBusObject *object,
                            BluetoothService *self) {
+    prune_operations(self);
     changed(self);
 }
 
 static void interface_changed(GDBusObjectManager *manager, GDBusObject *object,
                               GDBusInterface *interface,
                               BluetoothService *self) {
+    prune_operations(self);
     changed(self);
 }
 
@@ -570,6 +603,7 @@ static void owner_changed(GObject *manager, GParamSpec *pspec,
         g_hash_table_iter_init(&iter, self->pending);
         while (g_hash_table_iter_next(&iter, NULL, &value))
             g_cancellable_cancel(value);
+        g_hash_table_remove_all(self->pending);
     }
     changed(self);
 }
@@ -630,6 +664,8 @@ static void bluetooth_service_class_init(BluetoothServiceClass *klass) {
     object_class->dispose = bluetooth_service_dispose;
     object_class->finalize = bluetooth_service_finalize;
     signals[CHANGED] = g_signal_new("changed", G_TYPE_FROM_CLASS(klass),
+        G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
+    signals[OPERATION_SUCCEEDED] = g_signal_new("operation-succeeded", G_TYPE_FROM_CLASS(klass),
         G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
     signals[OPERATION_ERROR] = g_signal_new("operation-error",
         G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL, NULL,

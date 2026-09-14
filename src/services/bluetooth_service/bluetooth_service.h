@@ -16,7 +16,7 @@ typedef struct {
     gboolean busy;
 } BluetoothDevice;
 
-/* Signals: changed(); operation-error(const char *message).
+/* Signals: changed(); operation-error(const char *message); operation-succeeded().
  * The constructor takes ownership of a nonblocking rfkill fd, or -1.
  * Accepting a connection and fd also permits isolated, hardware-free tests. */
 BluetoothService *bluetooth_service_new(GDBusConnection *connection,

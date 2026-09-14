@@ -173,6 +173,11 @@ static void dismiss_error(GtkButton *button,
     gtk_revealer_set_reveal_child(self->menu.banner, FALSE);
 }
 
+static void on_succeeded(BluetoothService *service,
+                          QuickSettingsGridBluetoothButton *self) {
+    gtk_revealer_set_reveal_child(self->menu.banner, FALSE);
+}
+
 static void toggle_power(GtkButton *button,
                          QuickSettingsGridBluetoothButton *self) {
     gtk_revealer_set_reveal_child(self->menu.banner, FALSE);
@@ -245,6 +250,7 @@ QuickSettingsGridBluetoothButton *quick_settings_grid_bluetooth_button_init(Blue
                       G_CALLBACK(on_revealed), self);
     g_signal_connect(self->service, "changed", G_CALLBACK(on_changed), self);
     g_signal_connect(self->service, "operation-error", G_CALLBACK(on_error), self);
+    g_signal_connect(self->service, "operation-succeeded", G_CALLBACK(on_succeeded), self);
     sync_menu(self, TRUE);
     return self;
 }

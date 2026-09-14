@@ -438,6 +438,40 @@ static void test_connected_without_profiles(Fixture *f, gconstpointer data) {
     g_assert_true(mouse->connected);
 }
 
+static void test_removed_operation(Fixture *f, gconstpointer data) {
+    f->delay_connect = TRUE;
+    bluetooth_service_toggle_device(f->service, MOUSE);
+    pump();
+    const char *names[] = {DEVICE, NULL};
+    g_dbus_connection_emit_signal(f->server, NULL, "/",
+        "org.freedesktop.DBus.ObjectManager", "InterfacesRemoved",
+        g_variant_new("(o^as)", MOUSE, names), NULL);
+    pump();
+    g_dbus_method_invocation_return_dbus_error(f->delayed,
+        "org.freedesktop.DBus.Error.UnknownMethod", "Device no longer exists");
+    g_clear_object(&f->delayed);
+    pump();
+    g_assert_cmpuint(f->errors, ==, 0);
+}
+
+static void test_completed_operation_error(Fixture *f, gconstpointer data) {
+    f->delay_connect = TRUE;
+    bluetooth_service_toggle_device(f->service, MOUSE);
+    pump();
+    /* The requested disconnect succeeded, but the method reply failed. */
+    f->devices[0].connected = FALSE;
+    notify(f, MOUSE);
+    pump();
+    g_dbus_method_invocation_return_dbus_error(f->delayed,
+        "org.freedesktop.DBus.Error.NoReply", "Timeout was reached");
+    g_clear_object(&f->delayed);
+    pump();
+    g_assert_cmpuint(f->errors, ==, 0);
+    g_autoptr(GPtrArray) devices = bluetooth_service_get_devices(f->service);
+    for (guint i = 0; i < devices->len; i++)
+        g_assert_false(((BluetoothDevice *)devices->pdata[i])->busy);
+}
+
 static void test_power_timeout(Fixture *f, gconstpointer data) {
     const char *names[] = {ADAPTER, NULL};
     g_dbus_connection_unregister_object(f->server, f->adapter_registration);
@@ -534,6 +568,8 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/delayed-adapter", Fixture, NULL, setup, test_delayed_adapter, teardown);
     g_test_add("/bluetooth/radio", Fixture, NULL, setup, test_radio, teardown);
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);
+    g_test_add("/bluetooth/removed-operation", Fixture, NULL, setup, test_removed_operation, teardown);
+    g_test_add("/bluetooth/completed-operation-error", Fixture, NULL, setup, test_completed_operation_error, teardown);
     g_test_add("/bluetooth/power-timeout", Fixture, NULL, setup, test_power_timeout, teardown);
     g_test_add("/bluetooth/airplane-reversal", Fixture, NULL, setup, test_airplane_reversal, teardown);
     g_test_add_func("/bluetooth/settings", test_settings);
