@@ -22,6 +22,7 @@ BuildRequires: rust >= 1.90
 BuildRequires: cargo >= 1.90
 BuildRequires: clang-devel
 BuildRequires: pipewire
+BuildRequires: dbus-daemon
 
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(upower-glib)

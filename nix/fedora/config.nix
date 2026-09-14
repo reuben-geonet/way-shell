@@ -57,6 +57,7 @@
         "upower"
         "systemd"
         "dbus-broker"
+        "dbus-daemon"
         "cmake-rpm-macros"
         "systemd-rpm-macros"
         "binutils"

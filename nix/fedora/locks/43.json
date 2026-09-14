@@ -32,6 +32,7 @@
     "cmake-rpm-macros",
     "curl",
     "dbus-broker",
+    "dbus-daemon",
     "diffutils",
     "fedora-release",
     "findutils",
@@ -297,8 +298,16 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/dbus-common-1.16.0-4.fc43.noarch.rpm"
     },
     {
+      "sha256": "ed597480bb7756a389f235c71542fa8c1154c2c3c1019d1497ad509ce6794b62",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/dbus-daemon-1.16.0-4.fc43.x86_64.rpm"
+    },
+    {
       "sha256": "ef58d829caa357ceeab4e29f7188ef85d9b951f5843c2631a36af90ce8180235",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/dbus-libs-1.16.0-4.fc43.x86_64.rpm"
+    },
+    {
+      "sha256": "3819e6618d1207d2c862b79eed0dcda54811166ad9c04490ccd1cec83032e831",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/d/dbus-tools-1.16.0-4.fc43.x86_64.rpm"
     },
     {
       "sha256": "45a3704aa738ad3d3e60918e2f3552fc4c2128b5a6c2bc07ab2ea73724f72240",
