@@ -11,34 +11,23 @@
 #include "./commands.h"
 
 #define SOCK_NAME "/way-shell.sock"
-#define CLIENT_SOCK_PREFIX "way-shell-"
 
 int client_socket_create(way_sh_ctx *ctx) {
-    struct timeval time;
-    struct sockaddr_un addr = {.sun_family = AF_UNIX, .sun_path = {0}};
-    char *p = &addr.sun_path[1];
-
-    gettimeofday(&time, NULL);
-    int r = time.tv_sec;
-
-    memcpy(p, CLIENT_SOCK_PREFIX, sizeof(CLIENT_SOCK_PREFIX) - 1);
-    p += sizeof(CLIENT_SOCK_PREFIX) - 1;
-    memcpy(p, &r, sizeof(r));
-
-    int fd = socket(AF_UNIX, SOCK_DGRAM, 0);
-    if (fd <= 0) {
-        printf("[Error] Failed to create socket\n");
-        return -1;
-    }
-
-    if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) != 0) {
-        printf("[Error] Failed to bind socket\n");
-        return -1;
-    }
-
+    struct sockaddr_un address = {.sun_family = AF_UNIX};
+    int fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
+    if (fd < 0) return -1;
+    // Linux autobind allocates an unused abstract address for each socket.
+    if (bind(fd, (struct sockaddr *)&address, sizeof(address.sun_family)) < 0)
+        goto fail;
+    memcpy(address.sun_path, ctx->server_socket_path, strlen(ctx->server_socket_path) + 1);
+    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) < 0) goto fail;
     ctx->client_sock = fd;
-
     return 0;
+fail:;
+    int saved = errno;
+    close(fd);
+    errno = saved;
+    return -1;
 }
 
 static void build_command_tree() {
@@ -67,62 +56,64 @@ static void build_command_tree() {
 	cmd_tree_node_add_child(&root_cmd, rename_switcher);
 }
 
+static bool help_argument(const char *arg) {
+    return strcmp(arg, "--help") == 0 || strcmp(arg, "-h") == 0;
+}
+
 int main(int argc, char **argv) {
-    way_sh_ctx ctx = {0};
-    int ret = 0;
-    char socket_path[256] = {0};
-    struct stat statsbuf = {0};
-    cmd_tree_node_t *cmd = {0};
-
-    // check if XDG_RUNTIME_DIR is set
-    char *xdg_runtime_dir = getenv("XDG_RUNTIME_DIR");
-    if (!xdg_runtime_dir) {
-        printf(
-            "[Error] XDG_RUNTIME_DIR env variable must be set so we can find "
-            "way-shell's IPC socket\n");
-        return -1;
-    }
-
-    strcpy(socket_path, xdg_runtime_dir);
-    strcat(socket_path, SOCK_NAME);
-
-    // ensure socket exists
-    if (stat(socket_path, &statsbuf) != 0) {
-        printf("[Error] IPC socket does not exist at %s\n", socket_path);
-        return -1;
-    }
-    ctx.server_socket_path = socket_path;
-
-    // ensure file is indeed a socket
-    if (!S_ISSOCK(statsbuf.st_mode)) {
-        printf("[Error] IPC socket path is not a socket: %s\n", socket_path);
-        return -1;
-    }
-
-    client_socket_create(&ctx);
-
+    way_sh_ctx ctx = {.client_sock = -1};
+    char socket_path[sizeof(((struct sockaddr_un *)0)->sun_path)];
+    struct stat status;
+    cmd_tree_node_t *cmd = NULL;
     build_command_tree();
 
-    // adjust argc and argv one past binary name.
-    // garbage in argv is fine, cmd_tree api handles this.
-    if (cmd_tree_search(&root_cmd, argc - 1, argv + 1, &cmd) != 1) {
-        printf("Failed to find command");
-        return -1;
-    }
-
-    if (!cmd) {
-        printf("Failed to find command");
-        return -1;
-    }
-
-    ret = cmd->exec(&ctx, cmd->argc, cmd->argv);
-
-    close(ctx.client_sock);
-
-    // flip boolean values for exit codes
-    if (ret) {
+    if (argc == 1 || (argc == 2 && help_argument(argv[1]))) {
+        root_cmd.exec(NULL, 0, NULL);
         return 0;
     }
+    if (argc > 256 || cmd_tree_search(&root_cmd, argc - 1, argv + 1, &cmd) != 1 ||
+        !cmd || cmd == &root_cmd) {
+        fprintf(stderr, "way-sh: unknown command or too many arguments\n");
+        return 2;
+    }
+    if ((cmd->child && cmd->argc == 0) ||
+        (cmd->argc == 1 && help_argument(cmd->argv[0]))) {
+        if (cmd->child) cmd->exec(NULL, 0, NULL);
+        else {
+            printf("Usage: way-sh");
+            for (int i = 1; i < argc - 1; i++) printf(" %s", argv[i]);
+            puts(strcmp(cmd->name, "set") == 0 ? " <volume: 0.0-1.0>" : "");
+        }
+        return 0;
+    }
+    bool volume_set = strcmp(cmd->name, "set") == 0;
+    float volume;
+    if (cmd->child || cmd->argc != (volume_set ? 1 : 0) ||
+        (volume_set && !way_sh_parse_volume(cmd->argv[0], &volume))) {
+        fprintf(stderr, "way-sh: invalid arguments; use --help (volume must be finite, 0.0-1.0)\n");
+        return 2;
+    }
 
-    return 1;
+    const char *runtime = getenv("XDG_RUNTIME_DIR");
+    if (!runtime || runtime[0] != '/' ||
+        snprintf(socket_path, sizeof(socket_path), "%s%s", runtime, SOCK_NAME) >= sizeof(socket_path)) {
+        fprintf(stderr, "way-sh: XDG_RUNTIME_DIR must be an absolute path that fits a Unix socket address\n");
+        return 1;
+    }
+    if (stat(socket_path, &status) != 0) {
+        perror("way-sh: cannot access shell socket");
+        return 1;
+    }
+    if (!S_ISSOCK(status.st_mode)) {
+        fprintf(stderr, "way-sh: path is not a socket: %s\n", socket_path);
+        return 1;
+    }
+    ctx.server_socket_path = socket_path;
+    if (client_socket_create(&ctx) < 0) {
+        perror("way-sh: cannot connect to shell socket");
+        return 1;
+    }
+    int result = cmd->exec(&ctx, cmd->argc, cmd->argv);
+    close(ctx.client_sock);
+    return result == 1 ? 0 : 1;
 }

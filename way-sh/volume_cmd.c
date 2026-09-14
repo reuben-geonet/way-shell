@@ -75,7 +75,6 @@ cmd_tree_node_t volume_cmd_down = {.name = "down", .exec = volume_down_exec};
 
 static int volume_set_exec(void *ctx, uint8_t argc, char **argv) {
     int ret = 0;
-    char *endptr = NULL;
     way_sh_ctx *way_ctx = ctx;
 
     if (argc != 1) {
@@ -87,9 +86,7 @@ static int volume_set_exec(void *ctx, uint8_t argc, char **argv) {
         .header = {.type = IPC_CMD_VOLUME_SET},
     };
 
-    msg.volume = strtof(argv[0], &endptr);
-
-    if (msg.volume < 0.0 || msg.volume > 1.0) {
+    if (!way_sh_parse_volume(argv[0], &msg.volume)) {
         printf("Volume must be a float between 0.0 and 1.0\n");
         return -1;
     }

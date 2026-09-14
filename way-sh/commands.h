@@ -1,38 +1,81 @@
+#pragma once
 #include "../lib/cmd_tree/include/cmd_tree.h"
+#include "../src/services/ipc_service/ipc_protocol.h"
+#include <errno.h>
+#include <poll.h>
 #include <stdbool.h>
-#include <endian.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
-
-#define IPC_SEND_MSG(way_ctx, msg)                                 \
-    struct sockaddr *addr = NULL;                                  \
-    struct sockaddr_un addr_un = {                                 \
-        .sun_family = AF_UNIX,                                     \
-        .sun_path = {0},                                           \
-    };                                                             \
-    strcpy(&addr_un.sun_path[0], way_ctx->server_socket_path);     \
-    addr = (struct sockaddr *)&addr_un;                            \
-    ret = sendto(way_ctx->client_sock, &msg, sizeof(msg), 0, addr, \
-                 sizeof(addr_un))
-
-/* The server sends a four-byte gboolean, not a C bool or a pointer. */
-static inline int way_sh_receive(int fd, bool *response) {
-    uint32_t wire_response = 0;
-    *response = false;
-    ssize_t size = recvfrom(fd, &wire_response, sizeof(wire_response),
-                            MSG_TRUNC, NULL, NULL);
-    if (size != sizeof(wire_response) || le32toh(wire_response) > 1)
-        return -1;
-    *response = le32toh(wire_response) == 1;
-    return 0;
-}
-
-#define IPC_RECV_MSG(way_ctx, addr, response) \
-    way_sh_receive(way_ctx->client_sock, response)
+#include <time.h>
 
 typedef struct _ctx {
     char *server_socket_path;
     int client_sock;
+    int64_t deadline_ms;
 } way_sh_ctx;
+
+static inline int64_t way_sh_now_ms(void) {
+    struct timespec now;
+    if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) return -1;
+    return (int64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
+}
+
+static inline bool way_sh_parse_volume(const char *text, float *volume) {
+    char *end;
+    errno = 0;
+    *volume = strtof(text, &end);
+    return text != end && *end == '\0' && errno != ERANGE &&
+           isfinite(*volume) && *volume >= 0 && *volume <= 1;
+}
+
+static inline int way_sh_send(way_sh_ctx *ctx, const void *message, size_t size) {
+    uint8_t bytes[8];
+    uint32_t opcode;
+    _Static_assert(sizeof(IPCHeader) == 4 && sizeof(IPCVolumeSet) == 8,
+                   "unexpected C IPC layout");
+    memcpy(&opcode, message, sizeof(opcode));
+    ipc_write_u32(bytes, opcode);
+    if (size == 8) {
+        uint32_t bits;
+        memcpy(&bits, (const uint8_t *)message + 4, sizeof(bits));
+        ipc_write_u32(bytes + 4, bits);
+    }
+    int64_t now = way_sh_now_ms();
+    if (now < 0) return -1;
+    ctx->deadline_ms = now + 2000;
+    return send(ctx->client_sock, bytes, size, MSG_NOSIGNAL);
+}
+
+static inline int way_sh_receive(way_sh_ctx *ctx, bool *response) {
+    *response = false;
+    for (;;) {
+        int64_t now = way_sh_now_ms();
+        if (now < 0) break;
+        int64_t remaining = ctx->deadline_ms - now;
+        if (remaining <= 0) { errno = ETIMEDOUT; break; }
+        struct pollfd fd = {.fd = ctx->client_sock, .events = POLLIN};
+        int ready = poll(&fd, 1, (int)remaining);
+        if (ready < 0 && errno == EINTR) continue;
+        if (ready < 0) break;
+        if (ready == 0) { errno = ETIMEDOUT; break; }
+        uint8_t bytes[4];
+        ssize_t size = recv(ctx->client_sock, bytes, sizeof(bytes), MSG_TRUNC);
+        if (size < 0 && (errno == EINTR || errno == EAGAIN)) continue;
+        if (size < 0) break;
+        if (size != sizeof(bytes) || ipc_read_u32(bytes) > 1) {
+            errno = EPROTO;
+            break;
+        }
+        *response = ipc_read_u32(bytes) == 1;
+        return 0;
+    }
+    perror("way-sh: failed to receive acknowledgement");
+    return -1;
+}
+
+#define IPC_SEND_MSG(way_ctx, msg) ret = way_sh_send(way_ctx, &(msg), sizeof(msg))
+#define IPC_RECV_MSG(way_ctx, addr, response) way_sh_receive(way_ctx, response)
 
 // The root command node.
 //
