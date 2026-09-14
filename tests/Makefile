@@ -7,9 +7,10 @@ CORE_SOURCES := core.c \
   ../src/services/window_manager_service/sway/sway_client.c
 
 .PHONY: check clean
-check: core-test ipc-test
+check: core-test ipc-test theme-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
+	cd .. && tests/theme-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -18,5 +19,8 @@ core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/servic
 ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_service/ipc_protocol.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) ipc.c $(LDFLAGS) $(LDLIBS) -o $@
 
+theme-test: theme.c ../src/services/theme_service.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) theme.c $(LDFLAGS) $(LDLIBS) -o $@
+
 clean:
-	rm -f core-test ipc-test
+	rm -f core-test ipc-test theme-test

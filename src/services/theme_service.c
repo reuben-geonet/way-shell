@@ -37,29 +37,28 @@ static void theme_service_finalize(GObject *gobject) {
     G_OBJECT_CLASS(theme_service_parent_class)->finalize(gobject);
 };
 
-static void on_theme_switch(ThemeService *self) {
-    const char *conf_dir = g_get_user_config_dir();
-    char *arg = NULL;
-    if (theme_service_get_theme(self) == THEME_LIGHT) {
-        arg = "light";
-    } else {
-        arg = "dark";
-    }
-
+static void run_theme_hook(const char *conf_dir, const char *arg) {
     // check if {config_dir}/way-shell/on_theme_changed.sh file exists
     // if it does, execute it with
     char *script_path =
         g_build_filename(conf_dir, CONFIG_DIR, "on_theme_changed.sh", NULL);
     if (g_file_test(script_path,
                     G_FILE_TEST_EXISTS | G_FILE_TEST_IS_EXECUTABLE)) {
-        char *cmd = g_strdup_printf("bash -c '%s %s'", script_path, arg);
+        char *argv[] = {"bash", script_path, (char *)arg, NULL};
         GError *error = NULL;
-        g_spawn_command_line_async(cmd, &error);
+        g_spawn_async(NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL,
+                      NULL, &error);
         if (error != NULL) {
             g_warning("Failed to execute command: %s", error->message);
             g_error_free(error);
         }
     }
+    g_free(script_path);
+}
+
+static void on_theme_switch(ThemeService *self) {
+    run_theme_hook(g_get_user_config_dir(),
+                   theme_service_get_theme(self) == THEME_LIGHT ? "light" : "dark");
 }
 
 static void theme_service_class_init(ThemeServiceClass *klass) {

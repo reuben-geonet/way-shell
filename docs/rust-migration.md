@@ -34,6 +34,11 @@ size into a one-byte C bool. With Nix hardening every reply aborted with
 `buffer overflow detected`. Repair this before accepting CLI characterization:
 receive a four-byte integer, check its size/value, then convert to bool.
 
+Theme characterization also exposed a hook-path quoting failure: a configuration
+directory containing spaces or an apostrophe could not run `on_theme_changed.sh`.
+Pass the script and theme as separate Bash arguments. The regression fixture
+uses a directory containing both characters.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.
