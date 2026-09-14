@@ -75,6 +75,12 @@ index, map active to visible and focused to focused, unwrap `Ok.Outputs`, and
 encode strings with json-glib. Only complete integers in 1..255 become index
 references. Rust transfers the same fixtures and adds stable-ID references.
 
+The power-profile baseline fixture reproduces a missing profile-list update:
+`notify::profiles` called the active-profile handler. Correct the callback,
+retain the proxy's borrowed variant, own each profile string once, and disconnect
+the proxy before releasing the service. The regression also verifies that a
+released service receives no subsequent property callbacks.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

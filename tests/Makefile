@@ -6,10 +6,11 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test niri-test
+check: core-test ipc-test niri-test power-profiles-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/niri-test
+	cd .. && tests/power-profiles-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -21,5 +22,9 @@ ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_se
 niri-test: niri.c ../src/services/window_manager_service/niri/niri_client.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
+power-profiles-test: power-profiles.c ../src/services/power_profiles_service/power_profiles_service.c \
+  ../src/services/power_profiles_service/power_profiles_dbus.c ../src/services/power_profiles_service/power_profiles_dbus.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) power-profiles.c ../src/services/power_profiles_service/power_profiles_dbus.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
+
 clean:
-	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test
+	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test

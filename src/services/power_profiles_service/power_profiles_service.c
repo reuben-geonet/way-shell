@@ -13,7 +13,7 @@ struct _PowerProfilesService {
     GObject parent_instance;
     DbusPowerProfiles *dbus;
     GDBusConnection *conn;
-    const char *active_profile;
+    char *active_profile;
     GArray *profiles;
     gboolean enabled;
 };
@@ -22,7 +22,11 @@ G_DEFINE_TYPE(PowerProfilesService, power_profiles_service, G_TYPE_OBJECT);
 
 // stub out dispose, finalize, class_init, and init methods
 static void power_profiles_service_dispose(GObject *gobject) {
-    // Chain-up
+    PowerProfilesService *self = POWER_PROFILES_SERVICE(gobject);
+    if (self->dbus) g_signal_handlers_disconnect_by_data(self->dbus, self);
+    g_clear_object(&self->dbus);
+    g_clear_pointer(&self->profiles, g_array_unref);
+    g_clear_pointer(&self->active_profile, g_free);
     G_OBJECT_CLASS(power_profiles_service_parent_class)->dispose(gobject);
 };
 
@@ -61,6 +65,7 @@ static void power_profiles_service_dbus_connect(PowerProfilesService *self) {
         g_warning("Failed to connect to PowerProfiles service: %s",
                   error->message);
         self->enabled = false;
+        g_error_free(error);
         return;
     }
 
@@ -90,11 +95,12 @@ static void on_power_profiles_service_active_profile_change(
     // there is a chance this can be NULL if the service was restarted.
     if (!active_profile) return;
 
+    g_free(self->active_profile);
     self->active_profile = active_profile;
 
     // emit signal
     g_signal_emit(self, signals[active_profile_changed], 0,
-                  g_strdup(self->active_profile));
+                  self->active_profile);
 }
 
 static void on_power_profiles_service_profiles_change(
@@ -104,9 +110,6 @@ static void on_power_profiles_service_profiles_change(
         "change() "
         "called");
 
-    for (guint i = 0; i < self->profiles->len; i++) {
-        g_free(g_array_index(self->profiles, gchar *, i));
-    }
     g_array_set_size(self->profiles, 0);
 
     // extract profile strings from from 'aa{sv}'
@@ -123,16 +126,18 @@ static void on_power_profiles_service_profiles_change(
 
     g_variant_iter_init(&outer_iter, profiles);
     while (g_variant_iter_next(&outer_iter, "@a{sv}", &dict)) {
-        g_variant_lookup(dict, "Profile", "s", &profile);
-        char *duplicated_profile = g_strdup(profile);
-        g_array_append_val(self->profiles, duplicated_profile);
+        if (g_variant_lookup(dict, "Profile", "s", &profile))
+            g_array_append_val(self->profiles, profile);
         g_variant_unref(dict);
     }
 
-    g_variant_unref(profiles);
 
     // emit signal
     g_signal_emit(self, signals[profiles_changed], 0, self->profiles);
+}
+
+static void clear_profile(gpointer data) {
+    g_free(*(gchar **)data);
 }
 
 static void power_profiles_service_init(PowerProfilesService *self) {
@@ -140,6 +145,8 @@ static void power_profiles_service_init(PowerProfilesService *self) {
     power_profiles_service_dbus_connect(self);
 
     self->profiles = g_array_new(FALSE, FALSE, sizeof(gchar *));
+    g_array_set_clear_func(self->profiles, clear_profile);
+    if (!self->dbus) return;
 
     // profiles
     on_power_profiles_service_profiles_change(self->dbus, NULL, self);
@@ -155,7 +162,7 @@ static void power_profiles_service_init(PowerProfilesService *self) {
     // subscribe to profiles
     g_signal_connect(
         self->dbus, "notify::profiles",
-        G_CALLBACK(on_power_profiles_service_active_profile_change), self);
+        G_CALLBACK(on_power_profiles_service_profiles_change), self);
 };
 
 int power_profiles_service_global_init(void) {
@@ -172,7 +179,7 @@ PowerProfilesService *power_profiles_service_get_global() {
     g_debug(
         "power_profiles_service.c:power_profiles_service_get_global() "
         "called");
-    if (global->enabled) return global;
+    if (global && global->enabled) return global;
     return NULL;
 }
 
