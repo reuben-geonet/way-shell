@@ -35,7 +35,7 @@ BuildRequires: pkgconfig(gtk4-layer-shell-0)
 Requires: NetworkManager
 Requires: wireplumber
 Requires: upower
-Requires: power-profiles-daemon
+Requires: (power-profiles-daemon or tuned-ppd)
 Requires: systemd
 Requires: wayland-devel
 
