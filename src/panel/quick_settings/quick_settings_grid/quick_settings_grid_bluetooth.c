@@ -147,12 +147,18 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
     else
         gtk_widget_remove_css_class(GTK_WIDGET(self->button.toggle), "with-subtitle");
     quick_settings_grid_button_set_toggled(&self->button, powered);
-    gtk_image_set_from_icon_name(self->button.icon,
-        busy ? "bluetooth-acquiring-symbolic" :
-        powered ? "bluetooth-active-symbolic" : "bluetooth-disabled-symbolic");
+    /* GNOME uses this symbolic Bluetooth glyph with three dots for both
+     * transitions. The service stays busy through adapter re-enumeration. */
+    const char *icon_name = busy ? "bluetooth-acquiring-symbolic" :
+        powered ? "bluetooth-active-symbolic" : "bluetooth-disabled-symbolic";
+    gtk_image_set_from_icon_name(self->button.icon, icon_name);
+    quick_settings_menu_widget_set_icon(&self->menu, icon_name);
+    gboolean target = bluetooth_service_target_powered(self->service);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(self->button.toggle), busy
+        ? (target ? "Turning Bluetooth on…" : "Turning Bluetooth off…") : NULL);
     gtk_widget_set_sensitive(GTK_WIDGET(self->button.toggle), ready && !blocked);
     set_accessible_label(GTK_WIDGET(self->button.toggle),
-                         powered ? "Turn Bluetooth off" : "Turn Bluetooth on");
+                         target ? "Turn Bluetooth off" : "Turn Bluetooth on");
 }
 
 static void on_changed(BluetoothService *service,
