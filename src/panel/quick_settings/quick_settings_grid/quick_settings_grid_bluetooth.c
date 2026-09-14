@@ -129,6 +129,10 @@ static void sync_menu(QuickSettingsGridBluetoothButton *self,
 
     gtk_widget_set_visible(GTK_WIDGET(self->placeholder), !devices->len);
     gtk_widget_set_visible(GTK_WIDGET(self->menu.scroll), devices->len > 0);
+    /* Even a hidden automatic scrollbar imposes its minimum height. A single
+     * device needs no scrollbar, so let that row determine the viewport size. */
+    gtk_scrolled_window_set_policy(self->menu.scroll, GTK_POLICY_NEVER,
+        devices->len > 1 ? GTK_POLICY_AUTOMATIC : GTK_POLICY_NEVER);
     gtk_label_set_text(self->placeholder,
         !ready ? "Bluetooth service unavailable" :
         blocked ? "Bluetooth is disabled by a hardware switch" :

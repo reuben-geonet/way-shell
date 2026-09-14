@@ -2,7 +2,7 @@
 
 Name: way-shell
 Version: 0.0.10
-Release: 5%{?dist}
+Release: 6%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 
@@ -81,6 +81,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Tue Sep 15 2026 Way-Shell contributors - 0.0.10-6
+- Remove the unused scrollbar height below a single Bluetooth device.
+
 * Tue Sep 15 2026 Way-Shell contributors - 0.0.10-5
 - Wrap Bluetooth errors within the quick-settings panel.
 
