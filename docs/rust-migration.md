@@ -39,6 +39,11 @@ directory containing spaces or an apostrophe could not run `on_theme_changed.sh`
 Pass the script and theme as separate Bash arguments. The regression fixture
 uses a directory containing both characters.
 
+Clock characterization exposed a skipped first minute: synchronization scheduled
+the following minute without emitting the boundary it had just reached. Emit
+that update immediately and release the temporary timestamp. The deterministic
+test advances from 12:34:59 to 12:35:00 without waiting on real time.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

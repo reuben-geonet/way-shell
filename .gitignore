@@ -12,6 +12,7 @@ gresources.h
 /tests/core-test
 /tests/ipc-test
 /tests/theme-test
+/tests/clock-test
 __pycache__/
 
 # Build outputs

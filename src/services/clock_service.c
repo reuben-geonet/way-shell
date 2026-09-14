@@ -52,6 +52,8 @@ static gboolean tick_sync(gpointer self) {
         g_date_time_unref(now);
         return CLOCK_SERVICE(self)->enabled;
     }
+    g_date_time_unref(now);
+    emit_tick(self);
     g_timeout_add_seconds_full(G_PRIORITY_DEFAULT, 60, emit_tick, self, NULL);
     g_debug("clock_service.c:tick_sync() synchronized on minute boundary");
     return false;
