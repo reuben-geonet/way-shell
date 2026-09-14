@@ -20,6 +20,7 @@ gresources.h
 /tests/wayland-state-test
 /tests/power-boundary-test
 /tests/logind-test
+/tests/brightness-test
 __pycache__/
 
 # Build outputs

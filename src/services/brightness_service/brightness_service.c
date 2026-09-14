@@ -372,18 +372,18 @@ void brightness_service_backlight_up(BrightnessService *self) {
     int addend = self->max_backlight_brightness / 12;
 
     // add 1000 to current brightness
-    self->backlight_brightness += addend;
+    guint32 brightness = self->backlight_brightness + addend;
 
     // if brightness is over max brightness clamp it to max brightness
-    if (self->backlight_brightness > self->max_backlight_brightness)
-        self->backlight_brightness = self->max_backlight_brightness;
+    if (brightness > self->max_backlight_brightness)
+        brightness = self->max_backlight_brightness;
 
     // use logind service to set backlight
     if (logind_service_session_set_brightness(
             logind, "backlight",
             g_settings_get_string(self->systems_settings,
                                   "backlight-directory"),
-            self->backlight_brightness) != 0)
+            brightness) != 0)
         return;
 
     // file monitor will catch the change, update our internal state and
@@ -400,14 +400,14 @@ void brightness_service_backlight_down(BrightnessService *self) {
     gint32 brightness = self->backlight_brightness - subtrahend;
 
     // if brightness is under 0 clamp it to 0
-    self->backlight_brightness = (brightness < 0) ? 0 : brightness;
+    brightness = (brightness < 0) ? 0 : brightness;
 
     // use logind service to set backlight
     if (logind_service_session_set_brightness(
             logind, "backlight",
             g_settings_get_string(self->systems_settings,
                                   "backlight-directory"),
-            self->backlight_brightness) != 0)
+            brightness) != 0)
         return;
 
     // file monitor will catch the change, update our internal state and
@@ -449,20 +449,20 @@ void brightness_service_keyboard_up(BrightnessService *self) {
 
     get_current_keyboard_brightness(self);
 
-    self->keyboard_brightness += 1;
+    guint32 brightness = self->keyboard_brightness + 1;
 
     // if brightness exceeds max brightness, we actually want to turn off the
     // backlight. This works well for most modern laptops which only have a
     // single backlight button
-    if (self->keyboard_brightness > self->keyboard_max_brightness)
-        self->keyboard_brightness = 0;
+    if (brightness > self->keyboard_max_brightness)
+        brightness = 0;
 
     // use logind service to set backlight
     if (logind_service_session_set_brightness(
             logind, "leds",
             g_settings_get_string(self->systems_settings,
                                   "keyboard-backlight-directory"),
-            self->keyboard_brightness) != 0)
+            brightness) != 0)
         return;
 
     // file monitor will catch the change, update our internal state and
@@ -476,14 +476,11 @@ void brightness_service_keyboard_down(BrightnessService *self) {
 
     gint32 brightness = self->keyboard_brightness - 1;
 
-    // subtract 1000 from current brightness
-    self->keyboard_brightness -= 1;
-
     // if brightness is under 0 then we actually want to turn the brightness to
     // max.
     // This works well for most modern laptops which only have a single
     // backlight button
-    self->keyboard_brightness =
+    brightness =
         (brightness < 0) ? self->keyboard_max_brightness : brightness;
 
     // use logind service to set backlight
@@ -491,7 +488,7 @@ void brightness_service_keyboard_down(BrightnessService *self) {
             logind, "leds",
             g_settings_get_string(self->systems_settings,
                                   "keyboard-backlight-directory"),
-            self->keyboard_brightness) != 0)
+            brightness) != 0)
         return;
 
     // file monitor will catch the change, update our internal state and
