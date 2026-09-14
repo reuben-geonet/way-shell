@@ -881,7 +881,9 @@ statuspage {
 }
 
 #quick-settings-menu .bluetooth-placeholder {
-  margin: 24px 16px;
+  font-weight: 700;
+  font-size: 13pt;
+  margin: 2em 4em;
 }
 
 #quick-settings-menu .bluetooth-separator {
