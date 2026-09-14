@@ -6,3 +6,5 @@ way-sh/way-sh
 gresources.c
 gresources.h
 /.cache/
+/result
+/result-*

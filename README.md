@@ -30,7 +30,9 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
-Way-Shell currently targets Fedora 40 and will not work with previous version. 
+For Nix development, an installable native Nix package, and locally verified
+Fedora RPMs, see [the Nix guide](nix/README.md). Run `nix run .#rpm -- --list`
+for the supported Fedora releases.
 
 An [AUR package](https://aur.archlinux.org/packages/way-shell) also exists for Arch-based distros, which can be installed with any AUR helper, or with `makepkg` if you're feeling lucky.
 
