@@ -247,7 +247,8 @@ QuickSettingsGridBluetoothButton *quick_settings_grid_bluetooth_button_init(Blue
     GtkButton *error_button = GTK_BUTTON(gtk_button_new());
     self->error = GTK_LABEL(gtk_label_new(NULL));
     gtk_label_set_wrap(self->error, TRUE);
-    gtk_label_set_max_width_chars(self->error, 38);
+    gtk_label_set_wrap_mode(self->error, PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_max_width_chars(self->error, 24);
     gtk_button_set_child(error_button, GTK_WIDGET(self->error));
     gtk_widget_add_css_class(GTK_WIDGET(error_button), "failure-banner");
     set_accessible_label(GTK_WIDGET(error_button), "Dismiss Bluetooth error");
