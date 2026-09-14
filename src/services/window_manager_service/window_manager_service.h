@@ -38,7 +38,7 @@ window_manager_service_string_to_event(char *str) {
 typedef struct _WMWorkspace {
     gchar *name;
     gchar *output;
-    guint32 id;
+    guint64 id;
     gint32 num;
     gboolean urgent;
     gboolean focused;

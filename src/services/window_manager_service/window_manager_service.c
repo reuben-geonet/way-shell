@@ -24,7 +24,7 @@ int window_manager_service_init() {
         g_warning("Unknown backend: %s", backend);
         return -1;
     }
-    return 0;
+    return global ? 0 : -1;
 }
 
 // Obtain the global window manager service, a call to

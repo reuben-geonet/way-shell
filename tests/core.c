@@ -4,7 +4,6 @@
 
 #include "../src/services/wireplumber_service.h"
 #include "../src/services/wayland/gamma_control_service/colorramp.h"
-#include "../src/services/window_manager_service/sway/sway_client.h"
 
 static void volume_scaling(void) {
     g_assert_cmpfloat(volume_from_linear(-1, SCALE_CUBIC), ==, 0);
@@ -58,50 +57,10 @@ static void gamma_golden(void) {
     }
 }
 
-static sway_client_ipc_msg fixture(const char *path) {
-    sway_client_ipc_msg msg = {0};
-    gsize size = 0;
-    g_assert_true(g_file_get_contents(path, &msg.payload, &size, NULL));
-    msg.size = size;
-    return msg;
-}
-
-static void sway_workspaces(void) {
-    sway_client_ipc_msg msg = fixture("tests/fixtures/sway-workspaces.json");
-    GPtrArray *items = sway_client_ipc_get_workspaces_resp(&msg);
-    g_assert_nonnull(items);
-    g_assert_cmpuint(items->len, ==, 2);
-    WMWorkspace *first = items->pdata[0], *second = items->pdata[1];
-    g_assert_cmpuint(first->id, ==, 17);
-    g_assert_cmpstr(first->name, ==, "1: web");
-    g_assert_cmpstr(first->output, ==, "eDP-1");
-    g_assert_true(first->focused);
-    g_assert_false(first->urgent);
-    g_assert_cmpint(second->num, ==, -1);
-    g_assert_cmpstr(second->name, ==, "日本語");
-    g_assert_true(second->urgent);
-    g_ptr_array_unref(items);
-}
-
-static void sway_outputs(void) {
-    sway_client_ipc_msg msg = fixture("tests/fixtures/sway-outputs.json");
-    GPtrArray *items = sway_client_ipc_get_outputs_resp(&msg);
-    g_assert_nonnull(items);
-    g_assert_cmpuint(items->len, ==, 2);
-    WMOutput *first = items->pdata[0], *second = items->pdata[1];
-    g_assert_cmpstr(first->name, ==, "eDP-1");
-    g_assert_cmpstr(first->current_workspace, ==, "1: web");
-    g_assert_cmpstr(second->serial, ==, "1234");
-    g_assert_null(second->current_workspace);
-    g_ptr_array_unref(items);
-}
-
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/audio/volume-scaling", volume_scaling);
     g_test_add_func("/audio/channel-map", channels);
     g_test_add_func("/gamma/golden", gamma_golden);
-    g_test_add_func("/sway/workspaces", sway_workspaces);
-    g_test_add_func("/sway/outputs", sway_outputs);
     return g_test_run();
 }

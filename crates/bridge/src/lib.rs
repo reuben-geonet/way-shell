@@ -1,6 +1,7 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
 mod clock;
 mod theme;
+mod wm;
 use std::{
     ffi::{CStr, c_char},
     panic::{AssertUnwindSafe, catch_unwind},

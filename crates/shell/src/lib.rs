@@ -1,5 +1,6 @@
 //! Rust services and widgets introduced alongside the existing shell.
 
+pub mod platform;
 pub mod resources;
 pub mod services;
 

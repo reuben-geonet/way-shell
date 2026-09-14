@@ -57,6 +57,16 @@ EOF. Advance the buffer by the completed bytes, retry interrupted calls, and
 stop on EOF or a zero-length write. Deterministic two-byte operations cover
 both directions before transferring this contract to Rust.
 
+The Rust Sway backend uses bounded, nonblocking GIO streams, preserves partial
+reads/writes and 64-bit workspace identifiers, and clears stale state before
+reconnecting. An idle established socket has no connection deadline. Private
+socket fixtures cover those contracts, settings updates and owner destruction.
+Headless Sway verifies focus, rename, output hotplug and workspace movement.
+Literal names preserve quotes, backslashes, dollar signs and command separators;
+Sway IPC quote removal differs from shell escaping. Urgency clearing no longer
+requests focus. C retains only its temporary signal/vtable adapter and owned
+snapshots until the widgets migrate.
+
 ## Architecture and order
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.

@@ -7,6 +7,7 @@ license.workspace = true
 
 [dependencies]
 way-shell-core.workspace = true
+serde_json.workspace = true
 glib.workspace = true
 gio.workspace = true
 gtk.workspace = true
