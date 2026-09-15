@@ -2,7 +2,6 @@ use std::{
     os::unix::{fs::DirBuilderExt, fs::FileTypeExt},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant},
 };
 use wireplumber::{
@@ -18,11 +17,12 @@ pub struct Daemon {
 }
 impl Daemon {
     pub fn new() -> Self {
-        static NEXT_DAEMON: AtomicU64 = AtomicU64::new(0);
+        // This helper is included by multiple modules in one test executable.
+        // A module-local counter would repeat the same process/counter pair.
         let runtime = std::env::temp_dir().join(format!(
             "way-shell-audio-{}-{}",
             std::process::id(),
-            NEXT_DAEMON.fetch_add(1, Ordering::Relaxed)
+            glib::uuid_string_random()
         ));
         std::fs::DirBuilder::new()
             .mode(0o700)
@@ -59,7 +59,7 @@ impl Daemon {
     pub fn remote(&self) -> String {
         self.runtime.join("pipewire-0").to_str().unwrap().to_owned()
     }
-    #[allow(dead_code)] // The bridge inventory tests also include this helper.
+    #[allow(dead_code)] // Inventory fixtures do not need PulseAudio routing.
     pub fn start_pulse(&mut self) {
         assert!(self.child.is_some(), "private PipeWire is not started");
         assert!(
@@ -155,7 +155,7 @@ pub fn wait(context: &glib::MainContext, condition: impl Fn() -> bool) {
     }
 }
 
-// Shared with the bridge; routing fixtures do not require these graph helpers.
+// Routing fixtures do not require these graph helpers.
 #[allow(dead_code)]
 pub fn node(context: &glib::MainContext, core: &Core, name: &str, class: &str) -> Node {
     let properties = Properties::new();
