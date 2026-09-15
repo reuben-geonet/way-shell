@@ -337,3 +337,15 @@ and routing error regressions remain until their controls migrate. Workspace
 tests, Clippy and the linked application pass. Evidence:
 `audio-integrated-build.log` and `audio-inventory-final-checks.log` in
 `.cache/rust-migration/evidence`. Package checks are tracked separately.
+
+## Concurrent routing baseline fix
+
+Two overlapping C playback routing requests previously shared their destination
+and stream IDs, so only the second move happened. Each query now owns its IDs,
+destination name and native operation. Completion releases that operation once;
+owner loss or a failed/terminated PulseAudio connection cancels pending queries
+before releasing their callback data. Missing property lists are ignored safely.
+The regression covers concurrent destinations, normal completion, cancellation
+and both terminal connection states. The linked application and baseline checks
+pass; evidence is `audio-route-concurrency-before.log`,
+`audio-route-concurrency-resumed.log` and `audio-route-concurrency-reviewed.log`.

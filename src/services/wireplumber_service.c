@@ -9,15 +9,43 @@ extern gboolean way_shell_audio_available(WirePlumberService *self);
 /* Full reference; release after the call. */
 extern GObject *way_shell_audio_ref_mixer(WirePlumberService *self);
 
+typedef struct _Routing Routing;
 typedef struct {
+    Routing *routing;
+    guint32 stream_id, target_id;
+    gchar *target_name;
+    pa_operation *query;
+    gboolean matched;
+} RouteRequest;
+struct _Routing {
     GWeakRef owner;
     pa_context *pa_ctx;
     pa_glib_mainloop *pa_loop;
-    guint32 pending_output_stream, pending_sink;
-    guint32 pending_input_stream, pending_source;
-} Routing;
+    GPtrArray *requests;
+};
+static void route_request_free(gpointer data) {
+    RouteRequest *request = data;
+    if (request->query) {
+        pa_operation_cancel(request->query);
+        pa_operation_unref(request->query);
+    }
+    g_free(request->target_name);
+    g_free(request);
+}
+static void route_request_finished(RouteRequest *request) {
+    if (!request) return;
+    /* The end callback is already running: unref without cancelling it. */
+    pa_operation *operation = request->query;
+    request->query = NULL;
+    if (operation) pa_operation_unref(operation);
+    g_ptr_array_remove(request->routing->requests, request);
+}
+static void routing_cancel_requests(Routing *routing) {
+    g_clear_pointer(&routing->requests, g_ptr_array_unref);
+}
 static void routing_free(gpointer data) {
     Routing *routing = data;
+    routing_cancel_requests(routing);
     if (routing->pa_ctx) {
         pa_context_set_state_callback(routing->pa_ctx, NULL, NULL);
         pa_context_disconnect(routing->pa_ctx);
@@ -28,7 +56,12 @@ static void routing_free(gpointer data) {
     g_free(routing);
 }
 static void routing_state(pa_context *context, void *data) {
-    if (pa_context_get_state(context) == PA_CONTEXT_FAILED)
+    pa_context_state_t state = pa_context_get_state(context);
+    /* Context teardown cancels operations without invoking their query
+     * callbacks, so release their owned callback data here as well. */
+    if (state == PA_CONTEXT_FAILED || state == PA_CONTEXT_TERMINATED)
+        routing_cancel_requests(data);
+    if (state == PA_CONTEXT_FAILED)
         g_message("Stream routing is unavailable: %s", pa_strerror(pa_context_errno(context)));
 }
 static void routing_available(WirePlumberService *self, gboolean available, gpointer data) {
@@ -36,6 +69,7 @@ static void routing_available(WirePlumberService *self, gboolean available, gpoi
     if (!available) { g_object_set_data(G_OBJECT(self), "way-shell-pulse-routing", NULL); return; }
     if (routing) return;
     routing = g_new0(Routing, 1);
+    routing->requests = g_ptr_array_new_with_free_func(route_request_free);
     g_weak_ref_init(&routing->owner, self);
     routing->pa_loop = pa_glib_mainloop_new(g_main_context_default());
     routing->pa_ctx = pa_context_new(pa_glib_mainloop_get_api(routing->pa_loop), "org.ldelossa.way-shell");
@@ -52,84 +86,34 @@ int wire_plumber_service_global_init(void) {
     return 0;
 }
 
-void sink_input_info_cb(pa_context *c, const pa_sink_input_info *i, int eol,
-                        void *userdata) {
-    if (eol != 0 || !i) {
-        return;
-    }
-
-    Routing *routing = userdata;
-    g_autoptr(WirePlumberService) self = g_weak_ref_get(&routing->owner);
-    if (!self) return;
-
-    // we want to find the sink-input that matches our pending output stream.
-    const char *key = "object.id";
-    const char *value;
-
-    value = pa_proplist_gets(i->proplist, key);
-    if (!value) return;
-
-    guint32 id = g_ascii_strtoull(value, NULL, 10);
-    if (id != routing->pending_output_stream) return;
-
-    g_debug(
-        "wireplumber_service.c:sink_input_info_cb() found sink-input id: %d, "
-        "for wireplumber sink id: %d",
-        i->index, id);
-
-    // we found the sink-input, now get our WirePlumberServiceNode for the sink
-    // we are linking to.
-    WirePlumberServiceNode *node =
-        g_hash_table_lookup(wire_plumber_service_get_db(self), GUINT_TO_POINTER(routing->pending_sink));
-
-    if (!node) return;
-
-    // perform move-sink-input pa operation
-    pa_operation *o = pa_context_move_sink_input_by_name(
-        routing->pa_ctx, i->index, node->proper_name, NULL, NULL);
-    if (o) {
-        pa_operation_unref(o);
-    }
+static const char *route_target(RouteRequest *request, const pa_proplist *properties) {
+    if (!properties) return NULL;
+    const char *value = pa_proplist_gets(properties, "object.id");
+    if (!value || request->matched || g_ascii_strtoull(value, NULL, 10) != request->stream_id) return NULL;
+    g_autoptr(WirePlumberService) self = g_weak_ref_get(&request->routing->owner);
+    if (!self) return NULL;
+    WirePlumberServiceNode *node = g_hash_table_lookup(wire_plumber_service_get_db(self), GUINT_TO_POINTER(request->target_id));
+    if (!node || g_strcmp0(node->proper_name, request->target_name) != 0) return NULL;
+    request->matched = TRUE;
+    return request->target_name;
 }
-
-void source_output_info_cb(pa_context *c, const pa_source_output_info *i,
-                           int eol, void *userdata) {
-    if (eol != 0 || !i) {
-        return;
-    }
-
-    Routing *routing = userdata;
-    g_autoptr(WirePlumberService) self = g_weak_ref_get(&routing->owner);
-    if (!self) return;
-
-    const char *key = "object.id";
-    const char *value;
-
-    value = pa_proplist_gets(i->proplist, key);
-    if (!value) return;
-
-    guint32 id = g_ascii_strtoull(value, NULL, 10);
-    if (id != routing->pending_input_stream) return;
-
-    g_debug(
-        "wireplumber_service.c:source_output_info_cb() found source-output id: "
-        "%d, "
-        "for wireplumber sink id: %d",
-        i->index, id);
-
-    // we found the output source, now find the WirePlumberServiceNode for the
-    // source.
-    WirePlumberServiceNode *node =
-        g_hash_table_lookup(wire_plumber_service_get_db(self), GUINT_TO_POINTER(routing->pending_source));
-
-    if (!node) return;
-
-    // perform move-sink-input pa operation
-    pa_operation *o = pa_context_move_source_output_by_name(
-        routing->pa_ctx, i->index, node->proper_name, NULL, NULL);
-    if (o) {
-        pa_operation_unref(o);
-    }
+void sink_input_info_cb(pa_context *context, const pa_sink_input_info *info, int eol, void *data) {
+    RouteRequest *request = data;
+    if (!request) return;
+    if (eol != 0 || !info) { route_request_finished(request); return; }
+    const char *target = route_target(request, info->proplist);
+    if (!target) return;
+    pa_operation *operation = pa_context_move_sink_input_by_name(context, info->index, target, NULL, NULL);
+    if (operation) pa_operation_unref(operation);
+}
+void source_output_info_cb(pa_context *context, const pa_source_output_info *info, int eol, void *data) {
+    RouteRequest *request = data;
+    if (!request) return;
+    if (eol != 0 || !info) { route_request_finished(request); return; }
+    const char *target = route_target(request, info->proplist);
+    if (!target) return;
+    pa_operation *operation = pa_context_move_source_output_by_name(context, info->index, target, NULL, NULL);
+    if (operation) pa_operation_unref(operation);
 }
 
 void wire_plumber_service_set_link(WirePlumberService *self,
@@ -141,14 +125,6 @@ void wire_plumber_service_set_link(WirePlumberService *self,
     if (!routing || pa_context_get_state(routing->pa_ctx) != PA_CONTEXT_READY || !output || !input) {
         g_message("Stream routing is not ready"); return;
     }
-    // TODO: this should really be data tied to a 'request-id', such that
-    // multiple link changes can occur at once, creating a new 'request' each
-    // time.
-    routing->pending_input_stream = 0;
-    routing->pending_output_stream = 0;
-    routing->pending_sink = 0;
-    routing->pending_source = 0;
-
     // determine which one is our stream
     WirePlumberServiceNode *node = NULL;
     WirePlumberServiceAudioStream *stream = NULL;
@@ -181,27 +157,20 @@ void wire_plumber_service_set_link(WirePlumberService *self,
 
     if (!node || !stream) return;
 
-    // we need to now query the pulse audio api to find the 'sink-input' or
-    // 'source-outputs' which refer to our stream and move it to our discovered
-    // node.
-    if (stream->type == WIRE_PLUMBER_SERVICE_TYPE_INPUT_AUDIO_STREAM) {
-        routing->pending_input_stream = stream->id;
-        routing->pending_source = node->id;
-        pa_operation *o = pa_context_get_source_output_info_list(
-            routing->pa_ctx, source_output_info_cb, routing);
-        if (o) {
-            pa_operation_unref(o);
-        }
-    }
-    if (stream->type == WIRE_PLUMBER_SERVICE_TYPE_OUTPUT_AUDIO_STREAM) {
-        routing->pending_output_stream = stream->id;
-        routing->pending_sink = node->id;
-        pa_operation *o = pa_context_get_sink_input_info_list(
-            routing->pa_ctx, sink_input_info_cb, routing);
-        if (o) {
-            pa_operation_unref(o);
-        }
-    }
+    if (!routing->requests || !node->proper_name) return;
+    if ((stream->type == WIRE_PLUMBER_SERVICE_TYPE_INPUT_AUDIO_STREAM && node->type != WIRE_PLUMBER_SERVICE_TYPE_SOURCE) ||
+        (stream->type == WIRE_PLUMBER_SERVICE_TYPE_OUTPUT_AUDIO_STREAM && node->type != WIRE_PLUMBER_SERVICE_TYPE_SINK)) return;
+    RouteRequest *request = g_new0(RouteRequest, 1);
+    request->routing = routing;
+    request->stream_id = stream->id;
+    request->target_id = node->id;
+    request->target_name = g_strdup(node->proper_name);
+    g_ptr_array_add(routing->requests, request);
+    if (stream->type == WIRE_PLUMBER_SERVICE_TYPE_INPUT_AUDIO_STREAM)
+        request->query = pa_context_get_source_output_info_list(routing->pa_ctx, source_output_info_cb, request);
+    else
+        request->query = pa_context_get_sink_input_info_list(routing->pa_ctx, sink_input_info_cb, request);
+    if (!request->query) g_ptr_array_remove(routing->requests, request);
 }
 
 
