@@ -17,7 +17,6 @@ gresources.h
 /tests/niri-test
 /tests/power-profiles-test
 /tests/power-profiles-widgets-test
-/tests/power-boundary-test
 /tests/logind-test
 /tests/brightness-test
 /tests/battery-widgets-test

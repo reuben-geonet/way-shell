@@ -7,38 +7,28 @@
 
 struct _PanelStatusBarPowerButton {
     GObject parent_instance;
-    UpDevice *power_dev;
+    UPowerService *service;
     GtkImage *icon;
-    int signals[2];
 };
 G_DEFINE_TYPE(PanelStatusBarPowerButton, panel_status_bar_power_button,
               G_TYPE_OBJECT);
 
-static void on_battery_icon_change(GObject *object, GParamSpec *pspec,
-                                   PanelStatusBarPowerButton *self) {
-    char *icon_name = NULL;
-
-    g_debug("panel_status_bar_power_button.c:on_battery_icon_change() called.");
-
-    icon_name = upower_device_map_icon_name(UP_DEVICE(object));
-
-    g_debug("quick_settings_button.c:on_battery_icon_change() icon_name: %s",
-            icon_name);
-
-    // update icon
-    gtk_image_set_from_icon_name(self->icon, icon_name);
+static void on_power_changed(UPowerService *service,
+                             PanelStatusBarPowerButton *self) {
+    UpDevice *device = upower_service_get_primary_device(service);
+    gtk_image_set_from_icon_name(self->icon, upower_device_map_icon_name(device));
+    gtk_widget_set_tooltip_text(GTK_WIDGET(self->icon),
+                                device ? NULL : "Power information is unavailable");
 }
 
 // stub out dispose, finalize, class_init, and init methods
 static void panel_status_bar_power_button_dispose(GObject *gobject) {
     PanelStatusBarPowerButton *self = PANEL_STATUS_BAR_POWER_BUTTON(gobject);
 
-    // disconnect from signals
-    g_signal_handler_disconnect(self->power_dev, self->signals[0]);
-    g_signal_handler_disconnect(self->power_dev, self->signals[1]);
-
-    // unref power device
-    g_object_unref(self->power_dev);
+    if (self->service) {
+        g_signal_handlers_disconnect_by_func(self->service, on_power_changed, self);
+        g_clear_object(&self->service);
+    }
 
     // Chain-up
     G_OBJECT_CLASS(panel_status_bar_power_button_parent_class)
@@ -60,25 +50,10 @@ static void panel_status_bar_power_button_class_init(
 
 static void panel_status_bar_power_button_init_layout(
     PanelStatusBarPowerButton *self) {
-    gchar *name = NULL;
-
-    // get power device
-    UPowerService *upower = upower_service_get_global();
-
-    self->power_dev = upower_service_get_primary_device(upower);
-    g_object_ref(self->power_dev);
-
-    name = upower_device_map_icon_name(self->power_dev);
-
-    // create icon
-    self->icon = GTK_IMAGE(gtk_image_new_from_icon_name(name));
-
-    self->signals[0] =
-        g_signal_connect(self->power_dev, "notify::percentage",
-                         G_CALLBACK(on_battery_icon_change), self);
-    self->signals[1] =
-        g_signal_connect(self->power_dev, "notify::state",
-                         G_CALLBACK(on_battery_icon_change), self);
+    self->service = g_object_ref(upower_service_get_global());
+    self->icon = GTK_IMAGE(gtk_image_new());
+    g_signal_connect(self->service, "changed", G_CALLBACK(on_power_changed), self);
+    on_power_changed(self->service, self);
 
 };
 

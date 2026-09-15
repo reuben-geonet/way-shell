@@ -15,23 +15,39 @@ typedef struct _QuickSettingsBatteryMenu {
     GtkScale *battery_scale;
     GtkLabel *battery_time;
     GtkLabel *battery_percentage;
-    GSettings *settings;
+    UPowerService *service;
 } QuickSettingsBatteryMenu;
 G_DEFINE_TYPE(QuickSettingsBatteryMenu, quick_settings_battery_menu,
               G_TYPE_OBJECT);
 
-static void on_power_dev_notify(UpDevice *power_dev, GParamSpec *pspec,
-                                QuickSettingsBatteryMenu *self) {
+static void on_power_changed(UPowerService *service,
+                             QuickSettingsBatteryMenu *self) {
+    UpDevice *power_dev = upower_service_get_primary_device(service);
+    if (!power_dev) {
+        gtk_image_set_from_icon_name(self->menu.icon, "battery-missing-symbolic");
+        gtk_range_set_value(GTK_RANGE(self->battery_scale), 0);
+        gtk_label_set_text(self->battery_time, "Power information is unavailable");
+        gtk_label_set_text(self->battery_percentage, "—");
+        return;
+    }
     g_debug("quick_settings_battery_button.c:on_power_dev_notify() called.");
 
-    gchar *icon_name = upower_device_map_icon_name(power_dev);
+    const gchar *icon_name = upower_device_map_icon_name(power_dev);
     gtk_image_set_from_icon_name(self->menu.icon, icon_name);
 
     gboolean is_recharable = false;
     g_object_get(power_dev, "is-rechargeable", &is_recharable, NULL);
     if (!is_recharable) {
         gtk_range_set_value(GTK_RANGE(self->battery_scale), 100);
-        gtk_label_set_text(self->battery_time, "");
+        gtk_label_set_text(self->battery_time, "AC power");
+        gtk_label_set_text(self->battery_percentage, "");
+        return;
+    }
+    if (!upower_service_primary_has_percentage(service)) {
+        gtk_range_set_value(GTK_RANGE(self->battery_scale), 0);
+        gtk_label_set_text(self->battery_time, "Battery percentage is unavailable");
+        gtk_label_set_text(self->battery_percentage, "—");
+        return;
     }
 
     double percent = 0;
@@ -108,10 +124,11 @@ static void quick_settings_battery_menu_dispose(GObject *gobject) {
     QuickSettings *qs = quick_settings_get_global();
     g_signal_handlers_disconnect_by_func(qs, on_quick_settings_hidden, gobject);
 
-    UPowerService *upower = upower_service_get_global();
-    UpDevice *power_dev = upower_service_get_primary_device(upower);
-    g_signal_handlers_disconnect_by_func(power_dev, on_power_dev_notify,
-                                         gobject);
+    QuickSettingsBatteryMenu *self = QUICK_SETTINGS_BATTERY_MENU(gobject);
+    if (self->service) {
+        g_signal_handlers_disconnect_by_func(self->service, on_power_changed, self);
+        g_clear_object(&self->service);
+    }
 
     // Chain-up
     G_OBJECT_CLASS(quick_settings_battery_menu_parent_class)->dispose(gobject);
@@ -163,15 +180,9 @@ static void quick_settings_battery_menu_init_layout(
 
     gtk_box_append(self->menu.options, GTK_WIDGET(container));
 
-    UPowerService *upower = upower_service_get_global();
-
-    // get primary power device
-    UpDevice *power_dev = upower_service_get_primary_device(upower);
-
-    on_power_dev_notify(power_dev, NULL, self);
-
-    g_signal_connect(power_dev, "notify", G_CALLBACK(on_power_dev_notify),
-                     self);
+    self->service = g_object_ref(upower_service_get_global());
+    g_signal_connect(self->service, "changed", G_CALLBACK(on_power_changed), self);
+    on_power_changed(self->service, self);
 
     // wire into quick settings hidden event and close all revealers
     QuickSettings *qs = quick_settings_get_global();
@@ -184,10 +195,10 @@ void quick_settings_battery_menu_reinitialize(QuickSettingsBatteryMenu *self) {
     QuickSettings *qs = quick_settings_get_global();
     g_signal_handlers_disconnect_by_func(qs, on_quick_settings_hidden, self);
 
-    // kill signals to power device
-    UPowerService *upower = upower_service_get_global();
-    UpDevice *power_dev = upower_service_get_primary_device(upower);
-    g_signal_handlers_disconnect_by_func(power_dev, on_power_dev_notify, self);
+    if (self->service) {
+        g_signal_handlers_disconnect_by_func(self->service, on_power_changed, self);
+        g_clear_object(&self->service);
+    }
 
     quick_settings_battery_menu_init_layout(self);
 }
