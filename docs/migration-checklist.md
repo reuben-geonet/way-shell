@@ -29,7 +29,7 @@ a claim that the complete migration is ready to install.
 - [x] 23. Migrate network inventory and radio state to Rust.
 - [x] 24. Migrate network connection management to Rust.
 - [x] 25. Migrate WirePlumber object tracking to Rust.
-- [ ] 26. Migrate volume and stream routing to Rust.
+- [x] 26. Migrate volume and stream routing to Rust.
 - [ ] 27. Migrate MPRIS integration to Rust.
 - [ ] 28. Migrate the notification service to Rust.
 - [ ] 29. Migrate tray watcher and item tracking to Rust.
@@ -79,6 +79,9 @@ a claim that the complete migration is ready to install.
 - [x] Fedora 43/44 package matrix for network connections (`0cb7076`): build/install/uninstall and selected power providers pass; artifact `.cache/rust-migration/artifacts/network-connections-rpms` -> `/nix/store/h0b9569m0w2kmfxynh6pvmxnsdl5g29h-way-shell-rpms`.
 - [x] Rust audio tracking: private PipeWire devices, streams, ports, links, defaults, mixer notifications, microphone activity, hotplug/restart, owned snapshots, descriptor cleanup, C ABI and adapter recovery; workspace tests, Clippy and linked application pass.
 - [ ] Native/Fedora package matrix for Rust audio tracking.
+- [x] Rust volume/routing controls, confirmed playback/capture moves, concurrent requests, cancellation, restart, deadlines, C ABI, amplified-volume compatibility, full workspace tests, formatting, Clippy and linked build.
+- [x] Fedora 43/44 dependency images validate the private PulseAudio routing fixtures; both locks add only `pipewire-pulseaudio`.
+- [ ] Native/Fedora package matrix for the completed Rust audio service.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -96,7 +99,7 @@ The active checkout is the main repository at
 user's request so VS Code shows the edits and branch history. The Bluetooth
 branch is preserved. The former cache worktree is detached and inactive.
 
-Rust owns Wayland, power, networking and audio inventory. The audio adapter
-preserves stable C records and clears removed references before releasing them.
-C volume and PulseAudio routing controls remain for step 26. Private daemon and
-widget checks pass; package and laptop acceptance remain separate gates.
+Rust owns Wayland, power, networking and the complete audio service, including
+volume and PulseAudio stream routing. The audio adapter preserves stable C
+records for the remaining widgets. MPRIS migration is next; package and laptop
+acceptance remain separate gates.

@@ -20,7 +20,6 @@ gresources.h
 /tests/power-widgets-test
 /tests/brightness-widgets-test
 /tests/network-test
-/tests/audio-inventory-test
 /tests/network-operations-test
 __pycache__/
 
@@ -45,4 +44,4 @@ gschemas.compiled
 
 /tests/audio-widgets-test
 
-/tests/audio-controls-test
+/nix/fedora/locks/.update-*/

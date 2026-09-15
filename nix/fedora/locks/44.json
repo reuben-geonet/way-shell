@@ -55,6 +55,7 @@
     "perl",
     "pipewire",
     "pipewire-devel",
+    "pipewire-pulseaudio",
     "pkgconf-pkg-config",
     "pulseaudio-libs-devel",
     "python3",
@@ -2620,6 +2621,10 @@
     {
       "sha256": "c3d14ff9cdcc392d2c702d3edb8c4ea28fd61ccff9378ffa658e78dc08f6de4c",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/pipewire-libs-1.6.2-1.fc44.x86_64.rpm"
+    },
+    {
+      "sha256": "c04eb66ff94b194e88f64ca775ddc0481dfdb58b55790120ea890bae6edf6337",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os/Packages/p/pipewire-pulseaudio-1.6.2-1.fc44.x86_64.rpm"
     },
     {
       "sha256": "a2647f765cbea1cee0a0472223efd7538676e9272b5e9725dd3e37d44e0d81c6",

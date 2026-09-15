@@ -25,6 +25,9 @@ wireplumber = { git = "https://github.com/saivert/wireplumber.rs", rev = "04fbbc
 glib-build-tools = "=0.21.0"
 pkg-config = "=0.3.34"
 
+pulse = { package = "libpulse-sys", version = "=1.23.0" }
+pulse-glib = { package = "libpulse-mainloop-glib-sys", version = "=1.22.0" }
+
 [profile.dev]
 debug = 1
 

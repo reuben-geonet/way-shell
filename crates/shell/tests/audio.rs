@@ -1,6 +1,6 @@
 use glib::prelude::*;
 use std::time::Duration;
-use way_shell::services::audio::{AudioService, NodeKind};
+use way_shell::services::audio::{AudioError, AudioService, NodeKind};
 use wireplumber::{
     Core, InitFlags,
     core::ObjectFeatures,
@@ -36,6 +36,144 @@ fn node(context: &glib::MainContext, core: &Core, name: &str, class: &str) -> No
     node
 }
 
+fn controls(context: &glib::MainContext, service: &AudioService, id: u32) {
+    let original = service.state().node(id).unwrap().volume.clone().unwrap();
+    let channels = original
+        .channels
+        .iter()
+        .map(|channel| (channel.index, channel.channel.clone()))
+        .collect::<Vec<_>>();
+    assert_eq!(channels.len(), 2);
+    for invalid in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -0.01, 1.01] {
+        assert_eq!(
+            service.set_volume(id, invalid),
+            Err(AudioError::InvalidVolume)
+        );
+    }
+    for invalid in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+        assert_eq!(
+            service.change_volume(id, invalid),
+            Err(AudioError::InvalidDelta)
+        );
+    }
+    assert_eq!(
+        service.set_volume(u32::MAX, 0.5),
+        Err(AudioError::NodeNotFound(u32::MAX))
+    );
+    assert_eq!(
+        service.set_muted(u32::MAX, true),
+        Err(AudioError::NodeNotFound(u32::MAX))
+    );
+    assert_eq!(
+        service.change_volume(u32::MAX, 0.05),
+        Err(AudioError::NodeNotFound(u32::MAX))
+    );
+
+    let observed = |volume: f64, mute: bool| {
+        let state = service.state();
+        let actual = state.node(id).unwrap().volume.as_ref().unwrap();
+        assert_eq!(
+            actual
+                .channels
+                .iter()
+                .map(|c| (c.index, c.channel.clone()))
+                .collect::<Vec<_>>(),
+            channels
+        );
+        actual.mute == mute && (actual.volume - volume).abs() < 0.0001
+    };
+    service.set_muted(id, !original.mute).unwrap();
+    wait(context, || observed(original.volume, !original.mute));
+    let state = service.state();
+    let changed = state.node(id).unwrap().volume.as_ref().unwrap();
+    assert_eq!(changed.channels, original.channels);
+    service.set_muted(id, original.mute).unwrap();
+    wait(context, || observed(original.volume, original.mute));
+    assert_eq!(
+        service
+            .state()
+            .node(id)
+            .unwrap()
+            .volume
+            .as_ref()
+            .unwrap()
+            .channels,
+        original.channels
+    );
+    service.set_volume(id, 0.73).unwrap();
+    wait(context, || observed(0.73, original.mute));
+    // Preserve the existing master-volume operation: WirePlumber sets every channel
+    // to the requested level while retaining the channel indices and positions.
+    assert!(
+        service
+            .state()
+            .node(id)
+            .unwrap()
+            .volume
+            .as_ref()
+            .unwrap()
+            .channels
+            .iter()
+            .all(|channel| (channel.volume - 0.73).abs() < 0.0001)
+    );
+    service.set_muted(id, false).unwrap();
+    wait(context, || observed(0.73, false));
+    service.set_muted(id, true).unwrap();
+    wait(context, || observed(0.73, true));
+    service.set_muted(id, false).unwrap();
+    wait(context, || observed(0.73, false));
+    service.set_volume(id, 0.98).unwrap();
+    wait(context, || observed(0.98, false));
+    service.change_volume(id, 0.05).unwrap();
+    wait(context, || observed(1.0, false));
+    service.change_volume(id, 0.05).unwrap();
+    assert!(observed(1.0, false));
+    service.set_volume(id, 0.02).unwrap();
+    wait(context, || observed(0.02, false));
+    service.change_volume(id, -0.05).unwrap();
+    wait(context, || observed(0.0, false));
+    service.change_volume(id, -0.05).unwrap();
+    assert!(observed(0.0, false));
+    service.set_volume(id, 0.5).unwrap();
+    wait(context, || observed(0.5, false));
+}
+
+fn amplified_controls(
+    context: &glib::MainContext,
+    service: &AudioService,
+    mixer: &Plugin,
+    id: u32,
+) {
+    // Another mixer can amplify beyond the shell's 100% setting limit. Preserve
+    // the existing increment/decrement behavior for those externally set levels.
+    let values = std::collections::HashMap::from([("volume", 1.728_f64.to_variant())]).to_variant();
+    assert!(mixer.emit_by_name::<bool>("set-volume", &[&id, &values]));
+    let observed = || {
+        service
+            .state()
+            .node(id)
+            .unwrap()
+            .volume
+            .as_ref()
+            .unwrap()
+            .volume
+    };
+    wait(context, || (observed() - 1.2).abs() < 0.0001);
+    assert_eq!(service.set_volume(id, 1.2), Err(AudioError::InvalidVolume));
+    service.change_volume(id, 0.0).unwrap();
+    service.change_volume(id, 0.05).unwrap();
+    // Dispatch any native update so a wrongly clamped request cannot pass by
+    // observing the still-unchanged local snapshot immediately after the call.
+    context.block_on(glib::timeout_future(Duration::from_millis(50)));
+    assert!((observed() - 1.2).abs() < 0.0001);
+    service.change_volume(id, -0.05).unwrap();
+    wait(context, || (observed() - 1.15).abs() < 0.0001);
+    service.change_volume(id, -2.0).unwrap();
+    wait(context, || observed().abs() < 0.0001);
+    service.set_volume(id, 0.5).unwrap();
+    wait(context, || (observed() - 0.5).abs() < 0.0001);
+}
+
 #[test]
 fn inventory_defaults_removal_restart_and_ownership() {
     Core::init_with_flags(InitFlags::PIPEWIRE);
@@ -44,8 +182,12 @@ fn inventory_defaults_removal_restart_and_ownership() {
     context
         .with_thread_default(|| {
             let service = AudioService::with_remote(&daemon.remote());
+            assert_eq!(service.set_volume(0, 0.5), Err(AudioError::Unavailable));
+            assert_eq!(service.set_muted(0, true), Err(AudioError::Unavailable));
+            assert_eq!(service.change_volume(0, 0.05), Err(AudioError::Unavailable));
             wait(&context, || service.state().available);
             let state = service.state();
+            assert!(state.nodes.iter().all(|node| node.serial > 0));
             assert!(
                 state
                     .nodes
@@ -142,6 +284,41 @@ fn inventory_defaults_removal_restart_and_ownership() {
                     .len(),
                 2
             );
+            let channel_values = std::collections::HashMap::from([
+                (
+                    "0",
+                    std::collections::HashMap::from([
+                        ("volume", 0.125_f64.to_variant()),
+                        ("channel", "FL".to_variant()),
+                    ])
+                    .to_variant(),
+                ),
+                (
+                    "1",
+                    std::collections::HashMap::from([
+                        ("volume", 0.064_f64.to_variant()),
+                        ("channel", "FR".to_variant()),
+                    ])
+                    .to_variant(),
+                ),
+            ])
+            .to_variant();
+            let values =
+                std::collections::HashMap::from([("channelVolumes", channel_values)]).to_variant();
+            assert!(mixer.emit_by_name::<bool>("set-volume", &[&playback.bound_id(), &values]));
+            wait(&context, || {
+                service
+                    .state()
+                    .node(playback.bound_id())
+                    .and_then(|n| n.volume.as_ref())
+                    .is_some_and(|v| {
+                        v.channels.len() == 2
+                            && (v.channels[0].volume - 0.5).abs() < 0.0001
+                            && (v.channels[1].volume - 0.4).abs() < 0.0001
+                    })
+            });
+            controls(&context, &service, playback.bound_id());
+            amplified_controls(&context, &service, &mixer, playback.bound_id());
             let output = observed
                 .ports
                 .iter()
@@ -200,6 +377,10 @@ fn inventory_defaults_removal_restart_and_ownership() {
                     && !service.state().nodes.iter().any(|n| n.id == capture_id)
             });
             assert!(snapshot.nodes.iter().any(|n| n.name == "test-capture"));
+            assert_eq!(
+                service.set_volume(capture_id, 0.5),
+                Err(AudioError::NodeNotFound(capture_id))
+            );
             stream.request_destroy();
             playback.request_destroy();
             drop(metadata);
@@ -212,6 +393,8 @@ fn inventory_defaults_removal_restart_and_ownership() {
             assert!(service.state().nodes.is_empty());
             assert!(service.state().ports.is_empty());
             assert!(service.state().links.is_empty());
+            assert_eq!(service.set_volume(0, 0.5), Err(AudioError::Unavailable));
+            assert_eq!(service.set_muted(0, true), Err(AudioError::Unavailable));
             daemon.start();
             wait(&context, || {
                 service.state().available && !service.state().nodes.is_empty()

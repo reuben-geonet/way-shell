@@ -372,3 +372,38 @@ checks, and preservation of the selected power-profile providers. Artifact:
 `/nix/store/h0b9569m0w2kmfxynh6pvmxnsdl5g29h-way-shell-rpms`.
 Build and installation evidence is in `network-connections-rpm-resumed.log` and
 the artifact's `logs` directory.
+
+## Rust audio controls and routing
+
+Volume, mute and stream routing now use application-owned IDs and results in
+Rust. Mixer operations retain the plugin while releasing service state borrows
+before emitting native signals. Mute preserves each channel's volume. Master
+volume retains the existing WirePlumber channel-equalization behavior. Explicit
+volume settings still accept finite values from zero to one; externally
+amplified levels keep their existing incremental behavior (volume-up leaves
+them alone, and volume-down decreases them by five percent).
+
+PulseAudio routing uses the upstream `libpulse-sys` 1.23.0 and
+`libpulse-mainloop-glib-sys` 1.22.0 declarations behind private owning wrappers.
+They use GLib 0.21 on the existing application context. Each future owns its
+query and move callback data, cancels native operations before freeing that
+data, and reports success only after the server acknowledges the move. Requests
+check immutable PipeWire serials and current endpoint identities, expire after
+two seconds, cancel on owner loss, and recover after server restart or a stalled
+handshake. The accepted WirePlumber binding and system daemon remain in use.
+
+The temporary Rust adapter preserves the C API and record layout while rejecting
+unowned record addresses without dereferencing them. The C audio implementation,
+mixer-object escape hatch and C audio-control test helper are removed. Their
+regressions now run in Rust. Private PipeWire, PulseAudio and hardware-disabled
+WirePlumber policy instances verify playback/capture destinations, concurrent
+requests, native errors, removal, cancellation, reconnection and deadlines.
+Fixtures isolate configuration, state and D-Bus and reap their subprocesses.
+
+The Fedora build closures now include `pipewire-pulseaudio` for these tests.
+Both regenerated dependency images validate; each lock adds only that RPM.
+Evidence is in `audio-controls-fedora-locks-resumed.log`,
+`audio-controls-cutover.log`, `audio-routing-policy-verified.log` and
+`audio-amplified-volume-{before,after}.log`. Full workspace tests, formatting,
+Clippy and the linked application pass in `audio-controls-final-workspace.log`.
+Clean native and Fedora package results are tracked separately in the checklist.

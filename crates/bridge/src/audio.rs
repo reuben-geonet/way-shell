@@ -473,7 +473,7 @@ pub extern "C" fn wire_plumber_service_get_type() -> ffi::GType {
     catch_unwind(|| AudioAdapter::static_type().into_glib()).unwrap_or(0)
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn way_shell_audio_global_init() -> i32 {
+pub extern "C" fn wire_plumber_service_global_init() -> i32 {
     catch_unwind(AssertUnwindSafe(|| {
         GLOBAL.with(|global| {
             if global.borrow().is_none() {
@@ -502,6 +502,117 @@ unsafe fn borrowed(pointer: *mut glib::gobject_ffi::GObject) -> Option<AudioAdap
     }
     let object: Borrowed<glib::Object> = unsafe { from_glib_borrow(pointer) };
     object.downcast_ref::<AudioAdapter>().cloned()
+}
+impl AudioAdapter {
+    fn command_node(&self, pointer: *const c_void) -> Option<u32> {
+        // Compare owned record addresses without dereferencing a stale C record.
+        self.imp()
+            .records
+            .borrow()
+            .iter()
+            .find_map(|(&id, record)| {
+                (record.pointer().cast_const() == pointer
+                    && matches!(record, Record::Device(..) | Record::Stream(..)))
+                .then_some(id)
+            })
+    }
+    fn control(
+        &self,
+        node: *const c_void,
+        action: impl FnOnce(&AudioService, u32) -> Result<(), way_shell::services::audio::AudioError>,
+    ) {
+        let service = self.imp().service.borrow().clone();
+        if let Some(service) = service
+            && let Some(id) = self.command_node(node)
+            && let Err(error) = action(&service, id)
+        {
+            eprintln!("Audio control failed: {error}");
+        }
+    }
+}
+macro_rules! audio_control {
+    ($name:ident, $action:expr) => {
+        /// # Safety
+        /// The adapter is NULL or a live borrowed GObject. The record address is borrowed.
+        #[unsafe(no_mangle)]
+        pub unsafe extern "C" fn $name(
+            pointer: *mut glib::gobject_ffi::GObject,
+            node: *const c_void,
+        ) {
+            let _ = catch_unwind(AssertUnwindSafe(|| {
+                if let Some(adapter) = unsafe { borrowed(pointer) } {
+                    adapter.control(node, $action);
+                }
+            }));
+        }
+    };
+}
+audio_control!(wire_plumber_service_volume_up, |service, id| service
+    .change_volume(id, 0.05));
+audio_control!(wire_plumber_service_volume_down, |service, id| service
+    .change_volume(id, -0.05));
+audio_control!(wire_plumber_service_volume_mute, |service, id| service
+    .set_muted(id, true));
+audio_control!(wire_plumber_service_volume_unmute, |service, id| service
+    .set_muted(id, false));
+/// # Safety
+/// The adapter is NULL or a live borrowed GObject. The record address is borrowed.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wire_plumber_service_set_volume(
+    pointer: *mut glib::gobject_ffi::GObject,
+    node: *const c_void,
+    volume: f64,
+) {
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        if let Some(adapter) = unsafe { borrowed(pointer) } {
+            adapter.control(node, |service, id| service.set_volume(id, volume));
+        }
+    }));
+}
+/// # Safety
+/// The adapter is NULL or a live borrowed GObject. Record addresses are borrowed.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn wire_plumber_service_set_link(
+    pointer: *mut glib::gobject_ffi::GObject,
+    output: *const c_void,
+    input: *const c_void,
+) {
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        let Some(adapter) = (unsafe { borrowed(pointer) }) else {
+            return;
+        };
+        let service = adapter.imp().service.borrow().clone();
+        let (Some(service), Some(output), Some(input)) = (
+            service,
+            adapter.command_node(output),
+            adapter.command_node(input),
+        ) else {
+            return;
+        };
+        let state = service.state();
+        let (Some(output_node), Some(input_node)) = (state.node(output), state.node(input)) else {
+            return;
+        };
+        let (stream, target) = if matches!(
+            output_node.kind,
+            NodeKind::InputStream | NodeKind::OutputStream
+        ) {
+            (output, input)
+        } else if matches!(
+            input_node.kind,
+            NodeKind::InputStream | NodeKind::OutputStream
+        ) {
+            (input, output)
+        } else {
+            return;
+        };
+        let route = service.route(stream, target);
+        glib::MainContext::ref_thread_default().spawn_local(async move {
+            if let Err(error) = route.await {
+                eprintln!("Audio control failed: {error}");
+            }
+        });
+    }));
 }
 macro_rules! getter {
     ($name:ident, $output:ty, $fallback:expr, $body:expr) => {
@@ -561,18 +672,6 @@ getter!(
 getter!(wire_plumber_service_microphone_active, i32, 0, |a| {
     i32::from(a.imp().state.borrow().microphone_active())
 });
-getter!(
-    way_shell_audio_ref_mixer,
-    *mut glib::gobject_ffi::GObject,
-    std::ptr::null_mut(),
-    |a| a
-        .imp()
-        .service
-        .borrow()
-        .as_ref()
-        .and_then(AudioService::compatibility_mixer)
-        .map_or(std::ptr::null_mut(), |m| m.into_glib_ptr())
-);
 /// # Safety
 /// A non-NULL media class is a readable NUL-terminated string for this call.
 #[unsafe(no_mangle)]
@@ -596,6 +695,36 @@ getter!(way_shell_audio_available, i32, 0, |a| i32::from(
     a.imp().state.borrow().available
 ));
 
+#[unsafe(no_mangle)]
+pub extern "C" fn wire_plumber_service_map_sink_vol_icon(volume: f32, muted: i32) -> *const c_char {
+    if muted != 0 {
+        c"audio-volume-muted-symbolic"
+    } else if volume < 0.25 {
+        c"audio-volume-low-symbolic"
+    } else if volume < 0.5 {
+        c"audio-volume-medium-symbolic"
+    } else {
+        c"audio-volume-high-symbolic"
+    }
+    .as_ptr()
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn wire_plumber_service_map_source_vol_icon(
+    volume: f32,
+    muted: i32,
+) -> *const c_char {
+    if muted != 0 {
+        c"microphone-sensitivity-muted-symbolic"
+    } else if volume < 0.25 {
+        c"microphone-sensitivity-low-symbolic"
+    } else if volume < 0.5 {
+        c"microphone-sensitivity-medium-symbolic"
+    } else {
+        c"microphone-sensitivity-high-symbolic"
+    }
+    .as_ptr()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -603,6 +732,7 @@ mod tests {
     use way_shell::services::audio::{AudioPort, Volume};
     fn source() -> AudioNode {
         AudioNode {
+            serial: 100,
             id: 42,
             kind: NodeKind::Source,
             name: "node.name".into(),
@@ -662,7 +792,7 @@ mod tests {
                 adapter.apply(snapshot.clone());
                 assert_eq!(adapter.default_node(true).cast::<DeviceRecord>(), pointer);
                 assert_eq!(changes.get(), 1);
-                // C mute control currently keeps its restore value in this borrowed record.
+                // Preserve the unused ABI field until the last C widget migrates.
                 unsafe {
                     (*pointer).last_volume = 0.7;
                 }
@@ -733,6 +863,114 @@ mod tests {
                         sink.cast()
                     );
                 }
+                let id = adapter.imp().state.borrow().nodes[0].id;
+                let record = adapter.record(Some(id));
+                crate::audio_fixture::wait(&context, || {
+                    adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .is_some()
+                });
+                unsafe {
+                    wire_plumber_service_set_volume(pointer, record, 0.98);
+                }
+                crate::audio_fixture::wait(&context, || {
+                    (adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .as_ref()
+                        .unwrap()
+                        .volume
+                        - 0.98)
+                        .abs()
+                        < 0.0001
+                });
+                unsafe {
+                    wire_plumber_service_volume_up(pointer, record);
+                }
+                crate::audio_fixture::wait(&context, || {
+                    adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .as_ref()
+                        .unwrap()
+                        .volume
+                        == 1.0
+                });
+                unsafe {
+                    wire_plumber_service_volume_mute(pointer, record);
+                }
+                crate::audio_fixture::wait(&context, || {
+                    adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .as_ref()
+                        .unwrap()
+                        .mute
+                });
+                unsafe {
+                    wire_plumber_service_volume_unmute(pointer, record);
+                }
+                crate::audio_fixture::wait(&context, || {
+                    !adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .as_ref()
+                        .unwrap()
+                        .mute
+                });
+                assert_eq!(
+                    adapter
+                        .imp()
+                        .state
+                        .borrow()
+                        .node(id)
+                        .unwrap()
+                        .volume
+                        .as_ref()
+                        .unwrap()
+                        .volume,
+                    1.0
+                );
+                // A foreign/stale C record is rejected without dereferencing it,
+                // including the shorter stream layout that the old mute code overran.
+                #[repr(C)]
+                struct GuardedStream {
+                    record: StreamRecord,
+                    canary: [u8; 16],
+                }
+                let guarded = GuardedStream {
+                    record: StreamRecord::default(),
+                    canary: [0xa5; 16],
+                };
+                unsafe {
+                    wire_plumber_service_volume_mute(
+                        pointer,
+                        (&guarded.record as *const StreamRecord).cast(),
+                    );
+                    wire_plumber_service_set_volume(pointer, record, f64::NAN);
+                }
+                assert_eq!(guarded.canary, [0xa5; 16]);
                 daemon.stop();
                 crate::audio_fixture::wait(&context, || !adapter.imp().state.borrow().available);
                 unsafe {

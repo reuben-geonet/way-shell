@@ -6,7 +6,11 @@ use std::{
     time::Duration,
 };
 use wireplumber::{Core, InitFlags};
+mod controls;
 mod native;
+mod routing;
+pub use controls::AudioError;
+pub use routing::RouteError;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NodeKind {
@@ -60,6 +64,8 @@ pub struct Volume {
 #[derive(Clone, Debug, PartialEq)]
 pub struct AudioNode {
     pub id: u32,
+    /// Monotonic PipeWire identity; unlike the bound id, this is not reused after hotplug.
+    pub serial: u64,
     pub kind: NodeKind,
     pub name: String,
     pub description: String,
@@ -116,6 +122,9 @@ mod imp {
     pub struct AudioService {
         pub state: RefCell<AudioState>,
         pub remote: RefCell<Option<String>>,
+        pub pulse_server: RefCell<Option<String>>,
+        pub routing_enabled: Cell<bool>,
+        pub(super) router: RefCell<routing::Router>,
         pub(super) session: RefCell<Option<native::Session>>,
         pub task: RefCell<Option<glib::JoinHandle<()>>>,
         pub generation: Cell<u64>,
@@ -143,28 +152,26 @@ impl Default for AudioService {
 }
 impl AudioService {
     pub fn new() -> Self {
-        Self::create(None)
+        Self::create(None, None, true)
     }
-    /// Connect to a named or absolute PipeWire socket, also used by isolated tests.
+    /// Connect inventory to a named or absolute PipeWire socket. Routing stays disabled;
+    /// use `with_remotes` to select an explicit PulseAudio server as well.
     pub fn with_remote(remote: &str) -> Self {
-        Self::create(Some(remote.to_owned()))
+        Self::create(Some(remote.to_owned()), None, false)
     }
-    fn create(remote: Option<String>) -> Self {
+    /// Connect both protocols to explicit servers, for isolated operation/tests.
+    pub fn with_remotes(remote: &str, pulse_server: &str) -> Self {
+        Self::create(Some(remote.to_owned()), Some(pulse_server.to_owned()), true)
+    }
+    fn create(remote: Option<String>, pulse_server: Option<String>, routing_enabled: bool) -> Self {
         static INITIALIZED: OnceLock<()> = OnceLock::new();
         INITIALIZED.get_or_init(|| Core::init_with_flags(InitFlags::PIPEWIRE));
         let service: Self = glib::Object::new();
         service.imp().remote.replace(remote);
+        service.imp().pulse_server.replace(pulse_server);
+        service.imp().routing_enabled.set(routing_enabled);
         service.begin(false);
         service
-    }
-    /// Temporary retained object for the C volume adapter; removed with its last caller.
-    #[doc(hidden)]
-    pub fn compatibility_mixer(&self) -> Option<glib::Object> {
-        self.imp()
-            .session
-            .borrow()
-            .as_ref()
-            .and_then(native::Session::compatibility_mixer)
     }
     pub fn state(&self) -> AudioState {
         self.imp().state.borrow().clone()
@@ -174,6 +181,7 @@ impl AudioService {
         self.publish(AudioState::default());
     }
     fn reset(&self) {
+        self.imp().router.replace(routing::Router::default());
         self.imp()
             .generation
             .set(self.imp().generation.get().wrapping_add(1));

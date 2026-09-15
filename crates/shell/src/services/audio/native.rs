@@ -8,6 +8,27 @@ use wireplumber::{
     registry::{Interest, ObjectManager},
 };
 
+pub(super) struct Mixer(Plugin);
+impl Mixer {
+    pub fn set_volume(&self, id: u32, volume: f64) -> Result<(), AudioError> {
+        let linear = way_shell_core::audio::to_linear(volume, way_shell_core::audio::Scale::Cubic);
+        self.set(id, "volume", f64::from(linear).to_variant())
+    }
+
+    pub fn set_muted(&self, id: u32, muted: bool) -> Result<(), AudioError> {
+        self.set(id, "mute", muted.to_variant())
+    }
+
+    fn set(&self, id: u32, name: &str, value: glib::Variant) -> Result<(), AudioError> {
+        let values = HashMap::from([(name, value)]).to_variant();
+        if self.0.emit_by_name::<bool>("set-volume", &[&id, &values]) {
+            Ok(())
+        } else {
+            Err(AudioError::Rejected(id))
+        }
+    }
+}
+
 struct Handler(glib::Object, Option<glib::SignalHandlerId>);
 impl Handler {
     fn new(object: &impl IsA<glib::Object>, handler: glib::SignalHandlerId) -> Self {
@@ -42,8 +63,8 @@ impl Drop for Session {
     }
 }
 impl Session {
-    pub fn compatibility_mixer(&self) -> Option<glib::Object> {
-        self.mixer.clone().map(|m| m.upcast())
+    pub fn mixer(&self) -> Option<Mixer> {
+        self.mixer.clone().map(Mixer)
     }
 
     pub async fn connect(remote: Option<&str>) -> Result<Self, glib::Error> {
@@ -178,6 +199,10 @@ impl Session {
                         .and_then(read_volume);
                     state.nodes.push(AudioNode {
                         id: node.bound_id(),
+                        serial: node
+                            .get_pw_property("object.serial")
+                            .and_then(|serial| serial.parse().ok())
+                            .unwrap_or_default(),
                         kind,
                         description: node
                             .get_pw_property("node.description")

@@ -44,6 +44,7 @@
         "NetworkManager-libnm-devel"
         "pipewire-devel"
         "pipewire"
+        "pipewire-pulseaudio"
         "pulseaudio-libs-devel"
         "wayland-devel"
         "wayland-protocols-devel"

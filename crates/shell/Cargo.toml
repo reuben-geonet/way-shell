@@ -16,6 +16,8 @@ gtk4-layer-shell.workspace = true
 wayland-client.workspace = true
 wayland-protocols-wlr.workspace = true
 wireplumber.workspace = true
+pulse.workspace = true
+pulse-glib.workspace = true
 
 [build-dependencies]
 pkg-config.workspace = true
