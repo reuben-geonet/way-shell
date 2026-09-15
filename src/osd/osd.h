@@ -2,18 +2,11 @@
 
 #include <adwaita.h>
 
-G_BEGIN_DECLS
-
-struct _OSD;
-#define OSD_TYPE osd_get_type()
-G_DECLARE_FINAL_TYPE(OSD, osd, OSD, OSD, GObject);
-
-G_END_DECLS
-
-void osd_reinitialize(OSD *self);
+// Opaque handle owned by the Rust level-overlay controller.
+typedef struct _OSD OSD;
 
 void osd_activate(AdwApplication *app, gpointer user_data);
 
-OSD *osd_get_global();
+OSD *osd_get_global(void);
 
 void osd_set_hidden(OSD *self);

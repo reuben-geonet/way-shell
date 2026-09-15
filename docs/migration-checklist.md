@@ -44,7 +44,7 @@ a claim that the complete migration is ready to install.
 - [x] 38. Migrate mixer controls to Rust.
 - [x] 39. Migrate notification presentation to Rust.
 - [x] 40. Migrate calendar and media presentation to Rust.
-- [ ] 41. Migrate OSD and dialog overlays to Rust.
+- [x] 41. Migrate OSD and dialog overlays to Rust.
 - [ ] 42. Replace the shell IPC server with Rust.
 - [ ] 43. Replace the packaging schema probe with Rust.
 - [ ] 44. Move startup and shutdown into Rust.
@@ -114,6 +114,7 @@ a claim that the complete migration is ready to install.
 - [ ] Fedora package matrix through quick settings (`4c9bc21`): offline builds are running.
 - [x] Rust message tray: notification history/actions/DND, popup replacement/expiry, calendar and media cards, fade/underlay mediation and retained-widget cleanup pass on Sway/Niri. Full workspace, strict Clippy and clean linked build pass; eleven replaced C sources/headers and four obsolete C tests are removed.
 - [ ] Native/Fedora package matrix for the Rust message-tray cutover.
+- [x] Rust level OSD is active with the existing confirmation dialog. Audio/brightness updates, default-device suppression, animation/timer cancellation, removed devices, reentrancy and cleanup pass on Sway/Niri; affected Rust tests, strict Clippy and linked build pass.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

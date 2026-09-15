@@ -116,6 +116,10 @@ pub fn shutdown() {
         object.stop();
     }
 }
+pub(crate) fn is_visible() -> bool {
+    let window = GLOBAL.with(|global| global.borrow().as_ref().and_then(QuickSettings::window));
+    window.is_some_and(|window| window.is_visible())
+}
 fn current(handle: *const c_void) -> Option<QuickSettings> {
     GLOBAL.with(|global| {
         global

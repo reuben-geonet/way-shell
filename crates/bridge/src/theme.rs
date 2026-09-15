@@ -125,6 +125,7 @@ pub extern "C" fn way_shell_rust_shutdown() {
         crate::activities::shutdown();
         crate::app_switcher::shutdown();
         crate::workspace_switchers::shutdown();
+        crate::osd::shutdown();
         crate::message_tray::shutdown();
         crate::quick_settings::shutdown();
         crate::dialog::shutdown();

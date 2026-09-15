@@ -107,6 +107,9 @@
             cargo build -p way-shell --example dialog-compat --frozen --jobs 1
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat niri
+            cargo build -p way-shell --example osd-compat --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-compat
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-compat niri
             cargo build -p way-shell --example quick-settings-audio-compat --example quick-settings-compat --frozen --jobs 1
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat niri

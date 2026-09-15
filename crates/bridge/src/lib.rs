@@ -16,6 +16,7 @@ mod media_fixture;
 mod message_tray;
 mod network;
 mod notifications;
+mod osd;
 mod panel;
 mod power;
 mod power_profiles;

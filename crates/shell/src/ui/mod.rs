@@ -3,6 +3,7 @@ pub mod activities;
 pub mod app_switcher;
 pub mod dialog;
 pub mod message_tray;
+pub mod osd;
 pub mod output_switcher;
 pub mod panel;
 pub mod quick_settings;

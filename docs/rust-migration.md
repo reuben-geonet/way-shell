@@ -982,3 +982,18 @@ are removed; the Rust examples now run under both Sway and Niri in native checks
 Component and composed-view evidence is in `message-tray-osd-components.log`
 and `message-tray-composition.log`; the full workspace, strict Clippy and clean
 linked-build gate is recorded in `message-tray-cutover-integrated.log`.
+
+## Rust level overlay
+
+The volume/brightness OSD now runs in Rust alongside the Rust confirmation
+dialog. It preserves the passive bottom layer, geometry, CSS, 350 ms slide and
+eight-second timeout. Initial audio inventory and default-device changes stay
+quiet; changes to the current device's volume/mute and brightness show the
+appropriate icon and level. Quick settings suppresses the overlay as before.
+
+Hiding cancels both the animation and timeout, new input during dismissal wins,
+and removal of the displayed device hides the stale level. Rust tests cover
+those fixes, keyboard brightness, repeated disposal and nested callbacks. The
+C implementation is removed; only startup and hide handles remain until the
+application entry point moves. Affected tests, strict Clippy, the linked shell
+and real Sway/Niri probes pass in `osd-cutover-integrated.log`.
