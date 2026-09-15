@@ -56,4 +56,7 @@ clean:
 	rm -f power-widgets-test
 	rm -f brightness-widgets-test
 	rm -f network-test network-operations-test
-	rm -f audio-inventory-test
+	rm -f audio-inventory-test audio-widgets-test
+
+audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@

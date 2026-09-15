@@ -138,7 +138,15 @@ static void on_default_source_change(WirePlumberService *wp,
                                      QuickSettingsScales *self) {
     g_debug("quick_settings_scales.c:on_default_source_change() called.");
 
-    if (!source) return;
+    self->active_source_node = source;
+    gtk_widget_set_sensitive(GTK_WIDGET(self->default_source_container), source != NULL);
+    if (!source) {
+        gtk_widget_set_visible(GTK_WIDGET(self->default_source_container), FALSE);
+        block_default_source_scale_changed_signals(self, true);
+        gtk_range_set_value(GTK_RANGE(self->default_source_scale), 0);
+        block_default_source_scale_changed_signals(self, false);
+        return;
+    }
 
     // we are going to update our sliders here, so block the event
     // which would occur when the slider is changed
@@ -227,7 +235,15 @@ static void on_default_sink_change(WirePlumberService *wp,
                                    QuickSettingsScales *self) {
     g_debug("quick_settings_scales.c:on_default_sink_change() called.");
 
-    if (!sink) return;
+    self->default_sink_node = sink;
+    gtk_widget_set_sensitive(GTK_WIDGET(self->default_sink_container), sink != NULL);
+    if (!sink) {
+        block_default_sink_scale_changed_signals(self, true);
+        gtk_range_set_value(GTK_RANGE(self->default_sink_scale), 0);
+        gtk_image_set_from_icon_name(self->default_sink_icon, "audio-volume-muted-symbolic");
+        block_default_sink_scale_changed_signals(self, false);
+        return;
+    }
 
     // we are going to update our sliders here, so block the event
     // which would occur when the slider is changed
@@ -406,8 +422,8 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
     self->default_sink_button = GTK_BUTTON(
         gtk_button_new_from_icon_name("audio-volume-muted-symbolic"));
 
-    g_signal_connect(self->default_sink_button, "clicked",
-                     G_CALLBACK(on_default_sink_button_clicked), self);
+    g_signal_connect_object(self->default_sink_button, "clicked",
+                     G_CALLBACK(on_default_sink_button_clicked), G_OBJECT(self), 0);
 
     self->default_sink_icon = GTK_IMAGE(
         gtk_widget_get_first_child(GTK_WIDGET(self->default_sink_button)));
@@ -424,7 +440,7 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
     // default source setup
     self->default_source_container =
         GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
-    gtk_widget_set_name(GTK_WIDGET(self->default_source_scale),
+    gtk_widget_set_name(GTK_WIDGET(self->default_source_container),
                         "default-source-container");
 
     // start source as hidden
@@ -437,8 +453,8 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
     self->default_source_button = GTK_BUTTON(
         gtk_button_new_from_icon_name("microphone-muted-high-symbolic"));
 
-    g_signal_connect(self->default_source_button, "clicked",
-                     G_CALLBACK(on_active_source_button_clicked), self);
+    g_signal_connect_object(self->default_source_button, "clicked",
+                     G_CALLBACK(on_active_source_button_clicked), G_OBJECT(self), 0);
 
     self->default_source_icon = GTK_IMAGE(
         gtk_widget_get_first_child(GTK_WIDGET(self->default_source_button)));
@@ -450,18 +466,18 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
 
     WirePlumberService *wp = wire_plumber_service_get_global();
     WirePlumberServiceNode *default_source =
-        wire_plumber_service_get_default_sink(wp);
-    on_default_sink_change(wp, default_source, self);
+        wire_plumber_service_get_default_source(wp);
+    on_default_source_change(wp, default_source, self);
 
     WirePlumberServiceNode *default_sink =
         wire_plumber_service_get_default_sink(wp);
     on_default_sink_change(wp, default_sink, self);
 
-    g_signal_connect(wp, "default-source-changed",
-                     G_CALLBACK(on_default_source_change), self);
+    g_signal_connect_object(wp, "default-source-changed",
+                     G_CALLBACK(on_default_source_change), G_OBJECT(self), 0);
 
-    g_signal_connect(wp, "default-sink-changed",
-                     G_CALLBACK(on_default_sink_change), self);
+    g_signal_connect_object(wp, "default-sink-changed",
+                     G_CALLBACK(on_default_sink_change), G_OBJECT(self), 0);
 
     // wire up to container
     gtk_box_append(self->audio_scales_revealer_contents,
@@ -496,26 +512,26 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
                        GTK_WIDGET(self->brightness_scale));
 
         // listen for brightness changes
-        g_signal_connect(bs, "brightness-changed",
-                         G_CALLBACK(on_brightness_change), self);
+        g_signal_connect_object(bs, "brightness-changed",
+                         G_CALLBACK(on_brightness_change), G_OBJECT(self), 0);
 
         // get initial brightness value
         float brightness = brightness_service_get_backlight(bs);
         gtk_range_set_value(GTK_RANGE(self->brightness_scale), brightness);
 
         // connect to scale's Range::value-changed signal
-        g_signal_connect(GTK_RANGE(self->default_sink_scale), "value-changed",
-                         G_CALLBACK(on_sink_scale_value_changed), self);
+        g_signal_connect_object(GTK_RANGE(self->default_sink_scale), "value-changed",
+                         G_CALLBACK(on_sink_scale_value_changed), G_OBJECT(self), 0);
 
-        g_signal_connect(GTK_RANGE(self->default_source_scale), "value-changed",
-                         G_CALLBACK(on_source_scale_value_changed), self);
+        g_signal_connect_object(GTK_RANGE(self->default_source_scale), "value-changed",
+                         G_CALLBACK(on_source_scale_value_changed), G_OBJECT(self), 0);
 
-        g_signal_connect(GTK_RANGE(self->brightness_scale), "value-changed",
-                         G_CALLBACK(on_brightness_scale_changed), self);
+        g_signal_connect_object(GTK_RANGE(self->brightness_scale), "value-changed",
+                         G_CALLBACK(on_brightness_scale_changed), G_OBJECT(self), 0);
 
         gtk_box_append(self->container, GTK_WIDGET(self->brightness_container));
-        g_signal_connect(bs, "availability-changed", G_CALLBACK(on_brightness_availability), self);
-        g_signal_connect(bs, "operation-failed", G_CALLBACK(on_brightness_failed), self);
+        g_signal_connect_object(bs, "availability-changed", G_CALLBACK(on_brightness_availability), G_OBJECT(self), 0);
+        g_signal_connect_object(bs, "operation-failed", G_CALLBACK(on_brightness_failed), G_OBJECT(self), 0);
         on_brightness_availability(bs, self);
     }
 }

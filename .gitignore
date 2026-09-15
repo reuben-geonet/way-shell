@@ -42,3 +42,5 @@ gschemas.compiled
 /src/services/status_notifier_service/status_notifier_item_dbus.h
 /src/services/status_notifier_service/status_notifier_watcher_dbus.c
 /src/services/status_notifier_service/status_notifier_watcher_dbus.h
+
+/tests/audio-widgets-test

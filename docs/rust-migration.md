@@ -291,3 +291,13 @@ GVariant's boolean format. It now reads a double, and missing mixer data produce
 safe defaults while node identity and names remain inventoried. The regression
 fails with the original format and passes with the correction; the linked build
 and C suite also pass (`audio-mixer-before.log`, `audio-mixer-after.log`).
+
+Audio control baseline fixtures reproduce an invalid widget access during
+construction, initialization from the wrong default device, retained pointers to
+removed devices, and callbacks surviving their controller. The controls now read
+the correct initial source, clear and disable unavailable devices, recover when
+they return, and use weak GObject callback ownership. The regression passes under
+both Sway and Niri, including widgets retained after controller destruction.
+Native package checks now include this fixture. Evidence is in the
+`audio-widgets-*.log` files; the main checkout's linked build and C checks pass in
+`audio-static-bridge-build.log`.
