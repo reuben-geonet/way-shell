@@ -12,6 +12,7 @@ typedef struct _QuickSesstingsGridPowerProfilesButton {
     // embedd this as first argument so we can cast to it.
     QuickSettingsGridButton button;
     QuickSettingsGridPowerProfilesMenu *menu;
+    struct _PowerProfilesService *service;
 } QuickSettingsGridPowerProfilesButton;
 
 QuickSettingsGridPowerProfilesButton *

@@ -6,10 +6,9 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test power-profiles-test brightness-test
+check: core-test ipc-test brightness-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
-	cd .. && tests/power-profiles-test
 	cd .. && GSETTINGS_SCHEMA_DIR=tests GSETTINGS_BACKEND=memory tests/brightness-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
@@ -18,10 +17,6 @@ core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/servic
 
 ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_service/ipc_protocol.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) ipc.c $(LDFLAGS) $(LDLIBS) -o $@
-
-power-profiles-test: power-profiles.c ../src/services/power_profiles_service/power_profiles_service.c \
-  ../src/services/power_profiles_service/power_profiles_dbus.c ../src/services/power_profiles_service/power_profiles_dbus.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) power-profiles.c ../src/services/power_profiles_service/power_profiles_dbus.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
 power-profiles-widgets-test: power-profiles-widgets.c \
   ../src/panel/quick_settings/quick_settings_grid/quick_settings_grid_power_profiles/quick_settings_grid_power_profiles_menu.c \
@@ -45,7 +40,7 @@ brightness-test: brightness.c ../src/services/brightness_service/brightness_serv
 	$(CC) $(CPPFLAGS) $(CFLAGS) brightness.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
 
 clean:
-	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test
+	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test
 	rm -f power-profiles-widgets-test
 	rm -f gschemas.compiled
 	rm -f brightness-test

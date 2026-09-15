@@ -1,6 +1,7 @@
 pub mod clock;
 pub mod logind;
 pub mod power;
+pub mod power_profiles;
 pub mod settings;
 pub mod theme;
 pub mod wayland;

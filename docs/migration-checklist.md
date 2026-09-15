@@ -24,7 +24,7 @@ a claim that the complete migration is ready to install.
 - [x] 18. Migrate Wayland connection and protocol ownership to Rust.
 - [x] 19. Migrate UPower integration to Rust.
 - [x] 20. Migrate logind session actions and inhibitors to Rust.
-- [ ] 21. Migrate power profile management to Rust.
+- [x] 21. Migrate power profile management to Rust.
 - [ ] 22. Migrate display and keyboard brightness to Rust.
 - [ ] 23. Migrate network inventory and radio state to Rust.
 - [ ] 24. Migrate network connection management to Rust.

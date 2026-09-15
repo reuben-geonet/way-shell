@@ -278,7 +278,8 @@ static void quick_settings_grid_init_layout(QuickSettingsGrid *self) {
     g_signal_connect(nm, "vpn-added", G_CALLBACK(on_vpn_added), self);
     g_signal_connect(nm, "vpn-removed", G_CALLBACK(on_vpn_removed), self);
 
-    // if power profiles service available create button for it
+    // Keep the profile control subscribed while a provider is unavailable;
+    // it becomes sensitive when the service reconnects.
     PowerProfilesService *pps = power_profiles_service_get_global();
     if (pps) {
         QuickSettingsGridPowerProfilesButton *pps_button =

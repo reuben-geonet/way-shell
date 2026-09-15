@@ -1,3 +1,5 @@
+#pragma once
+
 #include <adwaita.h>
 
 G_BEGIN_DECLS
@@ -13,11 +15,15 @@ int power_profiles_service_global_init(void);
 
 PowerProfilesService *power_profiles_service_get_global();
 
+gboolean power_profiles_service_get_enabled(PowerProfilesService *self);
+
+// Borrowed until the next profiles-changed signal; retain with g_array_ref.
 GArray *power_profiles_service_get_profiles(PowerProfilesService *self);
 
 void power_profiles_service_set_profile(PowerProfilesService *self,
                                         gchar *profile);
 
+// Borrowed until the next active-profile-changed signal.
 const gchar *power_profiles_service_get_active_profile(
     PowerProfilesService *self);
 

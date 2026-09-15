@@ -2,6 +2,7 @@
 mod clock;
 mod logind;
 mod power;
+mod power_profiles;
 mod theme;
 mod wayland;
 mod wm;

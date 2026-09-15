@@ -46,8 +46,6 @@
             "src/services/media_player_service/media_player_dbus.h"
             "src/services/notifications_service/notifications_dbus.c"
             "src/services/notifications_service/notifications_dbus.h"
-            "src/services/power_profiles_service/power_profiles_dbus.c"
-            "src/services/power_profiles_service/power_profiles_dbus.h"
             "src/services/status_notifier_service/dbusmenu_dbus.c"
             "src/services/status_notifier_service/dbusmenu_dbus.h"
             "src/services/status_notifier_service/status_notifier_host_dbus.c"

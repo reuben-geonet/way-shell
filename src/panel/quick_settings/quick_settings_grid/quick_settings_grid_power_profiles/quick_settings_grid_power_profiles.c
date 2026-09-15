@@ -9,23 +9,33 @@
 static void on_active_profile_change(
     PowerProfilesService *pps, char *power_profile,
     QuickSettingsGridPowerProfilesButton *self) {
-    gtk_label_set_text(self->button.subtitle, power_profile);
+    gtk_label_set_text(self->button.subtitle,
+                       power_profile && *power_profile ? power_profile : "Unavailable");
 
     const char *icon = power_profiles_service_profile_to_icon(power_profile);
     gtk_image_set_from_icon_name(self->button.icon, icon);
 
     // on selection of a new profile simulate a revealer button click which
     // closes the menu.
-    if (gtk_revealer_get_child_revealed(self->button.revealer)) {
+    if (self->button.revealer &&
+        gtk_revealer_get_child_revealed(self->button.revealer)) {
         g_signal_emit_by_name(G_OBJECT(self->button.reveal_button), "clicked");
     }
+}
+
+static void on_availability_change(PowerProfilesService *pps, gboolean available,
+                                   QuickSettingsGridPowerProfilesButton *self) {
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.toggle), available);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.reveal_button), available);
+    if (!available && self->button.revealer)
+        gtk_revealer_set_reveal_child(self->button.revealer, FALSE);
 }
 
 void quick_settings_grid_power_profiles_button_layout(
     QuickSettingsGridPowerProfilesButton *self) {
     // get power profiles service
     PowerProfilesService *power_profiles_service =
-        power_profiles_service_get_global();
+        self->service;
 
     // get active profile for subtitle and icon
     const gchar *active_profile =
@@ -34,18 +44,24 @@ void quick_settings_grid_power_profiles_button_layout(
     const char *icon = power_profiles_service_profile_to_icon(active_profile);
     quick_settings_grid_button_init(
         &self->button, QUICK_SETTINGS_BUTTON_PERFORMANCE, "Performance",
-        active_profile, icon,
+        active_profile ? active_profile : "Unavailable", icon,
         quick_settings_grid_power_profiles_button_get_menu_widget(self), NULL);
 
     // attach to active profile changed event
     g_signal_connect(power_profiles_service, "active-profile-changed",
                      G_CALLBACK(on_active_profile_change), self);
+    g_signal_connect(power_profiles_service, "availability-changed",
+                     G_CALLBACK(on_availability_change), self);
+    on_availability_change(power_profiles_service,
+        power_profiles_service_get_enabled(power_profiles_service), self);
 }
 
 QuickSettingsGridPowerProfilesButton *
 quick_settings_grid_power_profiles_button_init() {
     QuickSettingsGridPowerProfilesButton *self =
         g_malloc0(sizeof(QuickSettingsGridPowerProfilesButton));
+
+    self->service = g_object_ref(power_profiles_service_get_global());
 
     self->menu =
         g_object_new(QUICK_SETTINGS_GRID_POWER_PROFILES_MENU_TYPE, NULL);
@@ -68,8 +84,8 @@ void quick_settings_grid_power_profiles_button_free(
         "free() called");
 
     // kill signals
-    g_signal_handlers_disconnect_by_func(power_profiles_service_get_global(),
-                                         on_active_profile_change, self);
+    g_signal_handlers_disconnect_by_data(self->service, self);
+    g_clear_object(&self->service);
 
     // unref our menu
     g_object_unref(self->menu);
