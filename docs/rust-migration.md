@@ -680,3 +680,19 @@ From this point, new migration tests are written directly in Rust, following
 the user's updated direction. Existing C checks remain until Rust coverage
 replaces them. The prepared Rust menu service allows the watcher and menu
 integration to switch together, avoiding a disposable C menu adapter.
+
+## Rust tray menus
+
+The menu service owns a bounded layout tree and binds each endpoint to its
+unique bus owner. It preserves labels, visibility, sections and submenus;
+validates property types and duplicate IDs; and rejects oversized layouts.
+Refreshes, actions and AboutToShow calls are asynchronous, cancel on endpoint
+loss, and have a two-second deadline. An unsuccessful refresh retains the
+last valid tree with actions unavailable until recovery.
+
+AboutToShow now uses the actual returned boolean to request a refresh. Event
+encodes its integer payload in one variant and sends the supplied timestamp.
+Owned snapshot signals preserve order when observers stop or replace a menu.
+Seven private-bus integration tests, three parser tests and strict Clippy
+pass in `tray-menu-rust-verified.log`. The C tray remains active until the
+combined watcher/menu adapter cutover.

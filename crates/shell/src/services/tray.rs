@@ -3,6 +3,8 @@
 //! Item identity is the resolved unique bus owner plus object path. Requested
 //! well-known aliases remain private so replacing an owner cannot route actions
 //! to a different process through an old item handle.
+pub mod menu;
+
 use gio::prelude::*;
 use glib::subclass::prelude::*;
 use std::{
@@ -234,6 +236,35 @@ impl TrayService {
     }
     pub fn state(&self) -> TrayState {
         self.imp().state.borrow().clone()
+    }
+    /// Create an independently owned menu endpoint for a current item. The
+    /// caller stops it when the item or its menu path changes.
+    pub fn menu(&self, key: &ItemKey) -> Result<Option<menu::MenuService>, glib::Error> {
+        let missing = || {
+            glib::Error::new(
+                gio::IOErrorEnum::NotConnected,
+                "Tray item is no longer available",
+            )
+        };
+        if !self.imp().owned.get() {
+            return Err(missing());
+        }
+        let path = self
+            .imp()
+            .entries
+            .borrow()
+            .iter()
+            .find(|entry| &entry.key == key)
+            .and_then(|entry| entry.item.as_ref())
+            .ok_or_else(missing)?
+            .menu_path
+            .clone();
+        let connection = self
+            .connection()
+            .filter(|connection| !connection.is_closed())
+            .ok_or_else(missing)?;
+        path.map(|path| menu::MenuService::new(&connection, &key.owner, &path))
+            .transpose()
     }
     pub fn start(&self) {
         if !self.imp().running.replace(true) {
