@@ -119,6 +119,7 @@ pub extern "C" fn way_shell_rust_shutdown() {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         crate::panel::shutdown();
         crate::app_switcher::shutdown();
+        crate::workspace_switchers::shutdown();
         crate::audio::shutdown();
         crate::clock::shutdown();
         crate::brightness::shutdown();

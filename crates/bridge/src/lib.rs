@@ -20,6 +20,7 @@ mod theme;
 mod tray;
 mod wayland;
 mod wm;
+mod workspace_switchers;
 use std::{
     ffi::{CStr, c_char},
     panic::{AssertUnwindSafe, catch_unwind},

@@ -812,3 +812,27 @@ formatting, strict Clippy, clean linked application and remaining existing
 checks pass in `switcher-cutover-integrated.log`; before/after callback
 regressions are retained in `switcher-reentrant-*.log`. Native package checks
 now run the Rust probe on both compositors.
+
+
+## Rust workspace, output and rename views
+
+The workspace switcher now handles focus and move-window modes in Rust; the
+output and rename views share the same owned search surface. Selected rows
+carry full compositor IDs through reordering and renames, and raw commands
+preserve the user's exact text. Ctrl+Return in move-window mode now moves the
+window instead of unexpectedly focusing a workspace. Failed dispatch keeps the
+view and text available with a diagnostic; an empty rename remains a no-op.
+
+Seven new unit cases and real Sway/Niri fixtures cover typed selection, literal
+renames, raw movement, removal, keyboard commands and retained-widget disposal.
+The Sway fixture waits for compositor-confirmed placement before changing focus,
+so an empty test workspace cannot disappear prematurely. The tests, strict
+Clippy, clean linked application and existing checks pass in
+`workspace-switchers-cutover.log`; compositor evidence is retained in
+`workspace-switchers-{sway,niri}.log`.
+
+The C switcher implementations and shared C search view are removed. Small
+startup/command exports remain for C callers. With the Rust application
+switcher owning its Wayland interactions, the unused C toplevel snapshot and
+shortcut adapters, their headers and obsolete snapshot test are removed too.
+The permanent Rust Wayland and switcher tests retain their behavioral coverage.
