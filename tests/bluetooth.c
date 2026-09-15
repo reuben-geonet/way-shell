@@ -24,6 +24,8 @@ typedef struct {
     GDBusNodeInfo *info;
     gboolean powered;
     guint power_calls;
+    const char *power_error;
+    guint power_failures;
     gboolean fail_connect;
     guint calls;
     guint errors;
@@ -159,6 +161,11 @@ static gboolean set_property(GDBusConnection *connection, const char *sender,
                               gpointer data) {
     Fixture *f = data;
     f->power_calls++;
+    if (f->power_failures) {
+        f->power_failures--;
+        g_set_error_literal(error, g_quark_from_string(f->power_error), 0, "");
+        return FALSE;
+    }
     f->powered = g_variant_get_boolean(value);
     notify(f, path);
     return TRUE;
@@ -352,6 +359,21 @@ static void test_power_cycles(Fixture *f, gconstpointer data) {
     /* Ordinary off must not tear the USB controller down through rfkill. */
     struct rfkill_event radio;
     g_assert_cmpint(read(f->radio_peer, &radio, sizeof(radio)), ==, -1);
+}
+
+static void test_transient_power_error(Fixture *f, gconstpointer data) {
+    f->power_error = data;
+    g_dbus_error_register_error(g_quark_from_string(f->power_error), 0,
+                                f->power_error);
+    f->power_failures = 2;
+    bluetooth_service_set_powered(f->service, FALSE);
+    gint64 end = g_get_monotonic_time() + 2 * G_TIME_SPAN_SECOND;
+    while (bluetooth_service_busy(f->service) && g_get_monotonic_time() < end)
+        pump();
+    g_assert_cmpuint(f->errors, ==, 0);
+    g_assert_cmpuint(f->power_calls, ==, 3);
+    g_assert_false(bluetooth_service_busy(f->service));
+    g_assert_false(bluetooth_service_powered(f->service));
 }
 
 static void test_delayed_adapter(Fixture *f, gconstpointer data) {
@@ -650,6 +672,8 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/airplane", Fixture, NULL, setup, test_airplane, teardown);
     g_test_add("/bluetooth/external-override", Fixture, NULL, setup, test_external_override, teardown);
     g_test_add("/bluetooth/power-cycles", Fixture, NULL, setup, test_power_cycles, teardown);
+    g_test_add("/bluetooth/power-busy", Fixture, "org.bluez.Error.Busy", setup, test_transient_power_error, teardown);
+    g_test_add("/bluetooth/power-blocked", Fixture, "org.bluez.Error.Blocked", setup, test_transient_power_error, teardown);
     g_test_add("/bluetooth/delayed-adapter", Fixture, NULL, setup, test_delayed_adapter, teardown);
     g_test_add("/bluetooth/radio", Fixture, NULL, setup, test_radio, teardown);
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);

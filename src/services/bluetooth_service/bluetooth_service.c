@@ -344,13 +344,15 @@ static void operation_finished(GObject *source, GAsyncResult *result,
     gboolean target = power ? op->enabling : !g_strcmp0(op->method, "Connect");
     gboolean reached = current &&
         boolean_property(current, power ? "Powered" : "Connected") == target;
-    /* BlueZ can still be processing an rfkill unblock when Powered is set.
-     * Retry only that transient error; the UI stays busy throughout. */
+    /* BlueZ can already be changing power when an rfkill unblock returns
+     * the adapter. Retry its transient errors and keep the UI busy. */
     g_autofree char *remote = error ? g_dbus_error_get_remote_error(error) : NULL;
     if (power && relevant && !superseded && !reached && op->retries++ < 40 &&
         g_get_monotonic_time() < op->deadline &&
         !g_cancellable_is_cancelled(op->cancel) &&
-        (!g_strcmp0(remote, "org.bluez.Error.InProgress") ||
+        (!g_strcmp0(remote, "org.bluez.Error.Busy") ||
+         !g_strcmp0(remote, "org.bluez.Error.Blocked") ||
+         !g_strcmp0(remote, "org.bluez.Error.InProgress") ||
          !g_strcmp0(remote, "org.bluez.Error.NotReady") ||
          (!g_strcmp0(remote, "org.bluez.Error.Failed") &&
           (strstr(error->message, "Blocked") || strstr(error->message, "blocked"))))) {

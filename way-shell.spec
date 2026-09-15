@@ -2,7 +2,7 @@
 
 Name: way-shell
 Version: 0.0.10
-Release: 7%{?dist}
+Release: 8%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 
@@ -81,6 +81,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Tue Sep 15 2026 Way-Shell contributors - 0.0.10-8
+- Retry transient BlueZ Busy and Blocked errors during radio startup.
+
 * Tue Sep 15 2026 Way-Shell contributors - 0.0.10-7
 - Clear stale Bluetooth errors when a connection finishes after its timeout.
 
