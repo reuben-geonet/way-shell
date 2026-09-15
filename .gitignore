@@ -19,6 +19,7 @@ gresources.h
 /tests/battery-widgets-test
 /tests/power-widgets-test
 /tests/brightness-widgets-test
+/tests/network-test
 __pycache__/
 
 # Build outputs

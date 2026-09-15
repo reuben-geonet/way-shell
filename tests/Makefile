@@ -6,9 +6,13 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test
+check: core-test ipc-test network-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
+	cd .. && tests/network-test
+
+network-test: network.c ../src/services/network_manager_service.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -47,3 +51,4 @@ clean:
 	rm -f battery-widgets-test
 	rm -f power-widgets-test
 	rm -f brightness-widgets-test
+	rm -f network-test

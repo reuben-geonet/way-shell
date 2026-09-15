@@ -42,6 +42,13 @@ G_DEFINE_TYPE(NetworkManagerService, network_manager_service, G_TYPE_OBJECT);
 static void network_manager_service_dispose(GObject *gobject) {
     NetworkManagerService *self = NETWORK_MANAGER_SERVICE(gobject);
 
+    if (self->client)
+        g_signal_handlers_disconnect_by_data(self->client, self);
+    g_clear_object(&self->primary_dev);
+    g_clear_object(&self->client);
+    g_clear_pointer(&self->vpn_conns, g_hash_table_unref);
+    g_clear_pointer(&self->active_vpn_conns, g_hash_table_unref);
+
     // Chain-up
     G_OBJECT_CLASS(network_manager_service_parent_class)->dispose(gobject);
 };
@@ -116,13 +123,13 @@ static void on_changed(NMClient *client, GParamSpec *spec,
             break;
         case NM_STATE_CONNECTING:
             conn = nm_client_get_activating_connection(client);
-            if (!conn) return;
-            dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
+            if (conn && nm_active_connection_get_devices(conn)->len > 0)
+                dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
             break;
         case NM_STATE_CONNECTED_GLOBAL:
             conn = nm_client_get_primary_connection(client);
-            if (!conn) return;
-            dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
+            if (conn && nm_active_connection_get_devices(conn)->len > 0)
+                dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
             break;
         default:
             break;
@@ -168,7 +175,7 @@ static void on_vpn_connection_added(NMClient *client, NMConnection *conn,
     // We only care about tracking VPN connections.
     if (!connection_is_vpn(conn)) return;
 
-    g_hash_table_insert(self->vpn_conns, strdup(id), conn);
+    g_hash_table_insert(self->vpn_conns, g_strdup(id), g_object_ref(conn));
     int len = g_hash_table_size(self->vpn_conns);
 
     self->has_vpn = true;
@@ -198,7 +205,7 @@ static void on_active_vpn_connection_added(NMClient *client,
     if (!active_connection_is_vpn(conn)) return;
 
     const gchar *id = nm_active_connection_get_id(conn);
-    g_hash_table_insert(self->active_vpn_conns, strdup(id), conn);
+    g_hash_table_insert(self->active_vpn_conns, g_strdup(id), g_object_ref(conn));
 
     g_signal_emit(self, signals[vpn_activated], 0, conn);
 }
@@ -218,8 +225,8 @@ static void on_active_vpn_connection_removed(NMClient *client,
 static void network_manager_service_init(NetworkManagerService *self) {
     GError *error;
 
-    self->vpn_conns = g_hash_table_new(g_str_hash, g_str_equal);
-    self->active_vpn_conns = g_hash_table_new(g_str_hash, g_str_equal);
+    self->vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
+    self->active_vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
 
     self->client = nm_client_new(NULL, &error);
     if (!self->client) {
@@ -229,18 +236,6 @@ static void network_manager_service_init(NetworkManagerService *self) {
     }
 
     on_changed(self->client, NULL, self);
-
-    // populate existing VPN networks
-    const GPtrArray *connections = nm_client_get_connections(self->client);
-    for (int i = 0; i < connections->len; i++) {
-        NMConnection *conn = connections->pdata[i];
-        if (connection_is_vpn(conn)) {
-            g_object_ref(conn);
-            g_hash_table_insert(self->vpn_conns,
-                                g_strdup(nm_connection_get_id(conn)), conn);
-            self->has_vpn = true;
-        }
-    }
 
     // seed vpn connections
     const GPtrArray *conns = nm_client_get_connections(self->client);
