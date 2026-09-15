@@ -26,7 +26,7 @@ a claim that the complete migration is ready to install.
 - [x] 20. Migrate logind session actions and inhibitors to Rust.
 - [x] 21. Migrate power profile management to Rust.
 - [x] 22. Migrate display and keyboard brightness to Rust.
-- [ ] 23. Migrate network inventory and radio state to Rust.
+- [x] 23. Migrate network inventory and radio state to Rust.
 - [ ] 24. Migrate network connection management to Rust.
 - [ ] 25. Migrate WirePlumber object tracking to Rust.
 - [ ] 26. Migrate volume and stream routing to Rust.
@@ -69,7 +69,10 @@ a claim that the complete migration is ready to install.
 - [x] Wayland protocol fixtures, descriptor transfer, backpressure, repeated ownership and real Sway/Niri component checks (`fa909b9`).
 - [x] UPower, logind, power-profile and brightness service fixtures, adapter ownership, GTK controls, full workspace tests, Clippy and combined C/Rust build through `767efca`.
 - [x] Fedora 43/44 dependency images validate the private D-Bus test dependency (`c64a75f`).
-- [ ] Native and Fedora package matrix for the services through `767efca`, running from documentation checkpoint `2f40bf7`.
+- [x] Native package/schema check for the services through `767efca`, built from `2f40bf7`; artifact `../artifacts/power-services-native-schemas`.
+- [ ] Fedora package matrix for those services, running from checkpoint `2f40bf7`.
+- [x] Network inventory/radio private D-Bus fixtures using real libnm, C facade recovery, ownership, full local build/workspace checks and Clippy.
+- [ ] Native/Fedora package matrix for the network inventory port.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -82,10 +85,10 @@ are verification artifacts, not the final upgrade.
 
 ## Current work
 
-The separate Rust Wayland connection and all five power-related service ports
-are committed through `767efca`. Private service fixtures, compositor/component
-checks, Cargo tests, Clippy and the linked C/Rust shell pass locally. The power
-and brightness controls recover after service/device loss. Their old C service
-implementations and consumed generators are removed; C UI compatibility remains
-until the UI ports. NetworkManager inventory and connection management are next.
-The complete package matrix and real laptop verification remain required.
+Rust owns the Wayland connection, power services, and NetworkManager inventory
+and radio state. The network port uses asynchronous libnm initialization and
+operations, cancels requests when the daemon changes, and preserves the observed
+state after denial or timeout. Its temporary C facade retains native objects for
+the existing widgets and connection operations. Step 24 will migrate Wi-Fi,
+saved connections, VPN and WireGuard operations. The full local workspace tests
+and linked C/Rust shell pass; package and real laptop checks remain separate.

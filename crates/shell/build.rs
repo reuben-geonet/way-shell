@@ -1,6 +1,10 @@
 use std::{env, fs, path::PathBuf, process::Command};
 
 fn main() {
+    pkg_config::Config::new()
+        .atleast_version("1.24")
+        .probe("libnm")
+        .expect("libnm development files are required");
     let root = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("../..");
     let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
     for path in [

@@ -1,4 +1,5 @@
 #include "network_manager_service.h"
+#include "network_inventory.h"
 
 #include <NetworkManager.h>
 #include <adwaita.h>
@@ -22,11 +23,10 @@ enum signals {
 
 struct _NetworkManagerService {
     GObject parent_instance;
+    GObject *inventory;
     NMClient *client;
     NMDevice *primary_dev;
-    NMState last_state;
-    gboolean has_wifi;
-    gboolean has_ethernet;
+    gboolean networking_is_enabled;
     gboolean has_vpn;
     GHashTable *vpn_conns;
     GHashTable *active_vpn_conns;
@@ -42,6 +42,9 @@ G_DEFINE_TYPE(NetworkManagerService, network_manager_service, G_TYPE_OBJECT);
 static void network_manager_service_dispose(GObject *gobject) {
     NetworkManagerService *self = NETWORK_MANAGER_SERVICE(gobject);
 
+    if (self->inventory)
+        g_signal_handlers_disconnect_by_data(self->inventory, self);
+    g_clear_object(&self->inventory);
     if (self->client)
         g_signal_handlers_disconnect_by_data(self->client, self);
     g_clear_object(&self->primary_dev);
@@ -87,72 +90,6 @@ static void network_manager_service_class_init(
         "vpn-deactivated", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST, 0, NULL,
         NULL, NULL, G_TYPE_NONE, 1, G_TYPE_POINTER);
 };
-
-static void on_changed(NMClient *client, GParamSpec *spec,
-                       NetworkManagerService *self) {
-    g_debug("network_manager_service.c:on_change() called");
-
-    NMState state = 0;
-    NMDevice *dev = NULL;
-    NMActiveConnection *conn = NULL;
-
-    self->has_ethernet = false;
-    self->has_wifi = false;
-
-    const GPtrArray *devices = nm_client_get_devices(client);
-    for (int i = 0; i < devices->len; i++) {
-        NMDeviceType type = nm_device_get_device_type(devices->pdata[i]);
-        if (type == NM_DEVICE_TYPE_ETHERNET) {
-            self->has_ethernet = true;
-        }
-        if (type == NM_DEVICE_TYPE_WIFI) {
-            self->has_wifi = true;
-        }
-    }
-
-    state = nm_client_get_state(client);
-    self->last_state = state;
-    switch (state) {
-        case NM_STATE_UNKNOWN:
-        case NM_STATE_ASLEEP:
-        case NM_STATE_DISCONNECTED:
-        case NM_STATE_DISCONNECTING:
-        case NM_STATE_CONNECTED_LOCAL:
-        case NM_STATE_CONNECTED_SITE:
-            dev = NULL;
-            break;
-        case NM_STATE_CONNECTING:
-            conn = nm_client_get_activating_connection(client);
-            if (conn && nm_active_connection_get_devices(conn)->len > 0)
-                dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
-            break;
-        case NM_STATE_CONNECTED_GLOBAL:
-            conn = nm_client_get_primary_connection(client);
-            if (conn && nm_active_connection_get_devices(conn)->len > 0)
-                dev = g_ptr_array_index(nm_active_connection_get_devices(conn), 0);
-            break;
-        default:
-            break;
-    }
-
-    if (self->primary_dev) g_object_unref(self->primary_dev);
-    self->primary_dev = dev;
-    if (self->primary_dev) g_object_ref(self->primary_dev);
-
-    g_signal_emit(self, signals[changed], 0);
-};
-
-static void on_networking_enabled_changed(NMClient *client, GParamSpec *_,
-                                          NetworkManagerService *self) {
-    gboolean enabled = nm_client_networking_get_enabled(client);
-
-    // emit signals
-    if (enabled) {
-        g_signal_emit(self, signals[networking_enabled], 0, true);
-    } else {
-        g_signal_emit(self, signals[networking_enabled], 0, false);
-    }
-}
 
 gboolean connection_is_vpn(NMConnection *conn) {
     const gchar *type = nm_connection_get_connection_type(conn);
@@ -222,56 +159,61 @@ static void on_active_vpn_connection_removed(NMClient *client,
     g_signal_emit(self, signals[vpn_deactivated], 0, conn);
 }
 
-static void network_manager_service_init(NetworkManagerService *self) {
-    GError *error;
+/* C connection operations remain temporarily attached to the Rust-owned client. */
+static void on_inventory_changed(GObject *inventory, NetworkManagerService *self) {
+    NMClient *client = way_shell_network_inventory_client(inventory);
+    if (client != self->client) {
+        if (self->client)
+            g_signal_handlers_disconnect_by_data(self->client, self);
 
+        /* Retain each value while removal signals notify the existing widgets. */
+        GList *connections = g_hash_table_get_values(self->active_vpn_conns);
+        for (GList *item = connections; item; item = item->next)
+            g_object_ref(item->data);
+        for (GList *item = connections; item; item = item->next)
+            on_active_vpn_connection_removed(self->client, item->data, self);
+        g_list_free_full(connections, g_object_unref);
+        connections = g_hash_table_get_values(self->vpn_conns);
+        for (GList *item = connections; item; item = item->next)
+            g_object_ref(item->data);
+        for (GList *item = connections; item; item = item->next)
+            on_vpn_connection_removed(self->client, item->data, self);
+        g_list_free_full(connections, g_object_unref);
+
+        g_set_object(&self->client, client);
+        if (client) {
+            const GPtrArray *saved = nm_client_get_connections(client);
+            for (guint i = 0; i < saved->len; ++i)
+                on_vpn_connection_added(client, saved->pdata[i], self);
+            const GPtrArray *active = nm_client_get_active_connections(client);
+            for (guint i = 0; i < active->len; ++i)
+                on_active_vpn_connection_added(client, active->pdata[i], self);
+            g_signal_connect(client, "connection-added", G_CALLBACK(on_vpn_connection_added), self);
+            g_signal_connect(client, "connection-removed", G_CALLBACK(on_vpn_connection_removed), self);
+            g_signal_connect(client, "active-connection-added", G_CALLBACK(on_active_vpn_connection_added), self);
+            g_signal_connect(client, "active-connection-removed", G_CALLBACK(on_active_vpn_connection_removed), self);
+        }
+    }
+    g_set_object(&self->primary_dev, way_shell_network_inventory_primary(inventory));
+    gboolean enabled = way_shell_network_inventory_networking_enabled(inventory);
+    if (enabled != self->networking_is_enabled) {
+        self->networking_is_enabled = enabled;
+        g_signal_emit(self, signals[networking_enabled], 0, enabled);
+    }
+    g_signal_emit(self, signals[changed], 0);
+}
+
+static void network_manager_service_init(NetworkManagerService *self) {
     self->vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     self->active_vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
-
-    self->client = nm_client_new(NULL, &error);
-    if (!self->client) {
-        g_error("Failed to create NetworkManager client: %s", error->message);
-        g_error_free(error);
-        return;
-    }
-
-    on_changed(self->client, NULL, self);
-
-    // seed vpn connections
-    const GPtrArray *conns = nm_client_get_connections(self->client);
-    for (int i = 0; i < conns->len; i++) {
-        on_vpn_connection_added(self->client, conns->pdata[i], self);
-    }
-
-    // seed active vpn connections
-    const GPtrArray *active_conns =
-        nm_client_get_active_connections(self->client);
-    for (int i = 0; i < active_conns->len; i++) {
-        on_active_vpn_connection_added(self->client, active_conns->pdata[i],
-                                       self);
-    }
-
-    g_signal_connect(self->client, "notify", G_CALLBACK(on_changed), self);
-
-    g_signal_connect(self->client, "notify::networking-enabled",
-                     G_CALLBACK(on_networking_enabled_changed), self);
-
-    g_signal_connect(self->client, "connection-added",
-                     G_CALLBACK(on_vpn_connection_added), self);
-
-    g_signal_connect(self->client, "connection-removed",
-                     G_CALLBACK(on_vpn_connection_removed), self);
-
-    g_signal_connect(self->client, "active-connection-added",
-                     G_CALLBACK(on_active_vpn_connection_added), self);
-
-    g_signal_connect(self->client, "active-connection-removed",
-                     G_CALLBACK(on_active_vpn_connection_removed), self);
-};
+    self->inventory = way_shell_network_inventory_new();
+    g_signal_connect(self->inventory, "changed", G_CALLBACK(on_inventory_changed), self);
+    on_inventory_changed(self->inventory, self);
+}
 
 const GPtrArray *network_manager_service_get_devices(
     NetworkManagerService *self) {
-    return nm_client_get_devices(self->client);
+    return way_shell_network_inventory_devices(self->inventory);
 };
 
 NMDevice *network_manager_service_get_primary_device(
@@ -280,16 +222,16 @@ NMDevice *network_manager_service_get_primary_device(
 };
 
 gboolean network_manager_service_wifi_available(NetworkManagerService *self) {
-    return self->has_wifi;
+    return way_shell_network_inventory_wifi_available(self->inventory);
 };
 
 gboolean network_manager_service_ethernet_available(
     NetworkManagerService *self) {
-    return self->has_ethernet;
+    return way_shell_network_inventory_ethernet_available(self->inventory);
 };
 
 NMState network_manager_service_get_state(NetworkManagerService *self) {
-    return self->last_state;
+    return way_shell_network_inventory_state(self->inventory);
 };
 
 // A simplification of Device state which returns
@@ -299,49 +241,8 @@ NMState network_manager_service_get_state(NetworkManagerService *self) {
 // connecting to a network.
 // NM_DEVICE_STATE_ACTIVATED if at least one wifi device is activated
 NMDeviceState network_manager_service_wifi_state(NetworkManagerService *self) {
-    if (!self->has_wifi) return NM_DEVICE_STATE_UNKNOWN;
-
-    NMDeviceState state = 0;
-    int activating = 0;
-    int activated = 0;
-
-    if (!nm_client_wireless_get_enabled(self->client))
-        return NM_DEVICE_STATE_DISCONNECTED;
-
-    const GPtrArray *devices = nm_client_get_devices(self->client);
-    for (int i = 0; i < devices->len; i++) {
-        NMDevice *dev = devices->pdata[i];
-
-        if (!(nm_device_get_device_type(dev) == NM_DEVICE_TYPE_WIFI)) continue;
-
-        state = nm_device_get_state(dev);
-        switch (state) {
-            case NM_DEVICE_STATE_UNKNOWN:
-            case NM_DEVICE_STATE_UNMANAGED:
-            case NM_DEVICE_STATE_UNAVAILABLE:
-            case NM_DEVICE_STATE_DISCONNECTED:
-            case NM_DEVICE_STATE_FAILED:
-            case NM_DEVICE_STATE_DEACTIVATING:
-                continue;
-            case NM_DEVICE_STATE_PREPARE:
-            case NM_DEVICE_STATE_CONFIG:
-            case NM_DEVICE_STATE_NEED_AUTH:
-            case NM_DEVICE_STATE_IP_CONFIG:
-            case NM_DEVICE_STATE_IP_CHECK:
-            case NM_DEVICE_STATE_SECONDARIES:
-                activating++;
-                break;
-            case NM_DEVICE_STATE_ACTIVATED:
-                activated++;
-                break;
-        }
-    }
-
-    if (activated > 0) return NM_DEVICE_STATE_ACTIVATED;
-    if (activating > 0) return NM_DEVICE_STATE_PREPARE;
-
-    return NM_DEVICE_STATE_DISCONNECTED;
-};
+    return way_shell_network_inventory_wifi_state(self->inventory);
+}
 
 int network_manager_service_global_init(void) {
     g_debug(
@@ -430,6 +331,7 @@ static void on_remote_conn_sync(GObject *source_object, GAsyncResult *res,
         "network_manager_service.c:on_ap_join() successfully synced remote "
         "connection ");
 
+    if (!self->client) { g_object_unref(cancel); return; }
     nm_client_activate_connection_async(self->client, NM_CONNECTION(conn),
                                         NM_DEVICE(self->wireless_cache.dev),
                                         NULL, cancel, on_ap_join, self);
@@ -451,6 +353,7 @@ void network_manager_service_ap_join(NetworkManagerService *self,
         "password: %s",
         password);
 
+    if (!self || !self->client || !dev || !ap) return;
     NMClient *client = self->client;
     GBytes *ap_ssid = nm_access_point_get_ssid(ap);
     NMConnection *found_conn = NULL;
@@ -562,6 +465,7 @@ static void on_wifi_disconnect(GObject *source_object, GAsyncResult *res,
 
 void network_manager_service_ap_disconnect(NetworkManagerService *self,
                                            NMDeviceWifi *dev) {
+    if (!self || !self->client || !dev) return;
     NMActiveConnection *active_con =
         nm_device_get_active_connection(NM_DEVICE(dev));
 
@@ -573,19 +477,17 @@ void network_manager_service_ap_disconnect(NetworkManagerService *self,
 
 void network_manager_service_wireless_enable(NetworkManagerService *self,
                                              gboolean enabled) {
-    g_object_set(G_OBJECT(self->client), "wireless-enabled", enabled, NULL);
+    way_shell_network_inventory_set_wireless(self->inventory, enabled);
 }
 
 void network_manager_service_networking_enable(NetworkManagerService *self,
                                                gboolean enabled) {
-    g_object_set(G_OBJECT(self->client), "networking-enabled", enabled, NULL);
+    way_shell_network_inventory_set_networking(self->inventory, enabled);
 }
 
 gboolean network_manager_service_get_networking_enabled(
     NetworkManagerService *self) {
-    gboolean enabled = false;
-    enabled = nm_client_networking_get_enabled(self->client);
-    return enabled;
+    return way_shell_network_inventory_networking_enabled(self->inventory);
 };
 
 gboolean network_manager_has_vpn(NetworkManagerService *self) {
@@ -630,6 +532,7 @@ static void on_vpn_deactivated(GObject *source_object, GAsyncResult *res,
 
 void network_manager_activate_vpn(NetworkManagerService *self, const gchar *id,
                                   gboolean activate) {
+    if (!self || !self->client || !id) return;
     NMConnection *conn = g_hash_table_lookup(self->vpn_conns, id);
     if (!conn) return;
 

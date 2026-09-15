@@ -2,6 +2,7 @@
 mod brightness;
 mod clock;
 mod logind;
+mod network;
 mod power;
 mod power_profiles;
 mod theme;

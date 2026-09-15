@@ -17,5 +17,8 @@ wayland-client.workspace = true
 wayland-protocols-wlr.workspace = true
 wireplumber.workspace = true
 
+[build-dependencies]
+pkg-config.workspace = true
+
 [lints]
 workspace = true

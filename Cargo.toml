@@ -23,6 +23,7 @@ wayland-client = "=0.31.15"
 wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
 wireplumber = { git = "https://github.com/saivert/wireplumber.rs", rev = "04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc", default-features = false, features = ["v0_5", "futures"] }
 glib-build-tools = "=0.21.0"
+pkg-config = "=0.3.34"
 
 [profile.dev]
 debug = 1

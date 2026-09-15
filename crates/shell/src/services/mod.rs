@@ -1,6 +1,7 @@
 pub mod brightness;
 pub mod clock;
 pub mod logind;
+pub mod network;
 pub mod power;
 pub mod power_profiles;
 pub mod settings;

@@ -11,7 +11,7 @@ check: core-test ipc-test network-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
 
-network-test: network.c ../src/services/network_manager_service.c
+network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \

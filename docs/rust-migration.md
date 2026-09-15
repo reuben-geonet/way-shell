@@ -217,3 +217,22 @@ retain their existing immediate acknowledgement until step 42.
 
 All of these local checks pass through `767efca`. Package-matrix and real hardware
 acceptance are tracked independently in migration-checklist.md.
+
+## Network inventory verification
+
+Rust owns libnm initialization, device inventory, the primary device, radio
+state and networking enable requests. The service publishes owned snapshots
+without exposing native pointers to permanent application interfaces. The
+remaining C connection facade receives retained objects through the temporary
+bridge. It clears stale VPN records when the daemon disappears and reconnects
+its subscriptions when the Rust inventory becomes available again.
+
+The private D-Bus fixture exercises the real libnm cache with device state
+changes, an empty primary-device list, removal, radio changes, rejected writes,
+caller cancellation, a two-second response deadline, daemon restart, closed
+connections and repeated initialization/destruction. Device fixtures emit both
+State and StateReason, matching NetworkManager's paired state properties.
+Separate bridge and C facade checks cover retained array entries, callback
+teardown, delayed startup and VPN removal signal lifetimes. Local Cargo tests,
+Clippy, the linked application and remaining C tests pass. Offline Fedora and
+native package checks remain recorded separately in migration-checklist.md.
