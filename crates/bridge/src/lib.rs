@@ -7,7 +7,11 @@ mod brightness;
 mod clock;
 mod logind;
 mod media;
+#[cfg(test)]
+#[path = "../../shell/tests/common/media.rs"]
+mod media_fixture;
 mod network;
+mod notifications;
 mod power;
 mod power_profiles;
 mod theme;

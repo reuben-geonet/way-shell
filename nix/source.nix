@@ -42,8 +42,6 @@
             ".gdb_history"
             "src/services/dbus_dbus.c"
             "src/services/dbus_dbus.h"
-            "src/services/notifications_service/notifications_dbus.c"
-            "src/services/notifications_service/notifications_dbus.h"
             "src/services/status_notifier_service/dbusmenu_dbus.c"
             "src/services/status_notifier_service/dbusmenu_dbus.h"
             "src/services/status_notifier_service/status_notifier_host_dbus.c"

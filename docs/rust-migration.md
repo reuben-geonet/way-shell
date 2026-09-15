@@ -427,6 +427,22 @@ negotiation and property notifications before rerunning the full matrix.
 Evidence: `audio-controls-rpm-build.log`,
 `audio-mixer-scale-{before,after}.log` and `audio-controls-rpm-scale-fixed.log`.
 
+The smaller Fedora 43 guest isolated two fixture requirements in PipeWire
+1.4.8: explicitly configure F32P at 48 kHz to create the DSP ports, then
+negotiate a source-to-sink link before asserting mixer property notifications.
+Its unconfigured converter accepted the write without announcing changed
+properties. Newer PipeWire versions announced the change, hiding the fixture
+assumption in native checks. The shared test helper now waits for the ports,
+active link and running nodes. The bridge uses a separate negotiated pair for
+controls while retaining its static-sink inventory assertions.
+
+The final offline diagnostic reproduced the old bridge timeout, then passed
+the corrected shell test and all three bridge audio tests. Native affected
+tests and Clippy pass as well. Production audio code and the accepted
+WirePlumber binding are unchanged. Evidence: `audio-negotiated-native.log` and
+`audio-fedora-probe-6.log`; diagnostic artifact:
+`/nix/store/5k6l165xgayrwhlr1r8ch9ahf0dwrmqc-way-shell-fedora-43-audio-diagnostic`.
+
 ## MPRIS metadata baseline fixes
 
 Metadata replacement now clears omitted fields, accepts empty artist arrays,
@@ -550,11 +566,12 @@ order, and expiration rechecks records renewed by a callback.
 
 The core has ten notification tests; five private-bus integration tests and two
 parser tests cover the service, including production-constructor bus recovery.
-The adapter has six ABI, mutable-string, removal, replacement and ownership
-tests. All affected tests and Clippy pass. Evidence:
+The adapter has seven ABI, mutable-string, removal, replacement and ownership
+tests, including a real private-bus round trip through the C commands. All
+affected tests and Clippy pass. Evidence:
 `notifications-ids-before.log`, `notifications-core-cargo-check.log`,
-`notifications-rust-service-check.log` and `notifications-bridge-check.log`.
-The C service remains active until widget replacement handling is ready.
+`notifications-rust-service-check.log`, `notifications-bridge-check.log` and
+`notifications-bridge-live-check.log`.
 
 An ordinary notification action reproduced a GTK parentage failure before
 replacement handling was added. The action layout no longer attempts to put a
@@ -585,3 +602,10 @@ disposal. Evidence: `notification-presentation-after.log`,
 `notification-replacement-before.log`, `notification-head-removal-before.log`,
 `notification-osd-before.log`, `notification-replacement-after.log` and
 `notifications-ui-integrated.log`.
+
+Rust now supplies the notification service's C API. Startup and shutdown use
+the adapter, with owned records retained through legacy widget teardown. The
+C service, generated notification bindings and obsolete C validation harness
+are removed; the protocol XML remains tracked. The service and adapter tests
+cover those contracts. Workspace tests, formatting, strict Clippy, the linked
+application and remaining C tests pass in `notifications-cutover-integrated.log`.

@@ -29,8 +29,6 @@ __pycache__/
 gschemas.compiled
 /src/services/dbus_dbus.c
 /src/services/dbus_dbus.h
-/src/services/notifications_service/notifications_dbus.c
-/src/services/notifications_service/notifications_dbus.h
 /src/services/status_notifier_service/dbusmenu_dbus.c
 /src/services/status_notifier_service/dbusmenu_dbus.h
 /src/services/status_notifier_service/status_notifier_host_dbus.c
@@ -42,7 +40,6 @@ gschemas.compiled
 
 /tests/audio-widgets-test
 /tests/media-widgets-test
-/tests/notifications-test
 /tests/media-presentation-test
 /tests/notification-presentation-test
 /tests/notification-replacement-test

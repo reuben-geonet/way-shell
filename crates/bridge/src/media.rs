@@ -10,8 +10,7 @@ use std::{
 use way_shell::services::media::{MediaAction, MediaPlayer, MediaService, MediaState};
 
 #[cfg(test)]
-#[path = "../../shell/tests/common/media.rs"]
-mod fixture;
+use crate::media_fixture as fixture;
 
 /// Layout of the temporary `MediaPlayer` C structure. The proxy slots remain
 /// null: native objects are owned privately by the permanent Rust service.

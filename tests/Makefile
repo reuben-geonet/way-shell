@@ -6,19 +6,10 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test notifications-test
+check: core-test ipc-test network-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
-	cd .. && tests/notifications-test
-
-../src/services/notifications_service/notifications_dbus.h: ../data/dbus-interfaces/org.freedesktop.Notifications.xml
-	$(MAKE) -C .. src/services/notifications_service/notifications_dbus.h
-
-notifications-test: notifications.c ../src/services/notifications_service/notifications_service.c \
-  ../src/services/notifications_service/notifications_service.h \
-  ../src/services/notifications_service/notifications_dbus.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) notifications.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
@@ -63,7 +54,6 @@ clean:
 	rm -f network-test network-operations-test
 	rm -f audio-widgets-test
 	rm -f media-widgets-test
-	rm -f notifications-test
 	rm -f media-presentation-test
 	rm -f notification-presentation-test
 	rm -f notification-replacement-test

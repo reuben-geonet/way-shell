@@ -76,6 +76,10 @@ int notifications_service_closed_notification(
 int notifications_service_invoke_action(NotificationsService *self, guint32 id,
                                         char *action_key);
 
+// Borrowed array and records. Do not free them or replace their pointers.
+// notification-added/replaced(array, id, index) expose the current record.
+// notification-closed(array, id, index) exposes the removed record until all
+// handlers return. A replacement preserves its ID and index without a close.
 GPtrArray *notifications_service_get_notifications(NotificationsService *self);
 
 // Internal notifications API which can be used by Way-Shell.
