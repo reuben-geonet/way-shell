@@ -1,4 +1,8 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
+mod audio;
+#[cfg(test)]
+#[path = "../../shell/tests/common/audio.rs"]
+mod audio_fixture;
 mod brightness;
 mod clock;
 mod logind;
@@ -13,7 +17,7 @@ use std::{
     panic::{AssertUnwindSafe, catch_unwind},
 };
 use way_shell_core::{
-    audio::{self, Scale},
+    audio::{self as audio_math, Scale},
     gamma,
 };
 
@@ -32,12 +36,12 @@ pub extern "C" fn way_shell_gamma_supported(size: usize, temperature: i32) -> i3
 
 #[unsafe(no_mangle)]
 pub extern "C" fn volume_from_linear(volume: f32, curve: i32) -> f64 {
-    audio::from_linear(volume, scale(curve))
+    audio_math::from_linear(volume, scale(curve))
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn volume_to_linear(volume: f64, curve: i32) -> f32 {
-    audio::to_linear(volume, scale(curve))
+    audio_math::to_linear(volume, scale(curve))
 }
 
 /// # Safety
@@ -53,7 +57,7 @@ pub unsafe extern "C" fn way_shell_channel_index(channel: *const c_char) -> i32 
         channel
             .to_str()
             .ok()
-            .and_then(audio::channel_index)
+            .and_then(audio_math::channel_index)
             .map_or(-1, |index| index as i32)
     }))
     .unwrap_or(-1)

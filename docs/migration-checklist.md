@@ -28,7 +28,7 @@ a claim that the complete migration is ready to install.
 - [x] 22. Migrate display and keyboard brightness to Rust.
 - [x] 23. Migrate network inventory and radio state to Rust.
 - [x] 24. Migrate network connection management to Rust.
-- [ ] 25. Migrate WirePlumber object tracking to Rust.
+- [x] 25. Migrate WirePlumber object tracking to Rust.
 - [ ] 26. Migrate volume and stream routing to Rust.
 - [ ] 27. Migrate MPRIS integration to Rust.
 - [ ] 28. Migrate the notification service to Rust.
@@ -77,6 +77,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust Wi-Fi, saved profiles, VPN/WireGuard actions, concurrent requests, cancellation, raw SSIDs, removal/restart, C argument ownership, workspace tests, Clippy and linked application checks.
 - [x] Clean native application/schema package checks for network connections (`0cb7076`); artifact `../artifacts/network-connections-native-schemas` -> `/nix/store/ccmr6s3h5w0q65h2kjs0a70xiijbfq8l-way-shell-native-schemas-check`.
 - [ ] Fedora 43/44 package matrix for network connections, running from `0cb7076`.
+- [x] Rust audio tracking: private PipeWire devices, streams, ports, links, defaults, mixer notifications, microphone activity, hotplug/restart, owned snapshots, descriptor cleanup, C ABI and adapter recovery; workspace tests, Clippy and linked application pass.
+- [ ] Native/Fedora package matrix for Rust audio tracking.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -89,10 +91,12 @@ are verification artifacts, not the final upgrade.
 
 ## Current work
 
-Rust owns the Wayland connection, power services, NetworkManager inventory and
-connection operations. Wi-Fi, saved profiles, scanning, disconnect and VPN or
-WireGuard actions run through the Rust service. The remaining C network facade
-mirrors native objects and signals for C widgets; it no longer owns asynchronous
-connection requests. The obsolete C operation fixture has transferred to private
-Rust D-Bus and bridge checks. Audio object tracking and controls are next. Package
-and real laptop checks remain separate from the passing local implementation.
+The active checkout is the main repository at
+`/home/reubena/Documents/github/way-shell` on `rust-migration`, moved at the
+user's request so VS Code shows the edits and branch history. The Bluetooth
+branch is preserved. The former cache worktree is detached and inactive.
+
+Rust owns Wayland, power, networking and audio inventory. The audio adapter
+preserves stable C records and clears removed references before releasing them.
+C volume and PulseAudio routing controls remain for step 26. Private daemon and
+widget checks pass; package and laptop acceptance remain separate gates.

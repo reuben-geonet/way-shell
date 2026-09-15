@@ -307,3 +307,33 @@ an application stream's shorter record. Mute and unmute now send only the mixer
 mute flag; WirePlumber retains the volume independently. The C canary regression,
 Rust adapter ownership tests, private PipeWire volume/mute inventory and workspace
 Clippy pass (`audio-stream-mute-before.log`, `audio-stream-and-adapter-checks.log`).
+
+
+## Rust audio inventory verification
+
+WirePlumber connection setup, plugin activation, object inventory, default-node
+tracking, mixer notifications and reconnection now run in Rust. Widgets receive
+owned device, stream, port, link and volume snapshots. Native proxy objects stay
+inside the service. Callbacks use weak service references and disconnect before
+connection disposal; pending initialization and retries are cancelled on stop.
+The mixer scale is set through its actual enum type, and missing or invalid
+values disable the affected volume control until valid data arrives.
+
+The temporary adapter keeps stable C record addresses for existing objects and
+retains removed records through synchronous notifications so C widgets can clear
+their pointers. Rust and C checks agree on the record layout. Default changes,
+volume OSD signals and microphone activity are distinct; removal does not produce
+a volume OSD. The C layer now contains only volume and PulseAudio routing controls.
+It obtains a scoped mixer reference and drops its routing context when audio
+becomes unavailable. The remaining shared routing-request fields move to owned
+Rust requests in step 26. Failed PulseAudio list queries also return safely.
+
+A private PipeWire daemon exercises devices/streams, port/channel tracking,
+metadata default changes, real volume/mute notifications, links, microphone
+activity, removal, restart and repeated descriptor/ownership cleanup. A second
+live fixture verifies the C-facing adapter through disconnection and recovery.
+The C inventory regressions transfer to these Rust checks; the temporary C mute
+and routing error regressions remain until their controls migrate. Workspace
+tests, Clippy and the linked application pass. Evidence:
+`audio-integrated-build.log` and `audio-inventory-final-checks.log` in
+`.cache/rust-migration/evidence`. Package checks are tracked separately.
