@@ -12,6 +12,8 @@ DEPS := gtk4-layer-shell-0 libadwaita-1 upower-glib wireplumber-0.5 \
         libpulse-mainloop-glib wayland-client wayland-protocols gio-unix-2.0
 CFLAGS += $(shell pkg-config --cflags $(DEPS)) -g3 -Wall -MMD -MP
 LIBS := $(shell pkg-config --libs $(DEPS)) -lm
+# Match Cargo linking: discard unused Rust sections in the temporary static bridge.
+LDFLAGS += -Wl,--gc-sections
 
 .DEFAULT_GOAL := all
 DBUS_BASES := src/services/dbus_dbus \
