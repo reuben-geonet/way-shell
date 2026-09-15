@@ -52,7 +52,7 @@ a claim that the complete migration is ready to install.
 - [x] 46. Remove obsolete build dependencies.
 - [x] 47. Add packaged Wayland smoke coverage.
 - [x] 48. Complete Rust development and migration documentation.
-- [ ] 49. Advance the RPM release over the installed package.
+- [x] 49. Advance the RPM release over the installed package.
 
 ## Package and deployment gates
 
@@ -133,8 +133,10 @@ a claim that the complete migration is ready to install.
 - [ ] Install the completed migration RPM through polkit.
 - [ ] Activate and verify the installed shell without a duplicate instance.
 
-The laptop package has not been changed. Intermediate RPMs remain release 1 and
-are verification artifacts, not the final upgrade.
+The laptop package has not been changed. Its current version was rechecked as
+`0.0.10-8.fc44.x86_64`; the final migration RPM uses release 9. Earlier release 1
+RPMs remain verification artifacts. The laptop retains `tuned-ppd 2.28.0` and
+WirePlumber 0.5.14.
 
 ## Current work
 
