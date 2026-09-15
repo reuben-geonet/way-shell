@@ -890,3 +890,26 @@ Queued work holds only a weak service reference, so shutdown needs no deferred
 native-owner cleanup. The new regression, existing inventory/restart and
 routing/cancellation/deadline tests, and strict Clippy pass. Evidence:
 `audio-stop-native-before.log` and `audio-stop-native-after.log`.
+
+## Rust quick-settings system controls
+
+The permanent Rust window, two-column grid, menus, battery header, session
+actions, theme, idle inhibition, night light, power profiles and brightness
+controls are implemented. They preserve CSS, layout, confirmation flow and
+availability behavior. The opacity controller owns its click-away underlay,
+rejects stale animation completions and safely handles reopening from GTK
+callbacks. Final-owner destruction closes surfaces without calling observers
+whose weak owner is already gone.
+
+Battery warnings now acknowledge all thresholds crossed by one severe warning,
+so repeated updates at 5% do not send three increasingly mild warnings. Recharge
+re-arms each threshold independently; device replacement resets the tracker.
+Rapid menu toggles use the requested reveal state, and asynchronous brightness
+readback cannot feed changes back into another write.
+
+Four Rust cases, strict Clippy and actual system/window probes pass on Sway and
+Niri. Private services exercise availability, restart, brightness failures,
+power confirmations and retained controls. Evidence:
+`quick-settings-system-integrated.log`. Native Nix checks run both probes on
+both compositors. The C quick-settings view remains active until the Rust
+network and mixer controls are composed, avoiding disposable widget adapters.

@@ -3,6 +3,7 @@ pub mod activities;
 pub mod app_switcher;
 pub mod output_switcher;
 pub mod panel;
+pub mod quick_settings;
 pub mod rename_switcher;
 pub mod switcher;
 pub mod tray_support;
