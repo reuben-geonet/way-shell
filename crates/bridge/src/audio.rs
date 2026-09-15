@@ -838,6 +838,8 @@ mod tests {
     }
     #[test]
     fn live_inventory_adapter_disconnect_and_recovery() {
+        use wireplumber::{Core, prelude::*, pw::Properties};
+
         let mut daemon = crate::audio_fixture::Daemon::new();
         let context = glib::MainContext::new();
         context
@@ -863,7 +865,26 @@ mod tests {
                         sink.cast()
                     );
                 }
-                let id = adapter.imp().state.borrow().nodes[0].id;
+                // A negotiated graph is required for PipeWire 1.4 to publish mixer
+                // changes; the static sink above remains an inventory-only fixture.
+                let properties = Properties::new();
+                properties.insert("remote.name", daemon.remote());
+                let core = Core::new(Some(&context), None, Some(properties));
+                context.block_on(core.connect_future()).unwrap();
+                let capture =
+                    crate::audio_fixture::node(&context, &core, "bridge-capture", "Audio/Source");
+                let playback =
+                    crate::audio_fixture::node(&context, &core, "bridge-playback", "Audio/Sink");
+                let link =
+                    crate::audio_fixture::connect_nodes(&context, &core, &capture, &playback);
+                let id = playback.bound_id();
+                crate::audio_fixture::wait(&context, || {
+                    let state = adapter.imp().state.borrow();
+                    state
+                        .node(id)
+                        .is_some_and(|node| node.state == NodeState::Running)
+                        && state.links.iter().any(|item| item.id == link.bound_id())
+                });
                 let record = adapter.record(Some(id));
                 crate::audio_fixture::wait(&context, || {
                     adapter
@@ -971,6 +992,13 @@ mod tests {
                     wire_plumber_service_set_volume(pointer, record, f64::NAN);
                 }
                 assert_eq!(guarded.canary, [0xa5; 16]);
+                drop(link);
+                capture.request_destroy();
+                playback.request_destroy();
+                drop(capture);
+                drop(playback);
+                core.disconnect();
+                drop(core);
                 daemon.stop();
                 crate::audio_fixture::wait(&context, || !adapter.imp().state.borrow().available);
                 unsafe {

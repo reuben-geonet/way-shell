@@ -16,5 +16,8 @@ glib.workspace = true
 gio.workspace = true
 gtk.workspace = true
 
+[dev-dependencies]
+wireplumber.workspace = true
+
 [lints]
 workspace = true

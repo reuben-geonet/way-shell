@@ -7,34 +7,12 @@ use wireplumber::{
     local::ImplMetadata,
     plugin::{Plugin, PluginFeatures},
     prelude::*,
-    pw::{Link, Node, Properties},
+    pw::Properties,
 };
 
 #[path = "common/audio.rs"]
 mod fixture;
 use fixture::*;
-
-fn node(context: &glib::MainContext, core: &Core, name: &str, class: &str) -> Node {
-    let properties = Properties::new();
-    for (key, value) in [
-        ("factory.name", "support.null-audio-sink"),
-        ("node.name", name),
-        ("node.description", name),
-        ("media.class", class),
-        ("audio.position", "[ FL FR ]"),
-        (
-            "adapter.auto-port-config",
-            "{ mode = dsp monitor = true position = preserve }",
-        ),
-    ] {
-        properties.insert(key, value);
-    }
-    let node = Node::from_factory(core, "adapter", Some(properties)).unwrap();
-    context
-        .block_on(node.activate_future(ObjectFeatures::ALL))
-        .unwrap();
-    node
-}
 
 fn controls(context: &glib::MainContext, service: &AudioService, id: u32) {
     let original = service.state().node(id).unwrap().volume.clone().unwrap();
@@ -229,13 +207,17 @@ fn inventory_defaults_removal_restart_and_ownership() {
                     .iter()
                     .any(|n| n.id == stream.bound_id() && n.kind == NodeKind::OutputStream)
             });
-            assert!(
-                service
-                    .state()
-                    .ports
-                    .iter()
-                    .any(|p| p.node == capture.bound_id())
-            );
+            // Negotiate the converter before mixer writes. PipeWire 1.4 does not
+            // announce volume changes on a converter that has never processed audio.
+            let link = connect_nodes(&context, &core, &capture, &playback);
+            wait(&context, || {
+                let state = service.state();
+                state.links.iter().any(|item| {
+                    item.id == link.bound_id()
+                        && item.output_node == capture.bound_id()
+                        && item.input_node == playback.bound_id()
+                }) && state.microphone_active()
+            });
             // Real plugin property notifications, using a separate client as the writer.
             context
                 .block_on(core.load_component_future(
@@ -327,41 +309,6 @@ fn inventory_defaults_removal_restart_and_ownership() {
             });
             controls(&context, &service, playback.bound_id());
             amplified_controls(&context, &service, &mixer, playback.bound_id());
-            let output = observed
-                .ports
-                .iter()
-                .find(|p| {
-                    p.node == capture.bound_id()
-                        && p.direction == way_shell::services::audio::Direction::Output
-                })
-                .unwrap();
-            let input = observed
-                .ports
-                .iter()
-                .find(|p| {
-                    p.node == playback.bound_id()
-                        && p.direction == way_shell::services::audio::Direction::Input
-                })
-                .unwrap();
-            let props = Properties::new();
-            for (key, value) in [
-                ("link.output.node", output.node),
-                ("link.output.port", output.id),
-                ("link.input.node", input.node),
-                ("link.input.port", input.id),
-            ] {
-                props.insert(key, value);
-            }
-            let link = Link::from_factory(&core, "link-factory", Some(props)).unwrap();
-            context
-                .block_on(link.activate_future(ObjectFeatures::ALL))
-                .unwrap();
-            wait(&context, || {
-                service.state().links.iter().any(|l| {
-                    l.output_node == capture.bound_id() && l.input_node == playback.bound_id()
-                })
-            });
-            wait(&context, || service.state().microphone_active());
             drop(link);
             wait(&context, || service.state().links.is_empty());
             drop(mixer);

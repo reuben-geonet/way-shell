@@ -5,6 +5,12 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant},
 };
+use wireplumber::{
+    Core,
+    core::ObjectFeatures,
+    prelude::*,
+    pw::{Direction, Link, LinkState, Node, NodeState, Properties},
+};
 pub struct Daemon {
     child: Option<Child>,
     pulse_child: Option<Child>,
@@ -147,4 +153,75 @@ pub fn wait(context: &glib::MainContext, condition: impl Fn() -> bool) {
         assert!(Instant::now() < deadline, "audio fixture timed out");
         context.block_on(glib::timeout_future(Duration::from_millis(10)));
     }
+}
+
+// Shared with the bridge; routing fixtures do not require these graph helpers.
+#[allow(dead_code)]
+pub fn node(context: &glib::MainContext, core: &Core, name: &str, class: &str) -> Node {
+    let properties = Properties::new();
+    for (key, value) in [
+        ("factory.name", "support.null-audio-sink"),
+        ("node.name", name),
+        ("node.description", name),
+        ("media.class", class),
+        ("audio.position", "[ FL FR ]"),
+        // PipeWire 1.4 needs a fixed format/rate to create the DSP monitor ports.
+        ("audio.format", "F32P"),
+        ("audio.rate", "48000"),
+        (
+            "adapter.auto-port-config",
+            "{ mode = dsp monitor = true position = preserve }",
+        ),
+    ] {
+        properties.insert(key, value);
+    }
+    let node = Node::from_factory(core, "adapter", Some(properties)).unwrap();
+    context
+        .block_on(node.activate_future(ObjectFeatures::ALL))
+        .unwrap();
+    node
+}
+
+#[allow(dead_code)]
+pub fn connect_nodes(
+    context: &glib::MainContext,
+    core: &Core,
+    output: &Node,
+    input: &Node,
+) -> Link {
+    let ports = || {
+        let output = output
+            .ports()
+            .into_iter()
+            .find(|port| port.direction() == Direction::Output);
+        let input = input
+            .ports()
+            .into_iter()
+            .find(|port| port.direction() == Direction::Input);
+        output
+            .zip(input)
+            .map(|(output, input)| (output.bound_id(), input.bound_id()))
+    };
+    wait(context, || ports().is_some());
+    let (output_port, input_port) = ports().unwrap();
+    let properties = Properties::new();
+    for (key, value) in [
+        ("link.output.node", output.bound_id()),
+        ("link.output.port", output_port),
+        ("link.input.node", input.bound_id()),
+        ("link.input.port", input_port),
+    ] {
+        properties.insert(key, value);
+    }
+    let link = Link::from_factory(core, "link-factory", Some(properties)).unwrap();
+    context
+        .block_on(link.activate_future(ObjectFeatures::ALL))
+        .unwrap();
+    wait(context, || {
+        link.state_result().expect("private audio link failed") == LinkState::Active
+            && [output, input].into_iter().all(|node| {
+                node.state_result().expect("private audio node failed") == NodeState::Running
+            })
+    });
+    link
 }
