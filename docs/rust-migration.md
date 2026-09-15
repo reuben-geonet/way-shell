@@ -634,3 +634,18 @@ visibility, sections, submenus and action targets while verifying replacement
 cleanup and will-update/did-update signal ordering. Before and after evidence:
 `tray-menu-signal-before.log`, `tray-menu-parse-before.log`,
 `tray-menu-baseline-after.log` and `tray-menu-baseline-integrated.log`.
+
+The C indicators now subscribe to property updates even before an item has a
+menu, and create, update or remove their popover as menus arrive. Each button
+has one weak callback that selects the current activation mode. Controllers
+own their roots and textures, disconnect their original service, and release
+popovers on removal. The bar owns its keys and controllers, distinguishes
+owner/object-path pairs, and ignores duplicate additions without orphaning a
+widget. Repeated disposal leaves retained widgets inert.
+
+Six actual GTK tests reproduced these failures and now pass under sanitizers
+on Sway and Niri. The regular Make/component checks also exercise a mapped
+popup after the parent window's first frame. Programmatic fixture clicks use
+a non-grabbing popup because they have no Wayland input serial. Evidence:
+`tray-widgets-before.log`, `tray-widget-*-before.log`, `tray-widgets-after.log`
+and `tray-widgets-integrated.log`.

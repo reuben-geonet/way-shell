@@ -6,11 +6,12 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test tray-baseline-test
+check: core-test ipc-test network-test tray-baseline-test tray-menu-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
 	cd .. && tests/tray-baseline-test
+	cd .. && tests/tray-menu-test
 
 TRAY_BASES := dbusmenu status_notifier_item status_notifier_watcher status_notifier_host
 TRAY_SOURCES := $(addprefix ../src/services/status_notifier_service/,$(addsuffix _dbus.c,$(TRAY_BASES)))
@@ -30,6 +31,12 @@ tray-baseline-test: tray-baseline.c $(TRAY_SOURCES) $(TRAY_HEADERS) \
   ../src/services/status_notifier_service/libdbusmenu.h \
   ../src/services/status_notifier_service/libdbus_menu_consts.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) tray-baseline.c $(TRAY_SOURCES) ../src/services/status_notifier_service/libdbusmenu.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
+
+tray-menu-test: tray-menu.c $(TRAY_SOURCES) $(TRAY_HEADERS) \
+  ../src/services/status_notifier_service/status_notifier_service.c \
+  ../src/services/status_notifier_service/status_notifier_service.h \
+  ../src/services/status_notifier_service/libdbusmenu.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) tray-menu.c $(TRAY_SOURCES) $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
@@ -78,6 +85,8 @@ clean:
 	rm -f notification-presentation-test
 	rm -f notification-replacement-test
 	rm -f tray-baseline-test
+	rm -f tray-menu-test
+	rm -f tray-widgets-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
@@ -99,3 +108,9 @@ notification-replacement-test: notification-replacement.c gschemas.compiled \
   ../src/panel/message_tray/notifications/notification_osd.c \
   ../src/panel/message_tray/notifications/notifications_list.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) notification-replacement.c ../src/panel/message_tray/notifications/notification_widget.c $(LDFLAGS) $(shell pkg-config --libs gtk4-layer-shell-0 libadwaita-1) -o $@
+
+tray-widgets-test: tray-widgets.c $(TRAY_HEADERS) \
+  ../src/panel/indicator_bar/indicator_widget.c \
+  ../src/panel/indicator_bar/indicator_bar.c \
+  ../src/services/status_notifier_service/status_notifier_service.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) tray-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@

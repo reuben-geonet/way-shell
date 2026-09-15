@@ -86,6 +86,9 @@
             make -C tests notification-replacement-test
             sh tests/wayland-component.sh tests/notification-replacement-test
             sh tests/wayland-component.sh tests/notification-replacement-test niri
+            make -C tests tray-widgets-test
+            sh tests/wayland-component.sh tests/tray-widgets-test
+            sh tests/wayland-component.sh tests/tray-widgets-test niri
             make -C tests brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test niri

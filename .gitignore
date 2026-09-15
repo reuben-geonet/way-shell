@@ -44,5 +44,7 @@ gschemas.compiled
 /tests/notification-presentation-test
 /tests/notification-replacement-test
 /tests/tray-baseline-test
+/tests/tray-menu-test
+/tests/tray-widgets-test
 
 /nix/fedora/locks/.update-*/

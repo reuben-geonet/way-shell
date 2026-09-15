@@ -90,6 +90,7 @@ a claim that the complete migration is ready to install.
 - [x] Clean native MPRIS application/schema checks at `06ac6aa`, including Sway/Niri components and media artwork ownership; artifact `.cache/rust-migration/artifacts/media-native-schemas` -> `/nix/store/9s70xg1iq4p2im8pp984q1f7394ibz9k-way-shell-native-schemas-check`.
 - [x] Rust notification IDs, validation, D-Bus ownership/recovery, expiration, actions, C interoperability and replacement presentation; real Sway/Niri widgets, controller AddressSanitizer tests, workspace tests, formatting, Clippy and linked application checks.
 - [ ] Native/Fedora package matrix for Rust notifications.
+- [x] Clean native notification application/schema checks at `ff6a042`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/notifications-native-schemas` -> `/nix/store/spb53v4cfmn57wzqy8gbpmwgg59lhq35-way-shell-native-schemas-check`.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
