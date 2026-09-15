@@ -285,3 +285,9 @@ the linked application with the remaining C suite pass. Evidence is recorded in
 `audio-inventory-before.log`, `audio-default-before.log`, `audio-names-before.log`
 and `audio-inventory-after.log` under the migration cache's `evidence` directory.
 These checks use an empty object manager and do not touch desktop audio.
+
+The mixer baseline regression also reproduces a numeric `step` being read with
+GVariant's boolean format. It now reads a double, and missing mixer data produces
+safe defaults while node identity and names remain inventoried. The regression
+fails with the original format and passes with the correction; the linked build
+and C suite also pass (`audio-mixer-before.log`, `audio-mixer-after.log`).

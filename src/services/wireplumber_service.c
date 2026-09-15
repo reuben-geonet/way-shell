@@ -157,6 +157,16 @@ static void wire_plumber_service_clean_audio_node(
     node->media_name = NULL;
 }
 
+static void read_mixer_values(GVariant *values, gdouble *volume,
+                              gboolean *mute, gdouble *step, gdouble *base) {
+    *volume = 0; *mute = FALSE; *step = 0; *base = 1;
+    if (!values) return;
+    g_variant_lookup(values, "volume", "d", volume);
+    g_variant_lookup(values, "mute", "b", mute);
+    g_variant_lookup(values, "step", "d", step);
+    g_variant_lookup(values, "base", "d", base);
+}
+
 static void wire_plumber_service_fill_audio_stream(
     WirePlumberServiceAudioStream *node, WpGlobalProxy *proxy,
     WirePlumberService *self) {
@@ -172,12 +182,8 @@ static void wire_plumber_service_fill_audio_stream(
     // fill in audio details from mixer api
     g_signal_emit_by_name(self->mixer_api, "get-volume", node->id,
                           &mixer_values);
-    if (!mixer_values) return;
-
-    g_variant_lookup(mixer_values, "volume", "d", &node->volume);
-    g_variant_lookup(mixer_values, "mute", "b", &node->mute);
-    g_variant_lookup(mixer_values, "step", "b", &node->step);
-    g_variant_lookup(mixer_values, "base", "d", &node->base);
+    read_mixer_values(mixer_values, &node->volume, &node->mute,
+                      &node->step, &node->base);
 
     // when we receive the volume its a percentage (0.0-1.0) cubed.
     // for example, when you do a `wpctl set-volume [node] 0.2` the volume we
@@ -232,10 +238,8 @@ static void wire_plumber_service_fill_node(WirePlumberServiceNode *node,
     // fill in audio details from mixer api
     g_signal_emit_by_name(self->mixer_api, "get-volume", node->id,
                           &mixer_values);
-    g_variant_lookup(mixer_values, "volume", "d", &node->volume);
-    g_variant_lookup(mixer_values, "mute", "b", &node->mute);
-    g_variant_lookup(mixer_values, "step", "b", &node->step);
-    g_variant_lookup(mixer_values, "base", "d", &node->base);
+    read_mixer_values(mixer_values, &node->volume, &node->mute,
+                      &node->step, &node->base);
 
     // when we receive the volume its a percentage (0.0-1.0) cubed.
     // for example, when you do a `wpctl set-volume [node] 0.2` the volume we

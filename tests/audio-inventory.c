@@ -46,11 +46,28 @@ static void copied_node_names_are_released(void) {
     g_assert_null(stream.name); g_assert_null(stream.media_name);
     g_assert_null(stream.media_class); g_assert_null(stream.app_name);
 }
+static void mixer_step_and_missing_values(void) {
+    GVariantBuilder builder;
+    g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add(&builder, "{sv}", "volume", g_variant_new_double(.125));
+    g_variant_builder_add(&builder, "{sv}", "mute", g_variant_new_boolean(TRUE));
+    g_variant_builder_add(&builder, "{sv}", "step", g_variant_new_double(.01));
+    g_variant_builder_add(&builder, "{sv}", "base", g_variant_new_double(.75));
+    g_autoptr(GVariant) values = g_variant_ref_sink(g_variant_builder_end(&builder));
+    gdouble volume = -1, step = -1, base = -1; gboolean mute = FALSE;
+    read_mixer_values(values, &volume, &mute, &step, &base);
+    g_assert_cmpfloat(volume, ==, .125); g_assert_true(mute);
+    g_assert_cmpfloat(step, ==, .01); g_assert_cmpfloat(base, ==, .75);
+    read_mixer_values(NULL, &volume, &mute, &step, &base);
+    g_assert_cmpfloat(volume, ==, 0); g_assert_false(mute);
+    g_assert_cmpfloat(step, ==, 0); g_assert_cmpfloat(base, ==, 1);
+}
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     wp_init(WP_INIT_PIPEWIRE);
     g_test_add_func("/audio-inventory/source-without-sink", removed_source_without_sink);
     g_test_add_func("/audio-inventory/removed-default", removed_default_is_cleared);
     g_test_add_func("/audio-inventory/copied-names", copied_node_names_are_released);
+    g_test_add_func("/audio-inventory/mixer-values", mixer_step_and_missing_values);
     return g_test_run();
 }
