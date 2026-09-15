@@ -28,3 +28,7 @@ workspace = true
 [[example]]
 name = "schema-probe"
 test = true
+
+[[example]]
+name = "application-smoke"
+test = true

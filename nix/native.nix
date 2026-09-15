@@ -48,7 +48,7 @@
           buildPhase = ''
             runHook preBuild
             cargo build --workspace --bins --release --frozen --jobs 1
-            cargo build -p way-shell --example schema-probe --frozen --jobs 1
+            cargo build -p way-shell --example schema-probe --example application-smoke --frozen --jobs 1
             runHook postBuild
           '';
           doCheck = true;
@@ -136,6 +136,7 @@
           '';
           postInstall = ''
             install -Dm755 target/debug/examples/schema-probe "$testHelpers/bin/schema-probe"
+            install -Dm755 target/debug/examples/application-smoke "$testHelpers/bin/application-smoke"
             glib-compile-schemas "$out/share/glib-2.0/schemas"
             substituteInPlace "$out/lib/systemd/user/way-shell.service" \
               --replace-fail /usr/bin/way-shell "$out/bin/way-shell"

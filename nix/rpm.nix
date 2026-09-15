@@ -74,6 +74,8 @@
               export RPM_DIRECTORY=${builds.${release}}/rpms/fedora-${release}-x86_64
               export POWER_PROVIDER=${cfg.fedora.releases.${release}.powerProvider}
               export SCHEMA_PROBE=${builds.${release}}/test-helpers/schema-probe
+              export APPLICATION_SMOKE_HELPER=${builds.${release}}/test-helpers/application-smoke
+              export APPLICATION_SMOKE_SCRIPT=${../tests/application-smoke.sh}
               export EXPECTED_SCHEMAS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.schemaIds)}
               source ${./tests/fedora-install.sh}
             ''

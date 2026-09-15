@@ -9,6 +9,27 @@
     let
       package = config.packages.way-shell;
       schemaProbe = package.testHelpers;
+      applicationSmoke =
+        backend:
+        pkgs.runCommand "way-shell-native-${backend}-application-check"
+          {
+            nativeBuildInputs = [
+              pkgs.sway
+              pkgs.niri
+              pkgs.dbus
+            ];
+            FONTCONFIG_FILE = "${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}";
+            WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
+          }
+          ''
+            set -euo pipefail
+            mkdir -p "$out" "$TMPDIR/home"
+            HOME="$TMPDIR/home" sh ${../tests/application-smoke.sh} \
+              ${package.testHelpers}/bin/application-smoke \
+              ${package}/bin/way-shell ${package}/bin/way-sh \
+              ${package}/share/gsettings-schemas/${package.name}/glib-2.0/schemas \
+              ${backend} "$out"
+          '';
     in
     {
       checks =
@@ -22,6 +43,9 @@
             test -x ${package}/bin/way-shell
             test -x ${package}/bin/way-sh
             test ! -e ${package}/bin/schema-probe
+            test ! -e ${package}/bin/application-smoke
+            test -x ${package.testHelpers}/bin/application-smoke
+            test "$(head -c 4 ${package.testHelpers}/bin/application-smoke)" = "$(printf '\177ELF')"
             test -s ${package}/share/licenses/way-shell/LICENSE
             test -s ${package}/share/gsettings-schemas/${package.name}/glib-2.0/schemas/gschemas.compiled
             grep -Fx 'ExecStart=${package}/bin/way-shell' ${package}/lib/systemd/user/way-shell.service
@@ -43,6 +67,8 @@
             env -i HOME="$PWD/home" XDG_DATA_HOME="$PWD/empty" XDG_DATA_DIRS="$PWD/empty" \
               GSETTINGS_BACKEND=memory ${pkgs.bash}/bin/bash ./probe-wrapper > "$out/schemas.txt"
           '';
+          native-application-sway = applicationSmoke "sway";
+          native-application-niri = applicationSmoke "niri";
         };
     };
 }

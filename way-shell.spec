@@ -60,9 +60,10 @@ cargo build --workspace --bins --release --frozen --jobs 1
 
 %check
 cargo test --workspace --frozen --jobs 1
-cargo build -p way-shell --example schema-probe --frozen --jobs 1
+cargo build -p way-shell --example schema-probe --example application-smoke --frozen --jobs 1
 if [ -n "${WAY_SHELL_TEST_ARTIFACTS:-}" ]; then
     install -Dm755 target/debug/examples/schema-probe "$WAY_SHELL_TEST_ARTIFACTS/schema-probe"
+    install -Dm755 target/debug/examples/application-smoke "$WAY_SHELL_TEST_ARTIFACTS/application-smoke"
 fi
 cargo build -p way-shell --example audio-compat --frozen --jobs 1
 sh tests/audio-compat.sh target/debug/examples/audio-compat

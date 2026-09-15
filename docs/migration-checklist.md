@@ -50,7 +50,7 @@ a claim that the complete migration is ready to install.
 - [x] 44. Move startup and shutdown into Rust.
 - [x] 45. Make Cargo the sole application build tool; remove C and the bridge.
 - [x] 46. Remove obsolete build dependencies.
-- [ ] 47. Add packaged Wayland smoke coverage.
+- [x] 47. Add packaged Wayland smoke coverage.
 - [ ] 48. Complete Rust development and migration documentation.
 - [ ] 49. Advance the RPM release over the installed package.
 
@@ -125,6 +125,7 @@ a claim that the complete migration is ready to install.
 - [x] Cargo-only workspace build, full Rust tests, formatting and strict Clippy pass. The three permanent crates replace the temporary bridge; all remaining project C, C tests and Makefiles are removed. The shared POSIX installer passes staging checks. The combined tests also reproduced and fixed an audio fixture directory collision between separately included helper modules.
 - [x] Trimmed native dependencies compile and pass the affected Rust/GTK checks. Regenerated Fedora 43/44 locks validate both complete images with Sway/Niri and ordinary-user smoke tools; conditional image requirements remain explicit. Evidence: `final-fedora-lock-update.log`.
 - [x] Retained compositor handles stop immediately during shutdown, queued events cannot restart them, and closed Wayland peers fail startup. Regression, reconnection, strict Clippy, full runtime and application smoke checks pass on both compositors (`a09a4ab`).
+- [x] Installed-package Sway/Niri smoke checks are wired into native Nix and both Fedora installation VMs. Rust helpers stay outside the application payload; Fedora uses an ordinary guest user and preserves logs. Parser tests, actual binary smoke, shell checks and derivation evaluation pass; execution of the final installed artifacts remains in the matrix below.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
