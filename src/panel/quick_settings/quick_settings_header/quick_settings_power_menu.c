@@ -11,6 +11,7 @@
 enum signals { signals_n };
 
 typedef struct _QuickSettingsPowerMenu {
+    GObject parent_instance;
     QuickSettingsMenuWidget menu;
     GtkButton *suspend;
     GtkButton *restart;
@@ -27,6 +28,9 @@ static void quick_settings_power_menu_dispose(GObject *gobject) {
     g_debug(
         "quick_settings_power_menu.c:quick_settings_power_menu_dispose() "
         "called.");
+
+    QuickSettingsPowerMenu *self = QUICK_SETTINGS_POWER_MENU(gobject);
+    g_clear_pointer(&self->revealer, g_ptr_array_unref);
 
     // Chain-up
     G_OBJECT_CLASS(quick_settings_power_menu_parent_class)->dispose(gobject);
@@ -221,8 +225,8 @@ GtkWidget *make_power_button(QuickSettingsPowerMenu *self, gchar *title,
     g_ptr_array_add(self->revealer, revealer);
 
     // wire gtk revealer's reveal notify signal
-    g_signal_connect(revealer, "notify::reveal-child",
-                     G_CALLBACK(on_revealer_reveal_child), self);
+    g_signal_connect_object(revealer, "notify::reveal-child",
+                            G_CALLBACK(on_revealer_reveal_child), self, 0);
 
     // make button
     GtkWidget *button = gtk_button_new_with_label(title);
@@ -299,8 +303,8 @@ static void quick_settings_power_menu_init_layout(
 
     // wire into quick settings hidden event and close all revealers
     QuickSettings *qs = quick_settings_get_global();
-    g_signal_connect(qs, "quick-settings-hidden",
-                     G_CALLBACK(on_quick_settings_hidden), self);
+    g_signal_connect_object(qs, "quick-settings-hidden",
+                            G_CALLBACK(on_quick_settings_hidden), self, 0);
 }
 
 void quick_settings_power_menu_reinitialize(QuickSettingsPowerMenu *self) {
