@@ -6,9 +6,8 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test
+check: core-test network-test
 	cd .. && tests/core-test
-	cd .. && tests/ipc-test
 	cd .. && tests/network-test
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
@@ -17,9 +16,6 @@ network-test: network.c ../src/services/network_manager_service.c ../src/service
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(CORE_SOURCES) $(LDFLAGS) $(LDLIBS) -o $@
-
-ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_service/ipc_protocol.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) ipc.c $(LDFLAGS) $(LDLIBS) -o $@
 
 gschemas.compiled: ../data/org.ldelossa.way-shell.gschema.xml
 	glib-compile-schemas --strict --targetdir=. ../data

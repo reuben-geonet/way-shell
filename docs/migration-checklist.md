@@ -45,9 +45,9 @@ a claim that the complete migration is ready to install.
 - [x] 39. Migrate notification presentation to Rust.
 - [x] 40. Migrate calendar and media presentation to Rust.
 - [x] 41. Migrate OSD and dialog overlays to Rust.
-- [ ] 42. Replace the shell IPC server with Rust.
+- [x] 42. Replace the shell IPC server with Rust.
 - [x] 43. Replace the packaging schema probe with Rust.
-- [ ] 44. Move startup and shutdown into Rust.
+- [x] 44. Move startup and shutdown into Rust.
 - [ ] 45. Make Cargo the sole application build tool; remove C and the bridge.
 - [ ] 46. Remove obsolete build dependencies.
 - [ ] 47. Add packaged Wayland smoke coverage.
@@ -119,6 +119,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust schema helper: all application schemas/keys, missing IDs, wrong backend and exit statuses pass. Native and Fedora checks now consume separately compiled helper artifacts; native derivations evaluate and packaging syntax passes.
 - [ ] Native/Fedora installed-environment checks using the new Rust schema artifacts.
 - [x] Reproduce and repair bundled GTK CSS parsing and negative panel-scrollbar sizing. The Rust theme parser regression and complete runtime checks pass on both compositors with fatal warnings enabled.
+- [x] Rust application and IPC activation: normal debug/release binaries, explicit backend selection, real volume acknowledgement, network snapshot lifetime, strict Clippy and full runtime checks pass. Actual release executables pass private Sway/Niri smoke and installation staging; the C entry point/server and obsolete IPC test are removed.
+- [ ] Native/Fedora package matrix for the Rust application entry point.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -141,9 +143,9 @@ volume and PulseAudio stream routing. The audio adapter preserves stable C
 records for the remaining widgets. MPRIS and notifications now run in Rust;
 the tray watcher, items, menus and all panel widgets also run in Rust.
 All switchers, activities, quick settings, the confirmation dialog and the
-complete message tray now run in Rust. The level OSD, command server, application
-startup and final packaging are being integrated. Package and laptop acceptance
-remain separate gates.
+complete message tray, level OSD, command server and application entry point now
+run in Rust. Make and the remaining unused C adapters are being removed, followed
+by the final packaging checks. Package and laptop acceptance remain separate gates.
 
 Following the user's updated direction, new migration tests are written in
 Rust. Existing C checks remain useful until their consumers migrate; no new

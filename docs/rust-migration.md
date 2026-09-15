@@ -1048,3 +1048,33 @@ copy removed the warning, and the full runtime now passes on Sway and Niri
 with fatal warnings enabled (`application-runtime-verified.log`). The component
 runner disables core dumps so failed GTK assertions retain logs without large
 local crash artifacts.
+
+## Rust application lifetime and command activation
+
+The installed executable now starts in Rust. An application hold keeps services
+and the command socket alive with no outputs; monitor removal closes the old
+desktop controllers and returning outputs create new ones from shared services.
+Weak signal closures, queued popup events and revision checks prevent stale
+callbacks from rebuilding closed views. Shutdown stops IPC first, disconnects
+output callbacks, closes widgets and releases service owners. GLib/GIO launches
+retain their own child reaping instead of a process-wide SIGCHLD handler.
+
+Required Wayland/compositor startup failures return a nonzero status and a clear
+diagnostic. Optional daemons leave their controls unavailable and recover through
+the existing service subscriptions. An explicitly stored backend setting wins;
+without one, NIRI_SOCKET takes precedence over SWAYSOCK, followed by the existing
+Sway default/discovery. The caller's debug-log setting is preserved.
+
+The Rust IPC server now dispatches to those service/controller handles. A new
+private PipeWire regression verifies missing-default failure, successful volume
+acknowledgement and actual 0.5 readback. Network fixtures retain owned snapshots
+across daemon loss and service destruction. Both replace remaining C coverage.
+The C entry point, IPC implementation and old IPC test are removed; Make delegates
+to the Rust executable temporarily until the final build cleanup.
+
+Normal workspace integration, affected tests, strict Clippy, release linking and
+both complete compositor fixtures pass in `application-cutover-integrated.log`.
+The ignored GTK runtime test is explicitly run under both compositors in native
+checks. Actual release binaries also pass rendered-window/CLI/notification,
+duplicate-launch, shutdown/restart and installation-staging checks in
+`application-release-smoke.log`. Installed-package and laptop gates remain.

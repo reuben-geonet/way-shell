@@ -291,7 +291,10 @@ fn exercise(context: &glib::MainContext, address: &str) {
     ownership(&daemon, true);
     let service = NetworkService::on_connection(&connection);
     wait(context, || {
-        service.state().connections.len() == 3 && service.state().access_points.len() == 2
+        let state = service.state();
+        state.connections.len() == 3
+            && state.access_points.len() == 2
+            && state.active_connections.len() == 3
     });
     let state = service.state();
     let saved = state
@@ -609,6 +612,19 @@ fn exercise(context: &glib::MainContext, address: &str) {
     assert!(service.state().connections.is_empty());
     assert!(service.state().access_points.is_empty());
     assert!(service.state().active_connections.is_empty());
+    // A caller's inventory remains owned and readable after libnm discards its
+    // objects. In particular, daemon loss must not empty a retained VPN list.
+    assert!(state.available);
+    assert_eq!(state.connections.len(), 3);
+    assert_eq!(state.active_connections.len(), 3);
+    assert_eq!(
+        state
+            .connections
+            .iter()
+            .filter(|saved| saved.is_vpn())
+            .count(),
+        2
+    );
     wait(context, || result.borrow().is_some());
     assert!(
         result
@@ -683,6 +699,25 @@ fn exercise(context: &glib::MainContext, address: &str) {
     let weak = service.downgrade();
     drop(service);
     assert!(weak.upgrade().is_none());
+    // Subsequent updates, daemon replacement, object removal and final service
+    // destruction cannot mutate or invalidate the snapshot returned earlier.
+    assert_eq!(saved.name, "fixture-wifi");
+    assert_eq!(saved.ssid.as_deref(), Some(b"fixture-wifi".as_slice()));
+    assert_eq!(point.ssid, b"fixture-wifi");
+    assert_eq!(point.strength, 73);
+    for (id, kind, uuid) in [
+        (VPN, "vpn", "9fcad6cc-28a2-43fd-bf8a-aafda519c416"),
+        (
+            WIREGUARD,
+            "wireguard",
+            "9fcad6cc-28a2-43fd-bf8a-aafda519c417",
+        ),
+    ] {
+        let retained = state.connections.iter().find(|item| item.id == id).unwrap();
+        assert_eq!(retained.name, "fixture-tunnel");
+        assert_eq!(retained.kind, kind);
+        assert_eq!(retained.uuid, uuid);
+    }
     wait(context, || result.borrow().is_some());
     assert!(
         result

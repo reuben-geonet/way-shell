@@ -1,5 +1,6 @@
-//! Rust services and widgets introduced alongside the existing shell.
+//! Way Shell's application, services and GTK interface on one GLib main loop.
 
+pub mod application;
 pub mod platform;
 pub mod resources;
 pub mod services;

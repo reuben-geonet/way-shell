@@ -20,14 +20,15 @@ SOURCES := $(sort $(shell find src -type f -name '*.c'))
 OBJS := $(SOURCES:.c=.o)
 BRIDGE := target/release/libway_shell_bridge.a
 
-.PHONY: all check clean install install-gschema
+.PHONY: all check clean install install-gschema way-shell
 all: way-shell cli
-check: all
+check: all $(BRIDGE)
 	$(CARGO) test --workspace $(CARGO_BUILD_FLAGS)
 	$(MAKE) -C tests check
 
-way-shell: $(OBJS) $(BRIDGE)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(BRIDGE) $(LIBS) -ldl -lpthread
+way-shell:
+	$(CARGO) build -p way-shell --bin way-shell --release $(CARGO_BUILD_FLAGS)
+	install -m755 target/release/way-shell $@
 
 .PHONY: bridge
 bridge:
