@@ -4,6 +4,7 @@ pub mod audio;
 pub mod clock;
 pub mod gamma;
 pub mod ipc;
+pub mod notifications;
 pub mod sway;
 mod whitepoints;
 pub mod wm;
