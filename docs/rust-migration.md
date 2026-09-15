@@ -852,3 +852,26 @@ to all GTK components. No warnings are suppressed. The empty-data-path check
 passes on both Sway and Niri with fatal warnings enabled; evidence is in
 `native-schema-environment{,-fixed}.log`. The full native package rerun remains
 an independent gate.
+
+## Rust activities and application discovery
+
+The activities view now uses an owned application catalog, asynchronous GIO
+enumeration and desktop-entry launching. It preserves the original application
+filter, 24-item pages, seven-column grid, GLib search, navigation, animation and
+visibility signals. Escape clears search and resets the carousel, retaining the
+existing open-view behavior. Portable GIcons also display file-based icons,
+fixing the old icon-name-only handling.
+
+Weak callbacks, queued search updates and inventory generations prevent stale
+buttons or launch completions from acting on a replaced view. The catalog owns
+its monitor subscription and cancels pending work on shutdown. Only a small
+GObject signal/command facade remains for the C popup mediator and startup.
+The C activities implementation and application widgets are removed.
+
+Rust fixtures use isolated desktop entries and launch a private marker program.
+They cover additions/removals, a deleted entry, keyboard navigation, file icons,
+reentrant updates, interrupted animations and retained widgets. Focused Rust
+tests, bridge signal/ownership checks, formatting, strict Clippy, a clean linked
+application and remaining existing tests pass. Both Sway and Niri run the Rust
+view with fatal warnings enabled. Evidence: `activities-normal-targeted.log`,
+`activities-normal-wayland.log` and `activities-cutover-integrated.log`.

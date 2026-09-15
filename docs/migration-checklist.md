@@ -38,7 +38,7 @@ a claim that the complete migration is ready to install.
 - [x] 32. Migrate panel indicators and workspaces to Rust.
 - [x] 33. Migrate shared and application switchers to Rust.
 - [x] 34. Migrate workspace, output, and rename switchers to Rust.
-- [ ] 35. Migrate application discovery and launching to Rust.
+- [x] 35. Migrate application discovery and launching to Rust.
 - [ ] 36. Migrate quick settings layout and system controls to Rust.
 - [ ] 37. Migrate network controls to Rust.
 - [ ] 38. Migrate mixer controls to Rust.
@@ -102,6 +102,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust shared/application switchers: selection, filtering, activation, shortcut ownership, nested updates, reopening and disposal pass on Sway/Niri; full workspace, formatting, Clippy and clean linked application checks pass.
 - [x] Rust workspace/output/rename views: full-width identifiers, literal names, raw move-window mode, failed dispatch, reordering and owned destruction pass; affected Rust/bridge tests, Clippy, clean application build and real Sway/Niri probes pass.
 - [ ] Native/Fedora package matrix for the Rust switcher cutover.
+- [x] Rust activities: private desktop discovery, search/navigation, actual launching, file icons, inventory changes, failed launches, interrupted animations and disposal pass on Sway/Niri; Rust adapter tests, formatting, Clippy, clean linked build and existing checks pass.
+- [ ] Native/Fedora package matrix for the Rust activities cutover.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -123,8 +125,9 @@ Rust owns Wayland, power, networking and the complete audio service, including
 volume and PulseAudio stream routing. The audio adapter preserves stable C
 records for the remaining widgets. MPRIS and notifications now run in Rust;
 the tray watcher, items, menus and all panel widgets also run in Rust.
-All switchers now run in Rust. Activities and quick-settings migration are
-underway. Package and laptop acceptance remain separate gates.
+All switchers and activities now run in Rust. Quick-settings system, network
+and audio controls are being migrated in parallel. Package and laptop acceptance
+remain separate gates.
 
 Following the user's updated direction, new migration tests are written in
 Rust. Existing C checks remain useful until their consumers migrate; no new

@@ -1,4 +1,5 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
+mod activities;
 mod app_switcher;
 mod audio;
 #[cfg(test)]

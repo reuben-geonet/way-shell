@@ -1,4 +1,5 @@
 //! GTK components share the application's GLib main loop.
+pub mod activities;
 pub mod app_switcher;
 pub mod output_switcher;
 pub mod panel;

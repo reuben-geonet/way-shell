@@ -1,3 +1,4 @@
+pub mod apps;
 pub mod audio;
 pub mod brightness;
 pub mod clock;
