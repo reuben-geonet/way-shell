@@ -526,3 +526,29 @@ completion, owner destruction, replacement, errors and recovery. Evidence:
 and `media-presentation-integrated.log`. These tests are now in native checks.
 The clean MPRIS package also exposed an ambient-schema dependency in the tray
 fixture; that fixture now builds and selects its own adjacent schema directory.
+
+## Rust notification service
+
+The display-independent model owns notification IDs, content, validated image
+bytes and monotonic expiration deadlines. The GIO service exposes the existing
+D-Bus interface and reports owned change events for the remaining C widgets.
+It recovers from a missing/restarted session bus and waits for the notification
+name if another daemon owns it. Teardown releases both active and queued name
+requests. Internal notifications stay local to the shell.
+
+Four reproduced C failures establish intentional ID fixes: first and wrapped
+IDs must be nonzero, an active replacement retains its ID and inventory position,
+and an absent replacement target receives a fresh unused ID matching its reply.
+Replacement updates content, timestamp and deadline without a close signal.
+Positive expiration times are now honored; zero and the server-default value
+of minus one retain the existing notification history. Events are queued during
+callbacks so every listener observes additions, replacements and removals in
+order, and expiration rechecks records renewed by a callback.
+
+The core has ten notification tests; five private-bus integration tests and two
+parser tests cover the service, including production-constructor bus recovery.
+The adapter has six ABI, mutable-string, removal, replacement and ownership
+tests. All affected tests and Clippy pass. Evidence:
+`notifications-ids-before.log`, `notifications-core-cargo-check.log`,
+`notifications-rust-service-check.log` and `notifications-bridge-check.log`.
+The C service remains active until widget replacement handling is ready.

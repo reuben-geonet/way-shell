@@ -4,6 +4,7 @@ pub mod clock;
 pub mod logind;
 pub mod media;
 pub mod network;
+pub mod notifications;
 pub mod power;
 pub mod power_profiles;
 pub mod settings;
