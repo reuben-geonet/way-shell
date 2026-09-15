@@ -1361,18 +1361,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "way-shell-bridge"
-version = "0.0.10"
-dependencies = [
- "gio",
- "glib 0.21.5",
- "gtk4",
- "way-shell",
- "way-shell-core",
- "wireplumber",
-]
-
-[[package]]
 name = "way-shell-core"
 version = "0.0.10"
 dependencies = [

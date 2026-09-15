@@ -9,7 +9,7 @@
     {
       packages = rec {
         default = way-shell;
-        way-shell = pkgs.stdenv.mkDerivation {
+        way-shell = pkgs.rustPlatform.buildRustPackage {
           pname = "way-shell";
           inherit (config.wayShell) version;
           src = config.wayShell.source;
@@ -18,16 +18,15 @@
           wrapGAppsInOutputs = [ "out" ];
           enableParallelBuilding = false;
           cargoDeps = config.wayShell.cargoVendor;
-          CARGO_BUILD_FLAGS = "--frozen";
+          # Use the same Cargo entry point and artifact layout as the Fedora build.
+          auditable = false;
+          CARGO_TARGET_DIR = "target";
           nativeBuildInputs = with pkgs; [
             pkg-config
             glib
             python3
-            cargo
-            rustc
             rustfmt
             clippy
-            rustPlatform.cargoSetupHook
             rustPlatform.bindgenHook
             # A shell wrapper lets the schema check reuse the exact environment
             # of the installed application with a GLib probe as its executable.
@@ -48,14 +47,20 @@
             wireplumber
             dconf
           ];
-          installFlags = [ "PREFIX=$(out)" ];
-          preBuild = ''
-            cargo build --workspace --frozen --jobs 1
+          # The default Rust hooks pass --target. These explicit native phases
+          # keep the shared installer and component probes on target/{release,debug}.
+          buildPhase = ''
+            runHook preBuild
+            cargo build --workspace --bins --release --frozen --jobs 1
             cargo build -p way-shell --example schema-probe --frozen --jobs 1
+            runHook postBuild
           '';
           doCheck = true;
           nativeCheckInputs = [ pkgs.pipewire pkgs.wireplumber pkgs.sway pkgs.niri pkgs.dbus ];
-          checkTarget = "check";
+          checkPhase = ''
+            runHook preCheck
+            runHook postCheck
+          '';
           WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
           FONTCONFIG_FILE = "${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}";
           preCheck = ''
@@ -126,16 +131,21 @@
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';
+          installPhase = ''
+            runHook preInstall
+            PREFIX="$out" CARGO_ARTIFACT_DIR=target/release \
+              DEPENDENCY_LICENSES=${config.wayShell.dependencyLicenses} \
+              sh scripts/install.sh
+            runHook postInstall
+          '';
           postInstall = ''
             install -Dm755 target/debug/examples/schema-probe "$testHelpers/bin/schema-probe"
             glib-compile-schemas "$out/share/glib-2.0/schemas"
-            install -Dm644 LICENSE "$out/share/licenses/way-shell/LICENSE"
-            cp -r ${config.wayShell.dependencyLicenses} "$out/share/licenses/way-shell/dependencies"
             substituteInPlace "$out/lib/systemd/user/way-shell.service" \
               --replace-fail /usr/bin/way-shell "$out/bin/way-shell"
           '';
           meta = {
-            description = "GNOME-like desktop shell for Sway";
+            description = "GNOME-like desktop shell for Sway and Niri";
             homepage = "https://github.com/ldelossa/way-shell";
             license = lib.licenses.gpl2Only;
             platforms = [ "x86_64-linux" ];

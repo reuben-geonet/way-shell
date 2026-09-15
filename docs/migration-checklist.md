@@ -48,7 +48,7 @@ a claim that the complete migration is ready to install.
 - [x] 42. Replace the shell IPC server with Rust.
 - [x] 43. Replace the packaging schema probe with Rust.
 - [x] 44. Move startup and shutdown into Rust.
-- [ ] 45. Make Cargo the sole application build tool; remove C and the bridge.
+- [x] 45. Make Cargo the sole application build tool; remove C and the bridge.
 - [ ] 46. Remove obsolete build dependencies.
 - [ ] 47. Add packaged Wayland smoke coverage.
 - [ ] 48. Complete Rust development and migration documentation.
@@ -101,9 +101,9 @@ a claim that the complete migration is ready to install.
 - [x] Reproduce native GTK schema-source failure with empty data paths; supplying the private compiled schema source passes the Rust tray probe on Sway and Niri with fatal warnings enabled. Native checks now also provide a font configuration.
 - [x] Rust shared/application switchers: selection, filtering, activation, shortcut ownership, nested updates, reopening and disposal pass on Sway/Niri; full workspace, formatting, Clippy and clean linked application checks pass.
 - [x] Rust workspace/output/rename views: full-width identifiers, literal names, raw move-window mode, failed dispatch, reordering and owned destruction pass; affected Rust/bridge tests, Clippy, clean application build and real Sway/Niri probes pass.
-- [ ] Native/Fedora package matrix for the Rust switcher cutover.
+- [x] Native/Fedora package matrix for the Rust switcher cutover, covered by `4c9bc21`.
 - [x] Rust activities: private desktop discovery, search/navigation, actual launching, file icons, inventory changes, failed launches, interrupted animations and disposal pass on Sway/Niri; Rust adapter tests, formatting, Clippy, clean linked build and existing checks pass.
-- [ ] Native/Fedora package matrix for the Rust activities cutover.
+- [x] Native/Fedora package matrix for the Rust activities cutover, covered by `4c9bc21`.
 - [x] Reproduce and fix stopping audio from a native volume callback: direct Rust regression, inventory/restart and routing checks pass; refreshes are delivered after native dispatch returns.
 - [x] Permanent Rust quick-settings system widgets and window lifecycle: focused tests, strict Clippy and private-service GTK probes pass on Sway/Niri. Runtime composition with network/audio remains pending.
 - [x] Permanent Rust network controls: three focused tests, strict workspace Clippy and private libnm fixtures on Sway/Niri pass, including radio state, saved Wi-Fi, VPN/WireGuard, cancellation/restart and password-log checks. Runtime composition remains pending.
@@ -111,9 +111,10 @@ a claim that the complete migration is ready to install.
 - [x] Permanent Rust confirmation dialog: strict Clippy and real Sway/Niri ownership/cancellation/reentrancy checks pass. Runtime cutover joins quick settings; level OSD work remains in step 41.
 - [x] Quick-settings runtime cutover: system, network, audio and confirmation dialog now run in Rust. Full workspace tests, strict Clippy, clean linked build, existing tests and composed Sway/Niri probes pass; 56 replaced C sources/headers and five obsolete C widget tests are removed.
 - [x] Clean native package/schema checks for quick settings and the confirmation dialog (`4c9bc21`). Artifacts `.cache/rust-migration/artifacts/quick-settings-native` -> `/nix/store/1s7q3ci267vvnxln7dc1j2fv14lljhd8-way-shell-native-package-check` and `quick-settings-native-1` -> `/nix/store/z3bjhn6lmis94f7x3gmzdvy8fl3r1kv4-way-shell-native-schemas-check`.
-- [ ] Fedora package matrix through quick settings (`4c9bc21`): offline builds are running.
+- [x] Fedora package matrix through quick settings (`4c9bc21`): both offline builds and fresh-VM installation/schema/library/uninstall checks pass. Artifact `.cache/rust-migration/artifacts/quick-settings-rpms` -> `/nix/store/nyx32r3wssqicvg4mkdd5b2yszmli2mv-way-shell-rpms`; both selected power providers are retained.
 - [x] Rust message tray: notification history/actions/DND, popup replacement/expiry, calendar and media cards, fade/underlay mediation and retained-widget cleanup pass on Sway/Niri. Full workspace, strict Clippy and clean linked build pass; eleven replaced C sources/headers and four obsolete C tests are removed.
 - [ ] Native/Fedora package matrix for the Rust message-tray cutover.
+- [x] Native package/schema checks through the message tray, level OSD and Rust schema helper (`5de7eee`). Artifacts `.cache/rust-migration/artifacts/message-tray-native` -> `/nix/store/dplkyphrg46sb6lj7k2zbqzzqx7n8323-way-shell-native-package-check` and `message-tray-native-1` -> `/nix/store/1yjmgjssc7i2d33rjxhp409ghck60f8l-way-shell-native-schemas-check`.
 - [x] Rust level OSD is active with the existing confirmation dialog. Audio/brightness updates, default-device suppression, animation/timer cancellation, removed devices, reentrancy and cleanup pass on Sway/Niri; affected Rust tests, strict Clippy and linked build pass.
 - [x] Permanent Rust IPC server: five real-socket tests cover all 33 actions, malformed datagrams, replies, deadlines, concurrency, socket ownership and immediate cancellation. Normal workspace integration and strict Clippy pass; application activation joins step 44.
 - [x] Rust schema helper: all application schemas/keys, missing IDs, wrong backend and exit statuses pass. Native and Fedora checks now consume separately compiled helper artifacts; native derivations evaluate and packaging syntax passes.
@@ -121,6 +122,7 @@ a claim that the complete migration is ready to install.
 - [x] Reproduce and repair bundled GTK CSS parsing and negative panel-scrollbar sizing. The Rust theme parser regression and complete runtime checks pass on both compositors with fatal warnings enabled.
 - [x] Rust application and IPC activation: normal debug/release binaries, explicit backend selection, real volume acknowledgement, network snapshot lifetime, strict Clippy and full runtime checks pass. Actual release executables pass private Sway/Niri smoke and installation staging; the C entry point/server and obsolete IPC test are removed.
 - [ ] Native/Fedora package matrix for the Rust application entry point.
+- [x] Cargo-only workspace build, full Rust tests, formatting and strict Clippy pass. The three permanent crates replace the temporary bridge; all remaining project C, C tests and Makefiles are removed. The shared POSIX installer passes staging checks. The combined tests also reproduced and fixed an audio fixture directory collision between separately included helper modules.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -139,15 +141,15 @@ user's request so VS Code shows the edits and branch history. The Bluetooth
 branch is preserved. The former cache worktree is detached and inactive.
 
 Rust owns Wayland, power, networking and the complete audio service, including
-volume and PulseAudio stream routing. The audio adapter preserves stable C
-records for the remaining widgets. MPRIS and notifications now run in Rust;
+volume and PulseAudio stream routing. MPRIS and notifications now run in Rust;
 the tray watcher, items, menus and all panel widgets also run in Rust.
 All switchers, activities, quick settings, the confirmation dialog and the
 complete message tray, level OSD, command server and application entry point now
-run in Rust. Make and the remaining unused C adapters are being removed, followed
-by the final packaging checks. Package and laptop acceptance remain separate gates.
+run in Rust. Cargo owns application compilation and tests; the temporary bridge,
+project C and Makefiles are removed. Final packaging checks are underway.
+Package and laptop acceptance remain separate gates.
 
 Following the user's updated direction, new migration tests are written in
-Rust. Existing C checks remain useful until their consumers migrate; no new
-C test harnesses are added. The tray and menu services switched together
+Rust. The final obsolete C checks are removed with the unused adapters after
+their Rust replacements pass. The tray and menu services switched together
 after their Rust integration checks, avoiding a temporary C menu adapter.

@@ -48,8 +48,8 @@ Requires: systemd
 Requires: wayland-devel
 
 %description
-A Gnome inspired desktop shell for Wayland compositors/window managers written
-in C and Gtk4.
+A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,
+libadwaita and gtk4-layer-shell.
 
 Way-Shell expects a Gnome-like environment to be available.
 This means DBus must be running and the following services must be available:
@@ -57,23 +57,17 @@ This means DBus must be running and the following services must be available:
 - Logind
 - NetworkManager
 - WirePlumber/Pipewire
-- PowerProfiles Daemon
+- power-profiles-daemon or tuned-ppd
 - UPower
 
 If you're using Fedora these services should be available by default.
-
-Currently Way-Shell only supports Sway but this will change as the project
-matures.
 
 %prep
 %setup -q
 
 %build
 export CARGO_BUILD_JOBS=1
-export CARGO_BUILD_FLAGS=--frozen
-cargo build --workspace --frozen
-# Generated resources and Wayland sources are not safe to build in parallel yet.
-make -j1
+cargo build --workspace --bins --release --frozen --jobs 1
 
 %check
 cargo test --workspace --frozen --jobs 1
@@ -83,10 +77,12 @@ if [ -n "${WAY_SHELL_TEST_ARTIFACTS:-}" ]; then
 fi
 cargo build -p way-shell --example audio-compat --frozen --jobs 1
 sh tests/audio-compat.sh target/debug/examples/audio-compat
-make -j1 check CARGO_BUILD_FLAGS=--frozen
 
 %install
-make install DESTDIR=%{buildroot}
+DESTDIR="%{buildroot}" PREFIX="%{_prefix}" BINDIR="%{_bindir}" \
+    SCHEMADIR="%{_datadir}/glib-2.0/schemas" USERUNITDIR="%{_userunitdir}" \
+    LICENSEDIR="%{_datadir}/licenses/%{name}" CARGO_ARTIFACT_DIR=target/release \
+    DEPENDENCY_LICENSES="$PWD/dependency-licenses" sh scripts/install.sh
 
 %post
 glib-compile-schemas %{_datadir}/glib-2.0/schemas
@@ -95,8 +91,7 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 glib-compile-schemas %{_datadir}/glib-2.0/schemas
 
 %files
-%license LICENSE
-%license dependency-licenses
+%license %{_datadir}/licenses/%{name}
 %{_bindir}/way-shell
 %{_bindir}/way-sh
 %{_datadir}/glib-2.0/schemas/org.ldelossa.way-shell.gschema.xml

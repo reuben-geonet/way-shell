@@ -6,8 +6,8 @@
       internal = true;
     };
     config.wayShell = {
-      # Both package formats consume exactly this snapshot. In particular, a
-      # development build must not silently contribute generated C or objects.
+      # Both package formats consume this snapshot: Cargo sources, fixtures,
+      # resources, protocol XML and installation scripts, without local builds.
       source = lib.cleanSourceWith {
         src = ../.;
         name = "way-shell-source";
@@ -22,10 +22,13 @@
             ".cache"
             ".agents"
             ".codex"
+            ".direnv"
             ".github"
             ".vscode"
             "build"
             "dist"
+            "outputs"
+            "staging"
             "target"
             "gschemas.compiled"
           ])
@@ -42,7 +45,12 @@
             ".gdb_history"
           ])
           && !(lib.hasSuffix ".o" name)
-          && !(lib.hasSuffix ".d" name);
+          && !(lib.hasSuffix ".d" name)
+          && !(lib.hasSuffix ".a" name)
+          && !(lib.hasSuffix ".rlib" name)
+          && !(lib.hasSuffix ".rmeta" name)
+          && !(lib.hasSuffix ".pending" name)
+          && !(lib.hasPrefix "tests/" relative && lib.hasSuffix "-test" name);
       };
       version = let
         cargoVersion = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;

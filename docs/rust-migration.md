@@ -1078,3 +1078,26 @@ The ignored GTK runtime test is explicitly run under both compositors in native
 checks. Actual release binaries also pass rendered-window/CLI/notification,
 duplicate-launch, shutdown/restart and installation-staging checks in
 `application-release-smoke.log`. Installed-package and laptop gates remain.
+
+## Cargo-only build
+
+The workspace now contains only `way-shell-core`, `way-shell` and `way-sh`.
+The temporary static bridge, remaining C adapters and headers, obsolete C tests,
+schema probe and Makefiles are removed. XML definitions, resource manifests,
+settings, CSS and reusable fixtures remain tracked. Cargo generates resources
+inside its build output and the Rust Wayland crates provide protocol bindings.
+
+Nix uses `rustPlatform.buildRustPackage`. Native and offline Fedora builds use
+Cargo directly and stage the same artifacts through `scripts/install.sh`.
+The script installs the two executables, schema XML, user unit and licenses;
+packaging hooks compile schemas, wrap the Nix executable and select unit paths.
+Test helpers remain outside the application payload. The source filter excludes
+local build outputs while retaining manifests, lockfile, build scripts and tests.
+
+The three-crate build, full Rust suite, formatting and strict Clippy pass in
+`cargo-only-integrated.log`; actual release staging passed in
+`application-release-smoke.log`. The full suite exposed module-local audio
+fixture counters producing the same directory name. GLib UUIDs keep separately
+included fixtures isolated; both concurrent cases now pass. Native installed
+schema acceptance through `5de7eee` and both Fedora package checks through
+`4c9bc21` also pass. The final Cargo-only package matrix remains a separate gate.
