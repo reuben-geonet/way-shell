@@ -27,6 +27,7 @@ typedef struct {
     gboolean fail_connect;
     guint calls;
     guint errors;
+    guint successes;
     guint root_registration, adapter_registration;
     MockDevice devices[4];
     GDBusMethodInvocation *delayed;
@@ -169,6 +170,10 @@ static void error_seen(BluetoothService *service, const char *message, Fixture *
     f->errors++;
 }
 
+static void success_seen(BluetoothService *service, Fixture *f) {
+    f->successes++;
+}
+
 static void bus_name(Fixture *f, gboolean own) {
     g_autoptr(GVariant) reply = g_dbus_connection_call_sync(f->server,
         "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
@@ -212,6 +217,7 @@ static void setup(Fixture *f, gconstpointer data) {
     g_assert_cmpint(write(f->radio_peer, &radio, sizeof(radio)), ==, sizeof(radio));
     f->service = bluetooth_service_new(f->client, sockets[0]);
     g_signal_connect(f->service, "operation-error", G_CALLBACK(error_seen), f);
+    g_signal_connect(f->service, "operation-succeeded", G_CALLBACK(success_seen), f);
     wait_ready(f);
 }
 
@@ -472,6 +478,38 @@ static void test_completed_operation_error(Fixture *f, gconstpointer data) {
         g_assert_false(((BluetoothDevice *)devices->pdata[i])->busy);
 }
 
+static void test_late_connection(Fixture *f, gconstpointer data) {
+    gboolean target = GPOINTER_TO_INT(data);
+    f->devices[0].connected = !target;
+    notify(f, MOUSE);
+    pump();
+    f->delay_connect = TRUE;
+    bluetooth_service_toggle_device(f->service, MOUSE);
+    pump();
+    g_dbus_method_invocation_return_dbus_error(f->delayed,
+        "org.freedesktop.DBus.Error.NoReply", "Timeout was reached");
+    g_clear_object(&f->delayed);
+    pump();
+    g_assert_cmpuint(f->errors, ==, 1);
+    g_assert_cmpuint(f->successes, ==, 0);
+
+    /* Neither an unrelated device nor an unchanged state resolves the error. */
+    f->devices[1].connected = TRUE;
+    notify(f, f->devices[1].path);
+    notify(f, MOUSE);
+    pump();
+    g_assert_cmpuint(f->successes, ==, 0);
+
+    /* BlueZ can finish after our method call has already timed out. */
+    f->devices[0].connected = target;
+    notify(f, MOUSE);
+    pump();
+    g_assert_cmpuint(f->successes, ==, 1);
+    notify(f, MOUSE);
+    pump();
+    g_assert_cmpuint(f->successes, ==, 1);
+}
+
 static void test_external_power(Fixture *f, gconstpointer data) {
     f->powered = FALSE;
     notify(f, "/org/bluez/hci0");
@@ -617,6 +655,8 @@ int main(int argc, char **argv) {
     g_test_add("/bluetooth/owner-and-removal", Fixture, NULL, setup, test_owner_and_removal, teardown);
     g_test_add("/bluetooth/removed-operation", Fixture, NULL, setup, test_removed_operation, teardown);
     g_test_add("/bluetooth/completed-operation-error", Fixture, NULL, setup, test_completed_operation_error, teardown);
+    g_test_add("/bluetooth/late-connect", Fixture, GINT_TO_POINTER(TRUE), setup, test_late_connection, teardown);
+    g_test_add("/bluetooth/late-disconnect", Fixture, GINT_TO_POINTER(FALSE), setup, test_late_connection, teardown);
     g_test_add("/bluetooth/external-power", Fixture, NULL, setup, test_external_power, teardown);
     g_test_add("/bluetooth/power-timeout", Fixture, NULL, setup, test_power_timeout, teardown);
     g_test_add("/bluetooth/airplane-reversal", Fixture, NULL, setup, test_airplane_reversal, teardown);

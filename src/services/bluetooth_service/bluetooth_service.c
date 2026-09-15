@@ -17,6 +17,8 @@ struct _BluetoothService {
     GDBusObjectManager *manager;
     GCancellable *initialization;
     GHashTable *pending; /* object path -> GCancellable */
+    GDBusProxy *failed_device;
+    gboolean failed_device_target;
     GHashTable *radios; /* rfkill index -> struct rfkill_event */
     GHashTable *restore_power; /* adapter path -> powered + 1 */
     GHashTable *restore_blocks; /* rfkill index -> soft + 1 */
@@ -55,8 +57,14 @@ static void changed(BluetoothService *self) {
 }
 
 static void report_error(BluetoothService *self, const char *message) {
+    g_clear_object(&self->failed_device);
     g_message("Bluetooth: %s", message);
     g_signal_emit(self, signals[OPERATION_ERROR], 0, message);
+}
+
+static void operation_succeeded(BluetoothService *self) {
+    g_clear_object(&self->failed_device);
+    g_signal_emit(self, signals[OPERATION_SUCCEEDED], 0);
 }
 
 static gboolean boolean_property(GDBusProxy *proxy, const char *name) {
@@ -290,7 +298,7 @@ static void finish_power(BluetoothService *self, gboolean success) {
     if (success && self->block_after_off && self->rfkill_fd >= 0)
         success = write_radio(self, RFKILL_OP_CHANGE_ALL, 0, TRUE);
     self->block_after_off = FALSE;
-    if (success) g_signal_emit(self, signals[OPERATION_SUCCEEDED], 0);
+    if (success) operation_succeeded(self);
     changed(self);
 }
 
@@ -359,9 +367,13 @@ static void operation_finished(GObject *source, GAsyncResult *result,
         g_autofree char *message =
             g_strdup_printf("%s: %s", op->description, error->message);
         report_error(self, message);
+        if (!power) {
+            g_set_object(&self->failed_device, op->proxy);
+            self->failed_device_target = target;
+        }
         if (power) finish_power(self, FALSE);
     } else if (relevant && !superseded && (!error || reached)) {
-        g_signal_emit(self, signals[OPERATION_SUCCEEDED], 0);
+        operation_succeeded(self);
     }
     changed(self);
     g_object_unref(op->proxy);
@@ -573,6 +585,12 @@ void bluetooth_service_set_airplane_mode(BluetoothService *self,
 }
 
 static void prune_operations(BluetoothService *self) {
+    if (self->failed_device) {
+        const char *path = g_dbus_proxy_get_object_path(self->failed_device);
+        g_autoptr(GDBusProxy) current = get_proxy(self, path, DEVICE);
+        if (current != self->failed_device)
+            g_clear_object(&self->failed_device);
+    }
     GHashTableIter iter;
     gpointer key, value;
     g_hash_table_iter_init(&iter, self->pending);
@@ -610,6 +628,13 @@ static void properties_changed(GDBusObjectManagerClient *manager,
                                GVariant *properties, const char *const *invalid,
                                BluetoothService *self) {
     prune_operations(self);
+    /* A timed-out call can still complete in BlueZ. Clear its error only
+     * when that same device reaches the requested connection state. */
+    gboolean connected;
+    if (proxy == self->failed_device &&
+        g_variant_lookup(properties, "Connected", "b", &connected) &&
+        connected == self->failed_device_target)
+        operation_succeeded(self);
     gboolean powered;
     if (self->airplane_mode && !bluetooth_service_busy(self) &&
         !g_strcmp0(g_dbus_proxy_get_interface_name(proxy), ADAPTER) &&
@@ -621,6 +646,7 @@ static void properties_changed(GDBusObjectManagerClient *manager,
 static void owner_changed(GObject *manager, GParamSpec *pspec,
                           BluetoothService *self) {
     if (!bluetooth_service_ready(self)) {
+        g_clear_object(&self->failed_device);
         GHashTableIter iter;
         gpointer value;
         g_hash_table_iter_init(&iter, self->pending);
@@ -667,6 +693,7 @@ static void bluetooth_service_dispose(GObject *object) {
     if (self->rfkill_fd >= 0) close(self->rfkill_fd);
     self->rfkill_fd = -1;
     if (self->manager) g_signal_handlers_disconnect_by_data(self->manager, self);
+    g_clear_object(&self->failed_device);
     g_clear_object(&self->manager);
     g_clear_object(&self->connection);
     G_OBJECT_CLASS(bluetooth_service_parent_class)->dispose(object);
