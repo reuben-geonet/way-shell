@@ -118,6 +118,7 @@ a claim that the complete migration is ready to install.
 - [x] Permanent Rust IPC server: five real-socket tests cover all 33 actions, malformed datagrams, replies, deadlines, concurrency, socket ownership and immediate cancellation. Normal workspace integration and strict Clippy pass; application activation joins step 44.
 - [x] Rust schema helper: all application schemas/keys, missing IDs, wrong backend and exit statuses pass. Native and Fedora checks now consume separately compiled helper artifacts; native derivations evaluate and packaging syntax passes.
 - [ ] Native/Fedora installed-environment checks using the new Rust schema artifacts.
+- [x] Reproduce and repair bundled GTK CSS parsing and negative panel-scrollbar sizing. The Rust theme parser regression and complete runtime checks pass on both compositors with fatal warnings enabled.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

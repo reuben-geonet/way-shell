@@ -1031,3 +1031,20 @@ now including the Rust helper. Three Rust tests, executable exit-status checks,
 strict Clippy, syntax checks and Nix derivation evaluation pass; evidence is in
 `schema-probe-rust.log` and `schema-probe-executable.log`. Installed-environment
 acceptance remains part of the native and Fedora package matrix.
+
+## Bundled GTK stylesheet corrections
+
+The full Rust application fixture exposed eight parser diagnostics in each
+bundled theme. Missing declaration semicolons, an unsupported `overflow`
+property and malformed battery-menu selectors are corrected. The theme probe
+now collects GTK parser errors for both embedded stylesheets and fails on any
+diagnostic. `bundled-css-before.log` records the failure;
+`bundled-css-after.log` records both compositor passes after the correction.
+
+The actual panel also exposed a negative scrollbar minimum: its existing
+negative bottom margin exceeded GTK's intrinsic height. A 12 px minimum keeps
+the existing offset while preventing a negative allocation. An isolated theme
+copy removed the warning, and the full runtime now passes on Sway and Niri
+with fatal warnings enabled (`application-runtime-verified.log`). The component
+runner disables core dumps so failed GTK assertions retain logs without large
+local crash artifacts.

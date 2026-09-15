@@ -1,11 +1,31 @@
 //! Run on an isolated Wayland display to exercise CSS and layer-shell together.
 use adw::prelude::*;
-use std::time::Duration;
+use std::{cell::RefCell, rc::Rc, time::Duration};
+use way_shell::resources;
 use way_shell::services::theme::{Theme, ThemeService};
 use way_shell::ui::window::{LayerWindow, WindowRole};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     adw::init()?;
+    resources::get();
+    for selected in [Theme::Light, Theme::Dark] {
+        let provider = gtk::CssProvider::new();
+        let errors = Rc::new(RefCell::new(Vec::new()));
+        let observed = errors.clone();
+        provider.connect_parsing_error(move |_, section, error| {
+            observed.borrow_mut().push(format!(
+                "{}:{}: {error}",
+                section.start_location().lines() + 1,
+                section.start_location().line_chars() + 1
+            ));
+        });
+        provider.load_from_resource(selected.resource_path());
+        assert!(
+            errors.borrow().is_empty(),
+            "Bundled {selected:?} CSS must parse without errors: {:?}",
+            errors.borrow()
+        );
+    }
     if !gtk4_layer_shell::is_supported() {
         return Err("The compositor does not support layer-shell".into());
     }

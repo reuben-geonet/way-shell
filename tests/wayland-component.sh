@@ -1,6 +1,8 @@
 #!/bin/sh
 # Isolated component smoke test; accepts a compiled Rust example as its argument.
 set -eu
+# A failing GTK assertion should leave diagnostics without a large core dump.
+ulimit -c 0
 if [ "${WAY_SHELL_TEST_BUS:-}" != 1 ]; then
     exec dbus-run-session --config-file=tests/fixtures/session-bus.conf -- \
         env WAY_SHELL_TEST_BUS=1 sh "$0" "$@"
