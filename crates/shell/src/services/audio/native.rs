@@ -43,6 +43,7 @@ impl Drop for Handler {
     }
 }
 pub(super) struct Session {
+    context: glib::MainContext,
     core: Core,
     manager: ObjectManager,
     mixer: Option<Plugin>,
@@ -72,12 +73,10 @@ impl Session {
         if let Some(remote) = remote {
             properties.insert("remote.name", remote);
         }
+        let context = glib::MainContext::ref_thread_default();
         let mut session = Self {
-            core: Core::new(
-                Some(&glib::MainContext::ref_thread_default()),
-                None,
-                Some(properties),
-            ),
+            core: Core::new(Some(&context), None, Some(properties)),
+            context,
             manager: ObjectManager::new(),
             mixer: None,
             defaults: None,
@@ -140,10 +139,11 @@ impl Session {
     }
     pub fn subscribe(&mut self, service: &AudioService, generation: u64) {
         let weak = service.downgrade();
+        let context = self.context.clone();
         let handler = self.core.connect_disconnected(move |_| {
             // Tear down after this native signal has returned, on the owning context.
             let weak = weak.clone();
-            glib::MainContext::ref_thread_default().spawn_local(async move {
+            context.spawn_local(async move {
                 if let Some(service) = weak.upgrade() {
                     service.disconnected(generation);
                 }
@@ -151,21 +151,23 @@ impl Session {
         });
         self.handlers.push(Handler::new(&self.core, handler));
         let weak = service.downgrade();
+        let context = self.context.clone();
         self.handlers.push(Handler::new(
             &self.manager,
             self.manager.connect_objects_changed(move |_| {
                 if let Some(service) = weak.upgrade() {
-                    service.refresh();
+                    service.schedule_refresh(&context);
                 }
             }),
         ));
         for plugin in [&self.mixer, &self.defaults].into_iter().flatten() {
             let weak = service.downgrade();
+            let context = self.context.clone();
             self.handlers.push(Handler::new(
                 plugin,
                 plugin.connect_local("changed", false, move |_| {
                     if let Some(service) = weak.upgrade() {
-                        service.refresh();
+                        service.schedule_refresh(&context);
                     }
                     None
                 }),
@@ -222,11 +224,12 @@ impl Session {
                         volume,
                     });
                     let weak = service.downgrade();
+                    let context = self.context.clone();
                     self.objects.push(Handler::new(
                         node,
                         node.connect_state_changed(move |_, _, _| {
                             if let Some(service) = weak.upgrade() {
-                                service.refresh();
+                                service.schedule_refresh(&context);
                             }
                         }),
                     ));
@@ -261,11 +264,12 @@ impl Session {
             }
             if let Some(pw) = object.dynamic_cast_ref::<PipewireObject>() {
                 let weak = service.downgrade();
+                let context = self.context.clone();
                 self.objects.push(Handler::new(
                     pw,
                     pw.connect_properties_notify(move |_| {
                         if let Some(service) = weak.upgrade() {
-                            service.refresh();
+                            service.schedule_refresh(&context);
                         }
                     }),
                 ));

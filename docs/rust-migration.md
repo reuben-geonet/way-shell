@@ -875,3 +875,18 @@ tests, bridge signal/ownership checks, formatting, strict Clippy, a clean linked
 application and remaining existing tests pass. Both Sway and Niri run the Rust
 view with fatal warnings enabled. Evidence: `activities-normal-targeted.log`,
 `activities-normal-wayland.log` and `activities-cutover-integrated.log`.
+
+## Audio callback shutdown regression
+
+The new Rust mixer fixture exposed a native crash when a volume notification
+updated GTK and an observer synchronously stopped the audio service. That stop
+freed the WirePlumber connection while PipeWire was still dispatching the event.
+A standalone Rust service test reproduces the segmentation fault without GTK.
+
+Native callbacks now coalesce refreshes onto their owning GLib context. Service
+observers run after native dispatch returns; stopping still clears state
+synchronously and cancels queued refreshes before releasing native objects.
+Queued work holds only a weak service reference, so shutdown needs no deferred
+native-owner cleanup. The new regression, existing inventory/restart and
+routing/cancellation/deadline tests, and strict Clippy pass. Evidence:
+`audio-stop-native-before.log` and `audio-stop-native-after.log`.

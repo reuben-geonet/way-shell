@@ -127,6 +127,7 @@ mod imp {
         pub(super) router: RefCell<routing::Router>,
         pub(super) session: RefCell<Option<native::Session>>,
         pub task: RefCell<Option<glib::JoinHandle<()>>>,
+        pub refresh_task: RefCell<Option<glib::JoinHandle<()>>>,
         pub generation: Cell<u64>,
     }
     #[glib::object_subclass]
@@ -185,6 +186,10 @@ impl AudioService {
         self.imp()
             .generation
             .set(self.imp().generation.get().wrapping_add(1));
+        let refresh = self.imp().refresh_task.borrow_mut().take();
+        if let Some(refresh) = refresh {
+            refresh.abort();
+        }
         let task = self.imp().task.borrow_mut().take();
         if let Some(task) = task {
             task.abort();
@@ -250,6 +255,25 @@ impl AudioService {
         if let Some(state) = state {
             self.publish(state);
         }
+    }
+    fn schedule_refresh(&self, context: &glib::MainContext) {
+        if self.imp().refresh_task.borrow().is_some() {
+            return;
+        }
+        let weak = self.downgrade();
+        let generation = self.imp().generation.get();
+        // Application subscribers may stop the service. Publish after the native
+        // PipeWire dispatch returns, so stop cannot destroy its current stack.
+        // The pending task owns no service or native object and reset cancels it.
+        let task = context.spawn_local(async move {
+            if let Some(service) = weak.upgrade()
+                && service.imp().generation.get() == generation
+            {
+                service.imp().refresh_task.borrow_mut().take();
+                service.refresh();
+            }
+        });
+        self.imp().refresh_task.replace(Some(task));
     }
     fn publish(&self, state: AudioState) {
         if *self.imp().state.borrow() != state {

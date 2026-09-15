@@ -104,6 +104,7 @@ a claim that the complete migration is ready to install.
 - [ ] Native/Fedora package matrix for the Rust switcher cutover.
 - [x] Rust activities: private desktop discovery, search/navigation, actual launching, file icons, inventory changes, failed launches, interrupted animations and disposal pass on Sway/Niri; Rust adapter tests, formatting, Clippy, clean linked build and existing checks pass.
 - [ ] Native/Fedora package matrix for the Rust activities cutover.
+- [x] Reproduce and fix stopping audio from a native volume callback: direct Rust regression, inventory/restart and routing checks pass; refreshes are delivered after native dispatch returns.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
