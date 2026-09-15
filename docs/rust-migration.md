@@ -714,3 +714,20 @@ The old C tray, menu parser and shared D-Bus service are removed together
 with the last five generated D-Bus binding pairs and their Make rules.
 Protocol XML remains tracked. Rust coverage replaces the old C tray/menu
 service tests; the existing C widget tests remain until the panel port.
+
+## Rust window ownership
+
+LayerWindow preserves each component's layer, namespace, anchors, margins,
+keyboard mode and panel exclusive zone. Its last owner destroys the GTK
+surface; native close and output invalidation also close paired underlays.
+VisibilityController rejects stale animation completions and handles reopening
+from inside GTK visibility callbacks. PopupCoordinator retains the existing
+asymmetric mediation timing and exclusions; it stores weak controllers.
+
+Four display-independent transition/policy tests, strict Clippy, window smoke
+checks and theme cycles pass on Sway and Niri. Sway checks real output creation
+and removal. Both exercise GDK invalidation, cleanup and reentrant visibility.
+The headless seat has no physical keyboard, so these checks verify the requested
+keyboard mode and GTK focus chain; real keyboard acceptance remains pending.
+The native Nix check runs both compositor probes. Theme compatibility is the
+first adopter; application panel and popup adoption follows in the UI ports.

@@ -1,12 +1,11 @@
 //! Run on an isolated Wayland display to exercise CSS and layer-shell together.
-use gio::prelude::*;
-use gtk::prelude::*;
-use gtk4_layer_shell::{Edge, Layer, LayerShell};
+use adw::prelude::*;
 use std::time::Duration;
 use way_shell::services::theme::{Theme, ThemeService};
+use way_shell::ui::window::{LayerWindow, WindowRole};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    gtk::init()?;
+    adw::init()?;
     if !gtk4_layer_shell::is_supported() {
         return Err("The compositor does not support layer-shell".into());
     }
@@ -26,13 +25,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::path::PathBuf::from("/nonexistent/way-shell-theme-test"),
         );
         theme.attach_display(&display);
-        let window = gtk::Window::new();
-        window.init_layer_shell();
-        window.set_layer(Layer::Top);
-        window.set_namespace(Some("way-shell-theme-test"));
-        window.set_anchor(Edge::Top, true);
-        window.set_default_size(320, 40);
-        window.set_child(Some(&gtk::Label::new(Some(
+        let window = LayerWindow::new(WindowRole::Panel, None)?;
+        window.window().set_default_size(320, 40);
+        window.window().set_content(Some(&gtk::Label::new(Some(
             "Way Shell theme compatibility",
         ))));
         window.present();
@@ -40,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             theme.set_theme(selected)?;
             context.block_on(glib::timeout_future(Duration::from_millis(50)));
         }
-        assert!(window.is_mapped());
+        assert!(window.window().is_mapped());
         let weak = theme.downgrade();
         window.close();
         drop(window);

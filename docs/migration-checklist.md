@@ -34,7 +34,7 @@ a claim that the complete migration is ready to install.
 - [x] 28. Migrate the notification service to Rust.
 - [x] 29. Migrate tray watcher and item tracking to Rust.
 - [x] 30. Migrate D-Bus menu handling to Rust.
-- [ ] 31. Introduce Rust window and visibility controllers.
+- [x] 31. Introduce Rust window and visibility controllers.
 - [ ] 32. Migrate panel indicators and workspaces to Rust.
 - [ ] 33. Migrate shared and application switchers to Rust.
 - [ ] 34. Migrate workspace, output, and rename switchers to Rust.
@@ -93,6 +93,7 @@ a claim that the complete migration is ready to install.
 - [x] Clean native notification application/schema checks at `ff6a042`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/notifications-native-schemas` -> `/nix/store/spb53v4cfmn57wzqy8gbpmwgg59lhq35-way-shell-native-schemas-check`.
 - [x] Rust tray/menu services and adapter: owned item/menu snapshots, unique registration, malformed images/layouts, cancellation, restart, deadlines, queued callbacks and disposal; full workspace tests, formatting, Clippy, clean linked build and existing tray widgets on Sway/Niri pass.
 - [ ] Native/Fedora package matrix for the Rust tray and menu cutover.
+- [x] Rust window foundation: transition/popup-policy tests, interrupted animations, underlay ownership, repeated destruction, GTK focus chain and theme cycles on Sway/Niri; real Sway output removal and GDK invalidation on both.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
