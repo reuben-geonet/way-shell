@@ -4,6 +4,7 @@ pub mod controls;
 pub mod grid;
 pub mod header;
 pub mod menu;
+pub mod network;
 pub mod power_menu;
 
 use super::window::{LayerWindow, Transition, Visibility, VisibilityController, WindowRole};

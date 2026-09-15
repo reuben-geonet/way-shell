@@ -122,6 +122,9 @@
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-window-compat niri
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-compat
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-compat niri
+            cargo build -p way-shell --example quick-settings-network-compat --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-compat
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-compat niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

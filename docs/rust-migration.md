@@ -913,3 +913,18 @@ power confirmations and retained controls. Evidence:
 `quick-settings-system-integrated.log`. Native Nix checks run both probes on
 both compositors. The C quick-settings view remains active until the Rust
 network and mixer controls are composed, avoiding disposable widget adapters.
+
+Rust network tiles now retain device identities, raw SSIDs and security groups,
+saved connection paths, and VPN/WireGuard rows. Radio toggles read the current
+service state; passwords never appear in diagnostics. Secured Wi-Fi preserves
+the existing password-entry flow, while operation cancellation and generations
+prevent stale scan/connection callbacks from restoring removed controls.
+
+Three focused Rust tests and strict workspace Clippy pass. Real libnm fixtures
+on both compositors cover two Wi-Fi devices, Ethernet, saved-password updates,
+open networks, duplicate VPN names, WireGuard, scans, failure banners, radio
+changes, daemon restart and retained-widget cleanup. The probes also assert
+that captured output excludes the entered password. Evidence:
+`quick-settings-network-integrated.log`. Libadwaita's `v1_4` binding feature
+exposes the SwitchRow already used by the existing interface; locked versions
+are unchanged. These controls join the active view in the mixer cutover.

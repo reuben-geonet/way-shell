@@ -106,6 +106,7 @@ a claim that the complete migration is ready to install.
 - [ ] Native/Fedora package matrix for the Rust activities cutover.
 - [x] Reproduce and fix stopping audio from a native volume callback: direct Rust regression, inventory/restart and routing checks pass; refreshes are delivered after native dispatch returns.
 - [x] Permanent Rust quick-settings system widgets and window lifecycle: focused tests, strict Clippy and private-service GTK probes pass on Sway/Niri. Runtime composition with network/audio remains pending.
+- [x] Permanent Rust network controls: three focused tests, strict workspace Clippy and private libnm fixtures on Sway/Niri pass, including radio state, saved Wi-Fi, VPN/WireGuard, cancellation/restart and password-log checks. Runtime composition remains pending.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
