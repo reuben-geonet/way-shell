@@ -427,3 +427,16 @@ Six GLib regressions cover valid multi-artist data, replacement, empty artists,
 wrong types, missing metadata and ownership. They are part of the default test
 suite. Evidence: `media-player-metadata-*-before.log`,
 `media-player-metadata-after.log` and `media-metadata-integrated.log`.
+
+MPRIS startup now discovers players that already own a bus name, deferring the
+initial notifications until widgets have subscribed. Atomic owner replacement
+removes the previous record and discovers its successor. Duplicate discovery and
+unrelated name prefixes are ignored. Disposal cancels initial discovery,
+unsubscribes from the bus and disconnects proxy callbacks; removed records stay
+alive through their removal signal and are then released.
+
+Three tests use real generated MPRIS proxies and skeletons on a private D-Bus to
+verify startup discovery, replacement and destruction before/after discovery.
+The six metadata tests remain green. Evidence is in
+`media-discovery-{existing,replacement}-before.log`,
+`media-discovery-after.log` and `media-discovery-integrated.log`.

@@ -16,14 +16,47 @@ struct _MediaPlayerService {
     GDBusConnection *conn;
     GHashTable *players_by_proxy;
     GHashTable *players_by_name;
+    guint name_subscription;
+    guint discovery_source;
     gboolean enabled;
 };
 static guint signals[signals_n] = {0};
 G_DEFINE_TYPE(MediaPlayerService, media_player_service, G_TYPE_OBJECT);
 
-// stub out dispose, finalize, class_init, and init methods
+static void media_player_free(MediaPlayer *player) {
+    g_clear_object(&player->player);
+    g_clear_object(&player->proxy);
+    g_free(player->identity);
+    g_free(player->name);
+    g_free(player->playback_status);
+    g_free(player->art_url);
+    g_free(player->album);
+    g_free(player->artist);
+    g_free(player->title);
+    g_free(player);
+}
+
 static void media_player_service_dispose(GObject *gobject) {
-    // Chain-up
+    MediaPlayerService *self = MEDIA_PLAYER_SERVICE(gobject);
+    if (self->discovery_source) {
+        g_source_remove(self->discovery_source);
+        self->discovery_source = 0;
+    }
+    if (self->name_subscription) {
+        g_dbus_connection_signal_unsubscribe(self->conn, self->name_subscription);
+        self->name_subscription = 0;
+    }
+    if (self->players_by_name) {
+        GHashTableIter iter;
+        gpointer value;
+        g_hash_table_iter_init(&iter, self->players_by_name);
+        while (g_hash_table_iter_next(&iter, NULL, &value)) {
+            MediaPlayer *player = value;
+            g_signal_handlers_disconnect_by_data(player->player, self);
+        }
+    }
+    g_clear_pointer(&self->players_by_proxy, g_hash_table_unref);
+    g_clear_pointer(&self->players_by_name, g_hash_table_unref);
     G_OBJECT_CLASS(media_player_service_parent_class)->dispose(gobject);
 };
 
@@ -124,6 +157,7 @@ static void on_media_player_property_changed(
 
 static void media_player_added(gchar *name, const gchar *object_path,
                                MediaPlayerService *self) {
+    if (g_hash_table_contains(self->players_by_name, name)) return;
     g_debug(
         "media_player_service.c:media_player_added(): media player added: %s",
         name);
@@ -141,6 +175,7 @@ static void media_player_added(gchar *name, const gchar *object_path,
         g_warning("media_player_service.c:media_player_added(): error: %s",
                   err->message);
         g_error_free(err);
+        g_free(media_player);
         return;
     }
 
@@ -152,6 +187,8 @@ static void media_player_added(gchar *name, const gchar *object_path,
         g_warning("media_player_service.c:media_player_added(): error: %s",
                   err->message);
         g_error_free(err);
+        g_object_unref(mediaplayer2);
+        g_free(media_player);
         return;
     }
 
@@ -210,10 +247,11 @@ static void media_player_removed(gchar *name, MediaPlayerService *self) {
         player->player, on_media_player_property_changed, self);
 
     g_hash_table_remove(self->players_by_proxy, player->player);
-    g_hash_table_remove(self->players_by_name, player->name);
+    g_hash_table_steal(self->players_by_name, player->name);
 
     // emit event
     g_signal_emit(self, signals[player_removed], 0, player);
+    media_player_free(player);
 }
 
 static void media_player_service_on_name_owner_changed(
@@ -228,13 +266,11 @@ static void media_player_service_on_name_owner_changed(
     gchar *old_owner;
     gchar *new_owner;
 
-    gboolean added = false;
-
     g_variant_get(parameters, "(&s&s&s)", &name, &old_owner, &new_owner);
 
     // if the name does not start with the prefix 'org.mpris.MediaPlayer2'
     // we can just return, we aren't interested
-    if (!g_str_has_prefix(name, "org.mpris.MediaPlayer2")) {
+    if (!g_str_has_prefix(name, "org.mpris.MediaPlayer2.")) {
         return;
     }
     g_debug(
@@ -242,26 +278,29 @@ static void media_player_service_on_name_owner_changed(
         "name: %s, old_owner: %s, new_owner: %s",
         name, old_owner, new_owner);
 
-    // determine if this media player is being added or removed
-    if (g_strcmp0(old_owner, "") == 0 && g_strcmp0(new_owner, "") != 0)
-        added = true;
-    else if (g_strcmp0(old_owner, "") != 0 && g_strcmp0(new_owner, "") == 0)
-        added = false;
-
-    g_debug(
-        "media_player_service.c:media_player_service_on_name_owner_changed(): "
-        "media player %s: %s",
-        added ? "added" : "removed", name);
-
-    if (added)
-        media_player_added(name, object_path, user_data);
-    else
+    /* A replacement has both owners: remove the old record, then discover
+     * the new owner's properties under the same well-known name. */
+    if (*old_owner)
         media_player_removed(name, user_data);
+    if (*new_owner)
+        media_player_added(name, object_path, user_data);
+}
+
+static gboolean media_player_discover_existing(gpointer data) {
+    g_autoptr(MediaPlayerService) self = g_object_ref(data);
+    self->discovery_source = 0;
+    GHashTable *names = dbus_service_get_bus_names(dbus_service_get_global(), FALSE);
+    GHashTableIter iter;
+    gpointer name;
+    g_hash_table_iter_init(&iter, names);
+    while (g_hash_table_iter_next(&iter, &name, NULL)) {
+        if (g_str_has_prefix(name, "org.mpris.MediaPlayer2."))
+            media_player_added(name, player_object_path, self);
+    }
+    return G_SOURCE_REMOVE;
 }
 
 static void media_player_service_dbus_connect(MediaPlayerService *self) {
-    GError *error = NULL;
-
     g_debug(
         "media_player_service.c:media_player_service_dbus_connect(): "
         "connecting to dbus");
@@ -271,11 +310,14 @@ static void media_player_service_dbus_connect(MediaPlayerService *self) {
 
     // we need to listen for NameOwnerChanged to determine if we see
     // service own or release name that starts with org.mpris.MediaPlayer2.
-    g_dbus_connection_signal_subscribe(
+    self->name_subscription = g_dbus_connection_signal_subscribe(
         self->conn, "org.freedesktop.DBus", "org.freedesktop.DBus",
         "NameOwnerChanged", "/org/freedesktop/DBus", NULL,
         G_DBUS_SIGNAL_FLAGS_NONE, media_player_service_on_name_owner_changed,
         self, NULL);
+    /* Existing widgets subscribe after service construction. Deliver the
+     * initial inventory when the main loop starts, after they can receive it. */
+    self->discovery_source = g_idle_add(media_player_discover_existing, self);
 }
 
 static void media_player_service_init(MediaPlayerService *self) {
@@ -284,7 +326,8 @@ static void media_player_service_init(MediaPlayerService *self) {
         "media player service");
 
     self->players_by_proxy = g_hash_table_new(g_direct_hash, g_direct_equal);
-    self->players_by_name = g_hash_table_new(g_str_hash, g_str_equal);
+    self->players_by_name = g_hash_table_new_full(
+        g_str_hash, g_str_equal, NULL, (GDestroyNotify)media_player_free);
 
     media_player_service_dbus_connect(self);
 }

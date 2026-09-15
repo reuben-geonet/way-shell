@@ -21,6 +21,7 @@ gresources.h
 /tests/brightness-widgets-test
 /tests/network-test
 /tests/media-player-test
+/tests/media-discovery-test
 /tests/network-operations-test
 __pycache__/
 
