@@ -911,8 +911,8 @@ Four Rust cases, strict Clippy and actual system/window probes pass on Sway and
 Niri. Private services exercise availability, restart, brightness failures,
 power confirmations and retained controls. Evidence:
 `quick-settings-system-integrated.log`. Native Nix checks run both probes on
-both compositors. The C quick-settings view remains active until the Rust
-network and mixer controls are composed, avoiding disposable widget adapters.
+both compositors. These controls now compose with the Rust network and mixer
+widgets, avoiding disposable widget adapters.
 
 Rust network tiles now retain device identities, raw SSIDs and security groups,
 saved connection paths, and VPN/WireGuard rows. Radio toggles read the current
@@ -927,7 +927,7 @@ changes, daemon restart and retained-widget cleanup. The probes also assert
 that captured output excludes the entered password. Evidence:
 `quick-settings-network-integrated.log`. Libadwaita's `v1_4` binding feature
 exposes the SwitchRow already used by the existing interface; locked versions
-are unchanged. These controls join the active view in the mixer cutover.
+are unchanged. These controls now run in the composed Rust view.
 
 The permanent Rust confirmation dialog preserves the full-output overlay,
 centered content, CSS and Confirm/Cancel flow. Pending responses resolve exactly
@@ -936,4 +936,25 @@ Revision guards let newer requests from callbacks win without being hidden or
 overwritten by stale work. The normal workspace build and strict Clippy pass;
 real Sway/Niri tests cover response reentrancy, native hide/reopen, replacement
 and retained widgets in `quick-settings-audio-dialog-integrated.log`.
-The dialog switches into the application with the composed quick-settings view.
+The dialog now runs in the application with the composed quick-settings view.
+
+The mixer preserves device volume sliders, default-device mute controls,
+running-microphone visibility and per-stream routing. Rows retain node serials
+and expanded state through updates; asynchronous routing reports errors and
+restores the observed destination. Pending requests are cancelled on removal.
+Four model tests and private PipeWire/PulseAudio GTK fixtures cover volume,
+mute, routing, hotplug, daemon restart and ownership on Sway and Niri.
+
+The composed popup shares the running services. Mixer/header selection controls
+the main audio scales, hiding clears menus/password prompts, and final cleanup
+disables retained widgets without stopping shared services. Its Rust fixture
+runs three lifetimes on each compositor; unconfigured hardware is explicitly
+disabled in the fixture so fatal warnings still catch unexpected failures.
+
+All quick-settings C widgets and the C confirmation dialog are removed, along
+with their five obsolete widget test harnesses. Small Rust startup/signal
+facades preserve the remaining C callers. The full workspace, formatting,
+strict Clippy, clean linked application, existing checks and composed GTK
+probes pass in `quick-settings-cutover-integrated.log`. Component evidence is
+in `quick-settings-audio-dialog-integrated.log` and
+`quick-settings-composition-fixed.log`. Package gates remain independent.

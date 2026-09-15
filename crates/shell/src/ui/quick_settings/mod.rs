@@ -1,5 +1,7 @@
 //! Quick-settings windows and service-owned controls on the GTK main thread.
+pub mod audio;
 pub mod battery;
+pub mod controller;
 pub mod controls;
 pub mod grid;
 pub mod header;

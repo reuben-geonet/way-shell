@@ -131,6 +131,14 @@ impl ProfileAdapter {
     }
 }
 thread_local! { static GLOBAL: RefCell<Option<ProfileAdapter>> = const { RefCell::new(None) }; }
+pub(crate) fn service() -> Option<PowerProfilesService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .and_then(|adapter| adapter.imp().service.borrow().clone())
+    })
+}
 pub fn shutdown() {
     GLOBAL.with(|global| {
         global.borrow_mut().take();

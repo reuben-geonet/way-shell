@@ -22,6 +22,14 @@ impl Drop for Binding {
     }
 }
 thread_local! { static GLOBAL: RefCell<Option<Binding>> = const { RefCell::new(None) }; }
+pub(crate) fn service() -> Option<BrightnessService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .map(|binding| binding.service.clone())
+    })
+}
 pub fn shutdown() {
     GLOBAL.with(|global| {
         global.borrow_mut().take();

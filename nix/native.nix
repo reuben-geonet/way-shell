@@ -64,17 +64,6 @@
               sh tests/wayland-component.sh target/debug/examples/theme-compat
             cargo build -p way-shell --example sway-compat --frozen --jobs 1
             sh tests/wayland-component.sh target/debug/examples/sway-compat
-            make -C tests power-profiles-widgets-test
-            sh tests/wayland-component.sh tests/power-profiles-widgets-test
-            make -C tests battery-widgets-test
-            sh tests/wayland-component.sh tests/battery-widgets-test
-            sh tests/wayland-component.sh tests/battery-widgets-test niri
-            make -C tests power-widgets-test
-            sh tests/wayland-component.sh tests/power-widgets-test
-            sh tests/wayland-component.sh tests/power-widgets-test niri
-            make -C tests audio-widgets-test
-            sh tests/wayland-component.sh tests/audio-widgets-test
-            sh tests/wayland-component.sh tests/audio-widgets-test niri
             make -C tests media-widgets-test
             sh tests/wayland-component.sh tests/media-widgets-test
             sh tests/wayland-component.sh tests/media-widgets-test niri
@@ -94,9 +83,6 @@
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-compat niri
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat niri
-            make -C tests brightness-widgets-test
-            sh tests/wayland-component.sh tests/brightness-widgets-test
-            sh tests/wayland-component.sh tests/brightness-widgets-test niri
             cargo build -p way-shell --example niri-compat --frozen --jobs 1
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
               sh tests/wayland-component.sh target/debug/examples/niri-compat niri
@@ -128,6 +114,11 @@
             cargo build -p way-shell --example dialog-compat --frozen --jobs 1
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat niri
+            cargo build -p way-shell --example quick-settings-audio-compat --example quick-settings-compat --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat niri
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-compat
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-compat niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

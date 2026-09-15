@@ -9,6 +9,10 @@ thread_local! {
     static GLOBAL: RefCell<Option<ThemeService>> = const { RefCell::new(None) };
 }
 
+pub(crate) fn service() -> Option<ThemeService> {
+    GLOBAL.with(|global| global.borrow().clone())
+}
+
 fn initialize() -> Result<ThemeService, glib::BoolError> {
     GLOBAL.with(|global| {
         if let Some(service) = global.borrow().as_ref() {
@@ -121,6 +125,8 @@ pub extern "C" fn way_shell_rust_shutdown() {
         crate::activities::shutdown();
         crate::app_switcher::shutdown();
         crate::workspace_switchers::shutdown();
+        crate::quick_settings::shutdown();
+        crate::dialog::shutdown();
         crate::audio::shutdown();
         crate::clock::shutdown();
         crate::brightness::shutdown();

@@ -15,9 +15,6 @@ G_END_DECLS
 // After this returns the QuickSettings window can be requested via a signal and
 void quick_settings_activate(AdwApplication *app, gpointer user_data);
 
-// Called to reinitialize the widget without allocating a new one.
-void quick_settings_reinitialize(QuickSettings *self);
-
 // Opens the QuickSettings relative to the given Panel.
 void quick_settings_set_visible(QuickSettings *qs);
 
@@ -36,6 +33,4 @@ void quick_settings_set_focused(QuickSettings *qs, gboolean focus);
 
 gboolean quick_settings_is_visible(QuickSettings *qs);
 
-QuickSettings *quick_settings_get_global();
-
-void quick_settings_toggle(QuickSettings *qs);
+QuickSettings *quick_settings_get_global(void);

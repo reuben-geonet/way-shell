@@ -39,9 +39,9 @@ a claim that the complete migration is ready to install.
 - [x] 33. Migrate shared and application switchers to Rust.
 - [x] 34. Migrate workspace, output, and rename switchers to Rust.
 - [x] 35. Migrate application discovery and launching to Rust.
-- [ ] 36. Migrate quick settings layout and system controls to Rust.
-- [ ] 37. Migrate network controls to Rust.
-- [ ] 38. Migrate mixer controls to Rust.
+- [x] 36. Migrate quick settings layout and system controls to Rust.
+- [x] 37. Migrate network controls to Rust.
+- [x] 38. Migrate mixer controls to Rust.
 - [ ] 39. Migrate notification presentation to Rust.
 - [ ] 40. Migrate calendar and media presentation to Rust.
 - [ ] 41. Migrate OSD and dialog overlays to Rust.
@@ -109,6 +109,8 @@ a claim that the complete migration is ready to install.
 - [x] Permanent Rust network controls: three focused tests, strict workspace Clippy and private libnm fixtures on Sway/Niri pass, including radio state, saved Wi-Fi, VPN/WireGuard, cancellation/restart and password-log checks. Runtime composition remains pending.
 - [x] Clean native package/schema checks through activities (`bb4f612`), covering the panel, all switchers and the corrected schema/font environment. Artifacts `.cache/rust-migration/artifacts/activities-native` -> `/nix/store/3cvw4yhjbmllbk63a3lg9gc01mw680pl-way-shell-native-package-check` and `activities-native-1` -> `/nix/store/8m5p34m110pb36g1mild8g0nyvn124my-way-shell-native-schemas-check`.
 - [x] Permanent Rust confirmation dialog: strict Clippy and real Sway/Niri ownership/cancellation/reentrancy checks pass. Runtime cutover joins quick settings; level OSD work remains in step 41.
+- [x] Quick-settings runtime cutover: system, network, audio and confirmation dialog now run in Rust. Full workspace tests, strict Clippy, clean linked build, existing tests and composed Sway/Niri probes pass; 56 replaced C sources/headers and five obsolete C widget tests are removed.
+- [ ] Native/Fedora package matrix for the composed Rust quick-settings view and confirmation dialog.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -130,9 +132,9 @@ Rust owns Wayland, power, networking and the complete audio service, including
 volume and PulseAudio stream routing. The audio adapter preserves stable C
 records for the remaining widgets. MPRIS and notifications now run in Rust;
 the tray watcher, items, menus and all panel widgets also run in Rust.
-All switchers and activities now run in Rust. Quick-settings system, network
-and audio controls are being migrated in parallel. Package and laptop acceptance
-remain separate gates.
+All switchers, activities, quick settings and the confirmation dialog now run
+in Rust. Notification presentation, calendar/media cards and the level OSD are
+being migrated in parallel. Package and laptop acceptance remain separate gates.
 
 Following the user's updated direction, new migration tests are written in
 Rust. Existing C checks remain useful until their consumers migrate; no new

@@ -7,6 +7,7 @@ mod audio;
 mod audio_fixture;
 mod brightness;
 mod clock;
+mod dialog;
 mod logind;
 mod media;
 #[cfg(test)]
@@ -17,6 +18,7 @@ mod notifications;
 mod panel;
 mod power;
 mod power_profiles;
+mod quick_settings;
 mod theme;
 mod tray;
 mod wayland;
