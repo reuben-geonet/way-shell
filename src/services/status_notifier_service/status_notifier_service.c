@@ -581,45 +581,46 @@ int status_notifier_service_global_init() {
 // NotifierItem Methods		//
 //							//
 
-// ripped from Waybar, thank you!!
+static void free_icon_pixels(guchar *pixels, gpointer data) {
+    g_free(pixels);
+}
+
 GdkPixbuf *pixbuf_from_icon_data(GVariant *icon_data) {
-    if (!icon_data) {
+    if (!icon_data ||
+        !g_variant_is_of_type(icon_data, G_VARIANT_TYPE("a(iiay)"))) {
         return NULL;
     }
 
-    GVariantIter *it;
-    g_variant_get(icon_data, "a(iiay)", &it);
-    if (!it) return NULL;
-
+    GVariantIter it;
+    g_variant_iter_init(&it, icon_data);
     GVariant *val;
     gint lwidth = 0;
     gint lheight = 0;
     gint width;
     gint height;
+    gsize largest_size = 0;
     guchar *array = NULL;
-    while (g_variant_iter_loop(it, "(ii@ay)", &width, &height, &val)) {
-        if (width > 0 && height > 0 && val &&
-            width * height > lwidth * lheight) {
-            int size = g_variant_get_size(val);
-            /* Sanity check */
-            if (size == 4U * width * height) {
-                /* Find the largest image */
-                gconstpointer data = g_variant_get_data(val);
-                if (data) {
-                    if (array) {
-                        g_free(array);
-                    }
-                    array = g_memdup2(data, size);
-                    lwidth = width;
-                    lheight = height;
-                }
+    while (g_variant_iter_next(&it, "(ii@ay)", &width, &height, &val)) {
+        /* GdkPixbuf uses a signed int rowstride. Check it before multiplying,
+         * then use the byte-array length to bound every pixel access. */
+        if (width > 0 && height > 0 && width <= G_MAXINT / 4 &&
+            (gsize)height <= G_MAXSIZE / ((gsize)width * 4)) {
+            gsize expected_size = (gsize)width * 4 * (gsize)height;
+            gsize size;
+            const guint8 *data = g_variant_get_fixed_array(val, &size, 1);
+            if (data && size == expected_size && size > largest_size) {
+                g_free(array);
+                array = g_memdup2(data, size);
+                lwidth = width;
+                lheight = height;
+                largest_size = size;
             }
         }
+        g_variant_unref(val);
     }
-    g_variant_iter_free(it);
     if (array) {
         /* argb to rgba */
-        for (uint32_t i = 0; i < 4U * lwidth * lheight; i += 4) {
+        for (gsize i = 0; i < largest_size; i += 4) {
             guchar alpha = array[i];
             array[i] = array[i + 1];
             array[i + 1] = array[i + 2];
@@ -627,8 +628,8 @@ GdkPixbuf *pixbuf_from_icon_data(GVariant *icon_data) {
             array[i + 3] = alpha;
         }
         return gdk_pixbuf_new_from_data(array, GDK_COLORSPACE_RGB, TRUE, 8,
-                                        lwidth, lheight, 4 * lwidth, NULL,
-                                        NULL);
+                                        lwidth, lheight, 4 * lwidth,
+                                        free_icon_pixels, NULL);
     }
     return NULL;
 }
@@ -863,7 +864,7 @@ void *status_notifier_item_init(StatusNotifierItem *self,
     self->overlay_icon_name =
         g_strdup(dbus_item_v0_gen_get_overlay_icon_name(proxy));
     self->overlay_icon_pixmap =
-        pixbuf_from_icon_data(dbus_item_v0_gen_get_icon_pixmap(proxy));
+        pixbuf_from_icon_data(dbus_item_v0_gen_get_overlay_icon_pixmap(proxy));
     self->attention_icon_name =
         g_strdup(dbus_item_v0_gen_get_attention_icon_name(proxy));
     self->attention_icon_pixmap = pixbuf_from_icon_data(

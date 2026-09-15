@@ -609,3 +609,20 @@ C service, generated notification bindings and obsolete C validation harness
 are removed; the protocol XML remains tracked. The service and adapter tests
 cover those contracts. Workspace tests, formatting, strict Clippy, the linked
 application and remaining C tests pass in `notifications-cutover-integrated.log`.
+
+## Tray icon baseline
+
+The C pixmap decoder now checks the variant type, signed rowstride limits and
+byte length before multiplying dimensions or reading pixels. It selects the
+largest valid image, converts ARGB to RGBA, and transfers ownership of its
+copied buffer to the pixbuf. Initial overlay icons now use their own property.
+Tests reproduced integer overflow accepting a bogus image, an unowned pixel
+allocation and an overlay displaying the primary icon's bytes.
+
+Seven GLib tests pass through Make and under AddressSanitizer/UBSan, including
+the existing bus-name/object-path registration forms and removal callback
+lifetime. Evidence: `tray-{overflow,ownership,overlay}-before.log`,
+`tray-baseline-after.log` and `tray-baseline-integrated.log`. Separate
+reproductions show that duplicate registration repeats discovery and two
+object paths from one owner collide; the Rust watcher contract tests cover
+those intentional identity fixes.

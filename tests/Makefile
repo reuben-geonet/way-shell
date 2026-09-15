@@ -6,10 +6,30 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test
+check: core-test ipc-test network-test tray-baseline-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
+	cd .. && tests/tray-baseline-test
+
+TRAY_BASES := dbusmenu status_notifier_item status_notifier_watcher status_notifier_host
+TRAY_SOURCES := $(addprefix ../src/services/status_notifier_service/,$(addsuffix _dbus.c,$(TRAY_BASES)))
+TRAY_HEADERS := $(TRAY_SOURCES:.c=.h)
+TRAY_XML := ../data/dbus-interfaces/com.canonical.dbusmenu.xml \
+  ../data/dbus-interfaces/org.kde.StatusNotifierItem.xml \
+  ../data/dbus-interfaces/org.kde.StatusNotifierWatcher.xml \
+  ../data/dbus-interfaces/org.kde.StatusNotifierHost.xml
+
+$(TRAY_SOURCES) $(TRAY_HEADERS) &: $(TRAY_XML)
+	$(MAKE) -C .. dbus-codegen
+
+tray-baseline-test: tray-baseline.c $(TRAY_SOURCES) $(TRAY_HEADERS) \
+  ../src/services/status_notifier_service/status_notifier_service.c \
+  ../src/services/status_notifier_service/status_notifier_service.h \
+  ../src/services/status_notifier_service/libdbusmenu.c \
+  ../src/services/status_notifier_service/libdbusmenu.h \
+  ../src/services/status_notifier_service/libdbus_menu_consts.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) tray-baseline.c $(TRAY_SOURCES) ../src/services/status_notifier_service/libdbusmenu.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
@@ -57,6 +77,7 @@ clean:
 	rm -f media-presentation-test
 	rm -f notification-presentation-test
 	rm -f notification-replacement-test
+	rm -f tray-baseline-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
