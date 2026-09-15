@@ -1,3 +1,5 @@
+#pragma once
+
 #include <adwaita.h>
 
 G_BEGIN_DECLS
@@ -11,6 +13,9 @@ G_END_DECLS
 int logind_service_global_init(void);
 
 LogindService *logind_service_get_global();
+
+gboolean logind_service_get_enabled(LogindService *self);
+gboolean logind_service_get_session_enabled(LogindService *self);
 
 gboolean logind_service_can_reboot(LogindService *self);
 
@@ -38,10 +43,16 @@ void logind_service_suspendthenhibernate(LogindService *self);
 
 void logind_service_kill_session(LogindService *self);
 
+/* Temporary synchronous compatibility for the remaining C brightness service. */
 int logind_service_session_set_brightness(LogindService *self,
-                                          const gchar *arg_subsystem,
-                                          const gchar *arg_name,
-                                          guint arg_brightness);
+    const gchar *subsystem, const gchar *name, guint brightness);
+
+// Strings are copied before return; error is borrowed during completion.
+// destroy(data) runs exactly once after completion, including cancellation.
+typedef void (*LogindBrightnessDone)(gboolean success, const gchar *error, gpointer data);
+void logind_service_session_set_brightness_async(LogindService *self,
+    const gchar *subsystem, const gchar *name, guint brightness,
+    LogindBrightnessDone done, gpointer data, GDestroyNotify destroy);
 
 gboolean logind_service_set_idle_inhibit(LogindService *self, gboolean enable);
 

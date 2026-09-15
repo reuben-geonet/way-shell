@@ -13,10 +13,11 @@ enum signals { signals_n };
 typedef struct _QuickSettingsPowerMenu {
     GObject parent_instance;
     QuickSettingsMenuWidget menu;
-    GtkButton *suspend;
-    GtkButton *restart;
-    GtkButton *power_off;
-    GtkButton *logout;
+    GtkWidget *suspend;
+    GtkWidget *restart;
+    GtkWidget *power_off;
+    GtkWidget *logout;
+    LogindService *service;
     GSettings *settings;
     GPtrArray *revealer;
 } QuickSettingsPowerMenu;
@@ -30,6 +31,9 @@ static void quick_settings_power_menu_dispose(GObject *gobject) {
         "called.");
 
     QuickSettingsPowerMenu *self = QUICK_SETTINGS_POWER_MENU(gobject);
+    if (self->service)
+        g_signal_handlers_disconnect_by_data(self->service, self);
+    g_clear_object(&self->service);
     g_clear_pointer(&self->revealer, g_ptr_array_unref);
 
     // Chain-up
@@ -266,6 +270,16 @@ static void on_quick_settings_hidden(QuickSettings *qs,
     }
 }
 
+static void on_logind_changed(LogindService *service,
+                             QuickSettingsPowerMenu *self) {
+    gtk_widget_set_sensitive(self->suspend,
+        logind_service_can_suspend(service) || logind_service_can_hibernate(service) ||
+        logind_service_can_hybrid_sleep(service) || logind_service_can_suspendthenhibernate(service));
+    gtk_widget_set_sensitive(self->restart, logind_service_can_reboot(service));
+    gtk_widget_set_sensitive(self->power_off, logind_service_can_power_off(service));
+    gtk_widget_set_sensitive(self->logout, logind_service_get_session_enabled(service));
+}
+
 static void quick_settings_power_menu_init_layout(
     QuickSettingsPowerMenu *self) {
     g_debug(
@@ -289,6 +303,12 @@ static void quick_settings_power_menu_init_layout(
 
     GtkWidget *logout_button =
         make_power_button(self, "Log Out...", G_CALLBACK(on_logout_clicked));
+
+    self->suspend = suspend_button;
+    self->restart = reset_button;
+    self->power_off = power_off_button;
+    self->logout = logout_button;
+    on_logind_changed(self->service, self);
 
     // wire it up
     gtk_box_append(self->menu.options, GTK_WIDGET(suspend_button));
@@ -321,8 +341,10 @@ void quick_settings_power_menu_reinitialize(QuickSettingsPowerMenu *self) {
 
 static void quick_settings_power_menu_init(QuickSettingsPowerMenu *self) {
     self->revealer = g_ptr_array_new();
+    self->service = g_object_ref(logind_service_get_global());
 
     quick_settings_power_menu_init_layout(self);
+    g_signal_connect_object(self->service, "changed", G_CALLBACK(on_logind_changed), self, 0);
 }
 
 GtkWidget *quick_settings_power_menu_get_widget(QuickSettingsPowerMenu *self) {

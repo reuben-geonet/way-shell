@@ -15,8 +15,6 @@ LIBS := $(shell pkg-config --libs $(DEPS)) -lm
 
 .DEFAULT_GOAL := all
 DBUS_BASES := src/services/dbus_dbus \
-  src/services/logind_service/logind_manager_dbus \
-  src/services/logind_service/logind_session_dbus \
   src/services/media_player_service/media_player_dbus \
   src/services/notifications_service/notifications_dbus \
   src/services/power_profiles_service/power_profiles_dbus \
@@ -56,8 +54,6 @@ $(1).c $(1).h &: data/dbus-interfaces/$(2).xml
 	  --interface-prefix $(3) --output-directory $(dir $(1)) $$<
 endef
 $(eval $(call dbus_binding,src/services/dbus_dbus,org.freedesktop.DBus,org.freedesktop.))
-$(eval $(call dbus_binding,src/services/logind_service/logind_manager_dbus,org.freedesktop.login1.Manager,org.freedesktop.))
-$(eval $(call dbus_binding,src/services/logind_service/logind_session_dbus,org.freedesktop.login1.Session,org.freedesktop.))
 $(eval $(call dbus_binding,src/services/media_player_service/media_player_dbus,org.mpris.MediaPlayer2,org.mpris.))
 $(eval $(call dbus_binding,src/services/notifications_service/notifications_dbus,org.freedesktop.Notifications,org.freedesktop.))
 $(eval $(call dbus_binding,src/services/power_profiles_service/power_profiles_dbus,net.hadess.PowerProfiles,net.hadess.))

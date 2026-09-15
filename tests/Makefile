@@ -6,11 +6,10 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test power-profiles-test logind-test brightness-test
+check: core-test ipc-test power-profiles-test brightness-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/power-profiles-test
-	cd .. && GSETTINGS_SCHEMA_DIR=tests tests/logind-test
 	cd .. && GSETTINGS_SCHEMA_DIR=tests GSETTINGS_BACKEND=memory tests/brightness-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
@@ -42,17 +41,13 @@ power-widgets-test: power-widgets.c \
   ../src/panel/quick_settings/quick_settings_menu_widget.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) power-widgets.c ../src/panel/quick_settings/quick_settings_menu_widget.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
-logind-test: logind.c ../src/services/logind_service/logind_service.c \
-  ../src/services/logind_service/logind_manager_dbus.c ../src/services/logind_service/logind_session_dbus.c gschemas.compiled
-	$(CC) $(CPPFLAGS) $(CFLAGS) logind.c ../src/services/logind_service/logind_manager_dbus.c ../src/services/logind_service/logind_session_dbus.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
-
 brightness-test: brightness.c ../src/services/brightness_service/brightness_service.c gschemas.compiled
 	$(CC) $(CPPFLAGS) $(CFLAGS) brightness.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
 
 clean:
 	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test
 	rm -f power-profiles-widgets-test
-	rm -f logind-test gschemas.compiled
+	rm -f gschemas.compiled
 	rm -f brightness-test
 	rm -f battery-widgets-test
 	rm -f power-widgets-test

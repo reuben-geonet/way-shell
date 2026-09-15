@@ -1,3 +1,5 @@
+#pragma once
+
 #include <adwaita.h>
 
 #include "quick_settings_grid_button.h"
@@ -10,6 +12,7 @@ typedef struct _QuickSettingsGridIdleInhibitorMenu
 typedef struct _QuickSettingsGridIdleInhibitorButton {
     // embedd this as first argument so we can cast to it.
     QuickSettingsGridButton button;
+    struct _LogindService *service;
 } QuickSettingsGridIdleInhibitorButton;
 
 QuickSettingsGridIdleInhibitorButton *

@@ -6,18 +6,23 @@ typedef struct { GObject parent_instance; } FixtureService;
 typedef struct { GObjectClass parent_class; } FixtureServiceClass;
 G_DEFINE_TYPE(FixtureService, fixture_service, G_TYPE_OBJECT)
 static void fixture_service_class_init(FixtureServiceClass *klass) {
+    g_signal_new("changed", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST,
+                 0, NULL, NULL, NULL, G_TYPE_NONE, 0);
     g_signal_new("quick-settings-hidden", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST,
                  0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 static void fixture_service_init(FixtureService *self) {}
 static GObject *settings_fixture;
+static GObject *logind_fixture;
+static gboolean capable;
 QuickSettings *quick_settings_get_global(void) { return (QuickSettings *)settings_fixture; }
 void quick_settings_set_hidden(QuickSettings *self) {}
-LogindService *logind_service_get_global(void) { return NULL; }
+LogindService *logind_service_get_global(void) { return (LogindService *)logind_fixture; }
+gboolean logind_service_get_session_enabled(LogindService *self) { return capable; }
 DialogOverlay *dialog_overlay_get_global(void) { return NULL; }
 void dialog_overlay_present(DialogOverlay *self, gchar *heading, gchar *body, GCallback cb) { g_assert_not_reached(); }
 #define ACTION(name) \
-gboolean logind_service_can_##name(LogindService *self) { return FALSE; } \
+gboolean logind_service_can_##name(LogindService *self) { return capable; } \
 void logind_service_##name(LogindService *self) { g_assert_not_reached(); }
 ACTION(reboot)
 ACTION(power_off)
@@ -29,13 +34,26 @@ void logind_service_kill_session(LogindService *self) { g_assert_not_reached(); 
 static void destroyed(gpointer data, GObject *object) { *(gboolean *)data = TRUE; }
 static void lifecycle(void) {
     settings_fixture = g_object_new(fixture_service_get_type(), NULL);
+    logind_fixture = g_object_new(fixture_service_get_type(), NULL);
     for (unsigned cycle = 0; cycle < 3; ++cycle) {
+        capable = FALSE;
         QuickSettingsPowerMenu *menu = g_object_new(QUICK_SETTINGS_POWER_MENU_TYPE, NULL);
         g_assert_true(G_IS_OBJECT(menu));
         gboolean finalized = FALSE;
         g_object_weak_ref(G_OBJECT(menu), destroyed, &finalized);
         GtkWidget *container = g_object_ref_sink(quick_settings_power_menu_get_widget(menu));
         g_assert_cmpuint(menu->revealer->len, ==, 4);
+        g_assert_false(gtk_widget_get_sensitive(menu->suspend));
+        g_assert_false(gtk_widget_get_sensitive(menu->logout));
+        capable = TRUE;
+        g_signal_emit_by_name(logind_fixture, "changed");
+        g_assert_true(gtk_widget_get_sensitive(menu->suspend));
+        g_assert_true(gtk_widget_get_sensitive(menu->restart));
+        g_assert_true(gtk_widget_get_sensitive(menu->power_off));
+        g_assert_true(gtk_widget_get_sensitive(menu->logout));
+        capable = FALSE;
+        g_signal_emit_by_name(logind_fixture, "changed");
+        g_assert_false(gtk_widget_get_sensitive(menu->restart));
         GtkRevealer *revealer = g_ptr_array_index(menu->revealer, 0);
         gtk_revealer_set_reveal_child(revealer, TRUE);
         g_signal_emit_by_name(settings_fixture, "quick-settings-hidden");
@@ -49,8 +67,11 @@ static void lifecycle(void) {
         gtk_revealer_set_reveal_child(revealer, TRUE);
         g_signal_emit_by_name(settings_fixture, "quick-settings-hidden");
         g_object_unref(container);
+        g_signal_emit_by_name(logind_fixture, "changed");
+        g_assert_cmpuint(logind_fixture->ref_count, ==, 1);
     }
     g_object_unref(settings_fixture);
+    g_object_unref(logind_fixture);
 }
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);

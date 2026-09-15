@@ -17,7 +17,6 @@ gresources.h
 /tests/niri-test
 /tests/power-profiles-test
 /tests/power-profiles-widgets-test
-/tests/logind-test
 /tests/brightness-test
 /tests/battery-widgets-test
 /tests/power-widgets-test
@@ -29,10 +28,6 @@ __pycache__/
 gschemas.compiled
 /src/services/dbus_dbus.c
 /src/services/dbus_dbus.h
-/src/services/logind_service/logind_manager_dbus.c
-/src/services/logind_service/logind_manager_dbus.h
-/src/services/logind_service/logind_session_dbus.c
-/src/services/logind_service/logind_session_dbus.h
 /src/services/media_player_service/media_player_dbus.c
 /src/services/media_player_service/media_player_dbus.h
 /src/services/notifications_service/notifications_dbus.c
