@@ -64,10 +64,14 @@ clean:
 	rm -f audio-widgets-test
 	rm -f media-widgets-test
 	rm -f notifications-test
+	rm -f media-presentation-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
-media-widgets-test: media-widgets.c ../src/panel/message_tray/notifications/notifications_list.c \
+media-widgets-test: media-widgets.c gschemas.compiled ../src/panel/message_tray/notifications/notifications_list.c \
   ../src/services/media_player_service/media_player_service.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) media-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
+
+media-presentation-test: media-presentation.c ../src/panel/message_tray/notifications/notification_widget.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) media-presentation.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@

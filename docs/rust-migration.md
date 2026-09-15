@@ -509,3 +509,20 @@ reproduced before the fixes, including the empty-name crash, truncated image
 acceptance and retained variant storage. Evidence:
 `notifications-validation-before.log`, `notifications-validation-after.log`
 and `notifications-validation-integrated.log`.
+
+## Media presentation ownership
+
+The remaining C media widget now owns its root, cancels old artwork requests
+and uses weak references plus a generation check for both file-open and decode
+callbacks. Missing artwork clears the previous image. Image decoding is
+asynchronous and scaled to the avatar size, and completed requests release
+their files, streams, pixbufs and cancellables. Disposal tolerates an absent
+timer/date and repeated calls; surviving media buttons no longer reference a
+destroyed controller.
+
+Five real-widget tests pass on Sway and Niri, including delayed open/decode
+completion, owner destruction, replacement, errors and recovery. Evidence:
+`media-presentation-{dispose,clear}-before.log`, `media-presentation-after.log`
+and `media-presentation-integrated.log`. These tests are now in native checks.
+The clean MPRIS package also exposed an ambient-schema dependency in the tray
+fixture; that fixture now builds and selects its own adjacent schema directory.

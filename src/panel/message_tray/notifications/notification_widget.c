@@ -60,6 +60,9 @@ typedef struct _NotificationWidget {
     guint32 timer_id;
     // mpris media player name, if null, notification is not a media player.
     gchar *media_player_name;
+    GCancellable *artwork_cancellable;
+    guint64 artwork_generation;
+    gboolean disposed;
     NotificationsOSD *osd;
 } NotificationWidget;
 
@@ -114,6 +117,13 @@ void on_notification_clicked(GtkButton *button, NotificationWidget *self) {
 static void on_message_tray_will_hide(MessageTray *tray,
                                       NotificationWidget *self);
 
+static void cancel_media_artwork(NotificationWidget *self) {
+    self->artwork_generation++;
+    if (self->artwork_cancellable)
+        g_cancellable_cancel(self->artwork_cancellable);
+    g_clear_object(&self->artwork_cancellable);
+}
+
 // stub out dispose, finalize, class_init and init methods.
 static void notification_widget_dispose(GObject *gobject) {
     NotificationWidget *self = NOTIFICATION_WIDGET(gobject);
@@ -123,13 +133,29 @@ static void notification_widget_dispose(GObject *gobject) {
             self);
 
     MessageTray *mt = message_tray_get_global();
-    g_signal_handlers_disconnect_by_func(mt, on_message_tray_will_hide, self);
+    if (mt)
+        g_signal_handlers_disconnect_by_func(mt, on_message_tray_will_hide, self);
+
+    self->disposed = TRUE;
+    cancel_media_artwork(self);
 
     // kill timer
-    g_source_remove(self->timer_id);
+    if (self->timer_id) {
+        g_source_remove(self->timer_id);
+        self->timer_id = 0;
+    }
 
     // unref our ref'd datetime.
-    g_date_time_unref(self->created_on);
+    g_clear_pointer(&self->created_on, g_date_time_unref);
+    g_clear_pointer(&self->media_player_name, g_free);
+    if (self->expand_animation) {
+        g_signal_handlers_disconnect_by_data(self->expand_animation, self);
+        adw_animation_pause(self->expand_animation);
+        g_clear_object(&self->expand_animation);
+    }
+    if (self->container)
+        g_object_set_data(G_OBJECT(self->container), "self", NULL);
+    g_clear_object(&self->container);
 
     // Chain-up
     G_OBJECT_CLASS(notification_widget_parent_class)->dispose(gobject);
@@ -296,7 +322,9 @@ static void notification_widget_from_notification_action_buttons(
 
 static void notification_widget_init_layout(NotificationWidget *self) {
     // main container for widget
-    self->container = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+    // Keep children alive for asynchronous artwork callbacks while their
+    // controller lives, including a containing window being rebuilt.
+    self->container = g_object_ref_sink(GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0)));
     gtk_widget_add_css_class(GTK_WIDGET(self->container),
                              "notification-widget-container");
 
@@ -350,8 +378,8 @@ static void notification_widget_init_layout(NotificationWidget *self) {
     gtk_widget_add_css_class(GTK_WIDGET(self->header_expand),
                              "notification-widget-expand-button");
     gtk_widget_set_visible(GTK_WIDGET(self->header_expand), false);
-    g_signal_connect(self->header_expand, "clicked",
-                     G_CALLBACK(on_expand_button_clicked), self);
+    g_signal_connect_object(self->header_expand, "clicked",
+                            G_CALLBACK(on_expand_button_clicked), self, 0);
 
     GtkImage *header_dismiss_icon =
         GTK_IMAGE(gtk_image_new_from_icon_name("window-close-symbolic"));
@@ -425,8 +453,8 @@ static void notification_widget_init_layout(NotificationWidget *self) {
     adw_timed_animation_set_easing(ADW_TIMED_ANIMATION(self->expand_animation),
                                    ADW_LINEAR);
 
-    g_signal_connect(self->expand_animation, "done",
-                     G_CALLBACK(on_expand_animation_done), self);
+    g_signal_connect_object(self->expand_animation, "done",
+                            G_CALLBACK(on_expand_animation_done), self, 0);
 
     gtk_box_append(self->notification_container, GTK_WIDGET(self->header));
     gtk_box_append(self->notification_container,
@@ -846,46 +874,90 @@ static void media_player_widget_on_raise(GtkButton *button,
     media_player_service_player_raise(srv, self->media_player_name);
 }
 
+typedef struct {
+    GWeakRef owner;
+    GCancellable *cancellable;
+    guint64 generation;
+} MediaArtworkRequest;
+
+static void media_artwork_request_free(MediaArtworkRequest *request) {
+    g_weak_ref_clear(&request->owner);
+    g_clear_object(&request->cancellable);
+    g_free(request);
+}
+
+static NotificationWidget *media_artwork_request_owner(MediaArtworkRequest *request) {
+    NotificationWidget *self = g_weak_ref_get(&request->owner);
+    if (self && (self->disposed || self->artwork_generation != request->generation ||
+                 self->artwork_cancellable != request->cancellable))
+        g_clear_object(&self);
+    return self;
+}
+
+static void media_artwork_error(GError *error) {
+    if (error && !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+        g_message("Could not load media artwork: %s", error->message);
+}
+
+static void on_media_player_img_decoded(GObject *obj, GAsyncResult *res,
+                                        gpointer user_data) {
+    MediaArtworkRequest *request = user_data;
+    g_autoptr(GError) error = NULL;
+    g_autoptr(GdkPixbuf) pixbuf = gdk_pixbuf_new_from_stream_finish(res, &error);
+    g_autoptr(NotificationWidget) self = media_artwork_request_owner(request);
+    if (self) {
+        g_clear_object(&self->artwork_cancellable);
+        if (pixbuf) {
+            g_autoptr(GBytes) pixels = gdk_pixbuf_read_pixel_bytes(pixbuf);
+            GdkMemoryFormat format = gdk_pixbuf_get_has_alpha(pixbuf)
+                ? GDK_MEMORY_R8G8B8A8 : GDK_MEMORY_R8G8B8;
+            g_autoptr(GdkTexture) texture = gdk_memory_texture_new(
+                gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf),
+                format, pixels, gdk_pixbuf_get_rowstride(pixbuf));
+            adw_avatar_set_custom_image(self->avatar, GDK_PAINTABLE(texture));
+        } else {
+            media_artwork_error(error);
+        }
+    }
+    media_artwork_request_free(request);
+}
+
 static void on_media_player_img_loaded(GObject *obj, GAsyncResult *res,
                                        gpointer user_data) {
-    g_debug("media_players.c:on_image_loaded() called.");
-
-    GFileInputStream *file_input_stream;
-    GError *error = NULL;
-    GdkPixbuf *pixbuf;
-
-    NotificationWidget *widget = (NotificationWidget *)user_data;
-
-    file_input_stream = g_file_read_finish(G_FILE(obj), res, &error);
-    if (error) {
-        g_warning("Error loading image: %s", error->message);
+    MediaArtworkRequest *request = user_data;
+    g_autoptr(GError) error = NULL;
+    g_autoptr(GFileInputStream) stream = g_file_read_finish(G_FILE(obj), res, &error);
+    g_autoptr(NotificationWidget) self = media_artwork_request_owner(request);
+    if (!self || !stream) {
+        if (self) {
+            g_clear_object(&self->artwork_cancellable);
+            media_artwork_error(error);
+        }
+        media_artwork_request_free(request);
         return;
     }
 
-    pixbuf = gdk_pixbuf_new_from_stream(G_INPUT_STREAM(file_input_stream), NULL,
-                                        &error);
-    if (error) {
-        g_warning("Failed to create pixbuf from stream: %s", error->message);
-        g_object_unref(file_input_stream);
-        return;
-    }
-
-    GdkTexture *texture = gdk_texture_new_for_pixbuf(pixbuf);
-
-    adw_avatar_set_custom_image(widget->avatar, GDK_PAINTABLE(texture));
-
-    g_object_unref(file_input_stream);
-    g_object_unref(pixbuf);
-    g_object_unref(texture);
+    // Decode off the GTK thread and retain only the avatar-sized image.
+    // The decoder owns the stream until its asynchronous result is finished.
+    gdk_pixbuf_new_from_stream_at_scale_async(G_INPUT_STREAM(stream), 48, 48, TRUE,
+                                             request->cancellable,
+                                             on_media_player_img_decoded, request);
 }
 
 NotificationWidget *notification_widget_set_media_player(
     NotificationWidget *self, MediaPlayer *player) {
-    if (player->art_url) {
-        GFile *file;
-        file = g_file_new_for_uri(player->art_url);
-        g_file_read_async(file, G_PRIORITY_DEFAULT, NULL,
-                          on_media_player_img_loaded, self);
+    if (self->disposed) return self;
+    cancel_media_artwork(self);
+    adw_avatar_set_custom_image(self->avatar, NULL);
+    if (player->art_url && *player->art_url) {
+        MediaArtworkRequest *request = g_new0(MediaArtworkRequest, 1);
+        g_weak_ref_init(&request->owner, self);
+        self->artwork_cancellable = g_cancellable_new();
+        request->cancellable = g_object_ref(self->artwork_cancellable);
+        request->generation = self->artwork_generation;
+        g_autoptr(GFile) file = g_file_new_for_uri(player->art_url);
+        g_file_read_async(file, G_PRIORITY_DEFAULT, request->cancellable,
+                          on_media_player_img_loaded, request);
     }
 
     // update play/pause icon depending on playback state
@@ -900,6 +972,7 @@ NotificationWidget *notification_widget_set_media_player(
     gtk_label_set_text(self->header_app_name, player->identity);
     gtk_label_set_text(self->summary, player->artist);
     gtk_label_set_text(self->body, player->title);
+    return self;
 }
 
 NotificationWidget *notification_widget_from_media_player(MediaPlayer *player) {
@@ -955,15 +1028,15 @@ NotificationWidget *notification_widget_from_media_player(MediaPlayer *player) {
                              "notification-widget-media-button");
 
     // wire them up
-    g_signal_connect(self->button, "clicked",
-                     G_CALLBACK(media_player_widget_on_raise), self);
-    g_signal_connect(self->play_pause, "clicked",
-                     G_CALLBACK(media_player_widget_on_playpause_clicked),
-                     self);
-    g_signal_connect(self->previous, "clicked",
-                     G_CALLBACK(media_player_widget_on_previous_clicked), self);
-    g_signal_connect(self->next, "clicked",
-                     G_CALLBACK(media_player_widget_on_next_clicked), self);
+    g_signal_connect_object(self->button, "clicked",
+                            G_CALLBACK(media_player_widget_on_raise), self, 0);
+    g_signal_connect_object(self->play_pause, "clicked",
+                            G_CALLBACK(media_player_widget_on_playpause_clicked),
+                            self, 0);
+    g_signal_connect_object(self->previous, "clicked",
+                            G_CALLBACK(media_player_widget_on_previous_clicked), self, 0);
+    g_signal_connect_object(self->next, "clicked",
+                            G_CALLBACK(media_player_widget_on_next_clicked), self, 0);
 
     gtk_box_append(self->media_buttons, GTK_WIDGET(self->previous));
     gtk_box_append(self->media_buttons, GTK_WIDGET(self->play_pause));

@@ -254,6 +254,10 @@ static void disposal_releases_collections_and_disconnects_callbacks(void) {
 
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
+    // Use the schemas built beside this probe, independent of the developer
+    // shell's environment or schemas installed on the build machine.
+    g_autofree gchar *schema_directory = g_path_get_dirname(argv[0]);
+    g_setenv("GSETTINGS_SCHEMA_DIR", schema_directory, TRUE);
     gtk_init();
     g_test_add_func("/media-widgets/ready-seed-change-removal", ready_seed_change_and_remove);
     g_test_add_func("/media-widgets/reinitialize-sources", reinitialize_disconnects_previous_layout_and_sources);
