@@ -784,3 +784,31 @@ three Sway outputs and NetworkManager stopping during a GTK property update.
 Both panel/status probes pass on Sway and Niri after the fixes; eight affected
 Rust tests and strict Clippy pass. Evidence: `panel-visibility-before.log`,
 `panel-status-reentry-before.log` and `panel-reentry-{rust-checks,sway,niri}.log`.
+
+
+## Rust shared and application switchers
+
+The shared search/list surface preserves GLib token matching, transliteration,
+CSS and keyboard commands. It retains selection by owned identifiers and only
+navigates visible results. Workspace, output and rename controllers adopt it
+in the next port; their C implementations remain active at this checkpoint.
+
+The application switcher now runs in Rust against the shared Wayland service.
+It preserves application/instance ordering, preview activation, Super-key
+navigation, mouse activation and its own shortcut inhibitor. Selected window
+IDs remain stable through metadata changes, regrouping and removals. Clicking
+an application header activates its selected instance, fixing the old null
+header target; the highlighted instance and activation target now agree.
+
+Queued list updates and coalesced application rendering preserve the newest
+state when GTK callbacks trigger nested changes. Interrupted hides cannot clear
+a newly opened query or hide a reopened window. The two layer windows close
+with their owner, and retained widgets cannot call a released controller.
+
+Six focused Rust regressions and the broader UI tests pass. Real Sway/Niri
+probes cover filter/navigation keys, activation, competing shortcut ownership,
+removal, nested callbacks, reopen and destruction. The full workspace,
+formatting, strict Clippy, clean linked application and remaining existing
+checks pass in `switcher-cutover-integrated.log`; before/after callback
+regressions are retained in `switcher-reentrant-*.log`. Native package checks
+now run the Rust probe on both compositors.

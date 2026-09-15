@@ -107,6 +107,9 @@
             cargo build -p way-shell --example window-compat --frozen --jobs 1
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat niri
+            cargo build -p way-shell --example switcher-compat --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

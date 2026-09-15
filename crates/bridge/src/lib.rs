@@ -1,4 +1,5 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
+mod app_switcher;
 mod audio;
 #[cfg(test)]
 #[path = "../../shell/tests/common/audio.rs"]
