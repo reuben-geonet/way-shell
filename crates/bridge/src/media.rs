@@ -258,6 +258,11 @@ impl MediaAdapter {
 
 thread_local! { static GLOBAL: RefCell<Option<MediaAdapter>> = const { RefCell::new(None) }; }
 
+pub(crate) fn service() -> Option<MediaService> {
+    let adapter = GLOBAL.with(|global| global.borrow().clone())?;
+    adapter.imp().service.borrow().clone()
+}
+
 pub fn shutdown() {
     // C widgets borrow the global without retaining a GObject reference. Keep
     // the stopped adapter and its empty array alive until this thread exits.

@@ -958,3 +958,27 @@ strict Clippy, clean linked application, existing checks and composed GTK
 probes pass in `quick-settings-cutover-integrated.log`. Component evidence is
 in `quick-settings-audio-dialog-integrated.log` and
 `quick-settings-composition-fixed.log`. Package gates remain independent.
+
+## Rust message-tray presentation
+
+Notifications, grouped history, Do Not Disturb, calendar, media cards and the
+notification popup now share an owned Rust message-tray controller. It retains
+the existing geometry, CSS, 250 ms fade, click-away surface, group collapse,
+actions and eight-second popup timer. Hiding a popup retains history. Replacing
+a notification updates its existing card without reopening a dismissed popup;
+Do Not Disturb suppresses new popups of every urgency, as before.
+
+Media cards retain player identity and ordering, clear obsolete metadata and
+artwork, cancel pending image work, and follow advertised control capabilities.
+The calendar now renders its initial date immediately, compares complete dates
+across years, and labels the selected month. Rust regressions cover leap days,
+year changes, navigation, Today, replacement, nested callbacks and retained
+widgets after disposal. Shared services remain running when the view closes.
+
+The combined view suppresses notification popups while visible and collapses
+groups at the end of its closing fade. Its signal facade preserves the remaining
+C callers. Eleven replaced C sources/headers and four obsolete C widget tests
+are removed; the Rust examples now run under both Sway and Niri in native checks.
+Component and composed-view evidence is in `message-tray-osd-components.log`
+and `message-tray-composition.log`; the full workspace, strict Clippy and clean
+linked-build gate is recorded in `message-tray-cutover-integrated.log`.

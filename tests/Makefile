@@ -28,25 +28,3 @@ clean:
 	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test
 	rm -f gschemas.compiled
 	rm -f network-test network-operations-test
-	rm -f media-widgets-test
-	rm -f media-presentation-test
-	rm -f notification-presentation-test
-	rm -f notification-replacement-test
-
-media-widgets-test: media-widgets.c gschemas.compiled ../src/panel/message_tray/notifications/notifications_list.c \
-  ../src/services/media_player_service/media_player_service.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) media-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
-
-media-presentation-test: media-presentation.c ../src/panel/message_tray/notifications/notification_widget.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) media-presentation.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
-
-notification-presentation-test: notification-presentation.c ../src/panel/message_tray/notifications/notification_widget.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) notification-presentation.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
-
-notification-replacement-test: notification-replacement.c gschemas.compiled \
-  ../src/panel/message_tray/notifications/notification_widget.c \
-  ../src/panel/message_tray/notifications/notification_widget.h \
-  ../src/panel/message_tray/notifications/notification_group.c \
-  ../src/panel/message_tray/notifications/notification_osd.c \
-  ../src/panel/message_tray/notifications/notifications_list.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) notification-replacement.c ../src/panel/message_tray/notifications/notification_widget.c $(LDFLAGS) $(shell pkg-config --libs gtk4-layer-shell-0 libadwaita-1) -o $@

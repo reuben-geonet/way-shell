@@ -13,6 +13,7 @@ mod media;
 #[cfg(test)]
 #[path = "../../shell/tests/common/media.rs"]
 mod media_fixture;
+mod message_tray;
 mod network;
 mod notifications;
 mod panel;

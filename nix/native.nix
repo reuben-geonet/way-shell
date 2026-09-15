@@ -64,18 +64,11 @@
               sh tests/wayland-component.sh target/debug/examples/theme-compat
             cargo build -p way-shell --example sway-compat --frozen --jobs 1
             sh tests/wayland-component.sh target/debug/examples/sway-compat
-            make -C tests media-widgets-test
-            sh tests/wayland-component.sh tests/media-widgets-test
-            sh tests/wayland-component.sh tests/media-widgets-test niri
-            make -C tests media-presentation-test
-            sh tests/wayland-component.sh tests/media-presentation-test
-            sh tests/wayland-component.sh tests/media-presentation-test niri
-            make -C tests notification-presentation-test
-            sh tests/wayland-component.sh tests/notification-presentation-test
-            sh tests/wayland-component.sh tests/notification-presentation-test niri
-            make -C tests notification-replacement-test
-            sh tests/wayland-component.sh tests/notification-replacement-test
-            sh tests/wayland-component.sh tests/notification-replacement-test niri
+            cargo build -p way-shell --example notification-ui-compat --example message-tray-media-compat --example message-tray-window-compat --example message-tray-compat --frozen --jobs 1
+            for probe in notification-ui-compat message-tray-media-compat message-tray-window-compat message-tray-compat; do
+              G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh "target/debug/examples/$probe"
+              G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh "target/debug/examples/$probe" niri
+            done
             cargo build -p way-shell --example tray-ui-compat --example panel-status-compat --example panel-compat --frozen --jobs 1
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat
             G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat niri
