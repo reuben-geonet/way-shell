@@ -22,6 +22,13 @@ static void on_gamma_control_disabled(WaylandGammaControlService *w,
     gtk_widget_set_visible(GTK_WIDGET(self->icon), false);
 }
 
+static void on_availability_changed(WaylandGammaControlService *w,
+                                     PanelStatusBarNightLightButton *self) {
+    gtk_widget_set_visible(GTK_WIDGET(self->icon),
+        wayland_gamma_control_service_available(w) &&
+        wayland_gamma_control_service_enabled(w));
+}
+
 // stub out dispose, finalize, class_init, and init methods
 static void panel_status_bar_nightlight_button_dispose(GObject *gobject) {
     PanelStatusBarNightLightButton *self =
@@ -31,6 +38,7 @@ static void panel_status_bar_nightlight_button_dispose(GObject *gobject) {
     WaylandGammaControlService *w = wayland_gamma_control_service_get_global();
     g_signal_handlers_disconnect_by_func(w, on_gamma_control_enabled, self);
     g_signal_handlers_disconnect_by_func(w, on_gamma_control_disabled, self);
+    g_signal_handlers_disconnect_by_func(w, on_availability_changed, self);
 
     // Chain-up
     G_OBJECT_CLASS(panel_status_bar_nightlight_button_parent_class)
@@ -66,6 +74,8 @@ static void panel_status_bar_nightlight_button_init_layout(
                      G_CALLBACK(on_gamma_control_enabled), self);
     g_signal_connect(w, "gamma-control-disabled",
                      G_CALLBACK(on_gamma_control_disabled), self);
+    g_signal_connect_object(w, "availability-changed",
+                            G_CALLBACK(on_availability_changed), self, 0);
 };
 
 static void panel_status_bar_nightlight_button_init(

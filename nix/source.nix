@@ -60,10 +60,6 @@
             "src/services/status_notifier_service/status_notifier_item_dbus.h"
             "src/services/status_notifier_service/status_notifier_watcher_dbus.c"
             "src/services/status_notifier_service/status_notifier_watcher_dbus.h"
-            "src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.c"
-            "src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.h"
-            "src/services/wayland/wlr-gamma-control-unstable-v1.c"
-            "src/services/wayland/wlr-gamma-control-unstable-v1.h"
           ])
           && !(lib.hasSuffix ".o" name)
           && !(lib.hasSuffix ".d" name);

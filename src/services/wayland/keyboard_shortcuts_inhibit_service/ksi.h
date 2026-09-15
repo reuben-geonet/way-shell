@@ -22,8 +22,6 @@ G_DECLARE_FINAL_TYPE(WaylandKSIService, wayland_ksi_service, WAYLAND,
 
 G_END_DECLS
 
-int wayland_ksi_service_global_init(WaylandCoreService *core);
-
 WaylandKSIService *wayland_ksi_service_get_global();
 
 // Make compositor forward all key events to `widget`.

@@ -19,8 +19,7 @@ G_DEFINE_TYPE(QuickSettingsGridNightLightMenu,
 
 // stub out dispose, finalize, init and class init functions for GObject
 static void quick_settings_grid_night_light_menu_dispose(GObject *object) {
-    QuickSettingsGridNightLightMenu *self =
-        QUICK_SETTINGS_GRID_NIGHT_LIGHT_MENU(object);
+    G_OBJECT_CLASS(quick_settings_grid_night_light_menu_parent_class)->dispose(object);
 }
 
 static void quick_settings_grid_night_light_menu_finalize(GObject *object) {}
@@ -39,6 +38,12 @@ static void on_value_changed(GtkRange *range,
     WaylandGammaControlService *w = wayland_gamma_control_service_get_global();
     wayland_gamma_control_service_set_temperature(w,
                                                   gtk_range_get_value(range));
+}
+
+static void on_availability_changed(WaylandGammaControlService *gamma,
+                                     QuickSettingsGridNightLightMenu *self) {
+    gtk_widget_set_sensitive(GTK_WIDGET(self->temp_slider),
+                             wayland_gamma_control_service_available(gamma));
 }
 
 static void quick_settings_grid_night_light_menu_init_layout(
@@ -61,8 +66,12 @@ static void quick_settings_grid_night_light_menu_init_layout(
     gtk_range_set_value(GTK_RANGE(self->temp_slider), 3000);
 
     // connect signal
-    g_signal_connect(self->temp_slider, "value-changed",
-                     G_CALLBACK(on_value_changed), self);
+    g_signal_connect_object(self->temp_slider, "value-changed",
+                            G_CALLBACK(on_value_changed), self, 0);
+    WaylandGammaControlService *gamma = wayland_gamma_control_service_get_global();
+    g_signal_connect_object(gamma, "availability-changed",
+                            G_CALLBACK(on_availability_changed), self, 0);
+    on_availability_changed(gamma, self);
 
     gtk_box_append(self->menu.options, GTK_WIDGET(self->temp_slider));
 }

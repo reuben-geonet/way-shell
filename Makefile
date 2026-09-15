@@ -24,15 +24,13 @@ DBUS_BASES := src/services/dbus_dbus \
   src/services/status_notifier_service/status_notifier_host_dbus \
   src/services/status_notifier_service/status_notifier_item_dbus \
   src/services/status_notifier_service/status_notifier_watcher_dbus
-WAYLAND_BASES := src/services/wayland/wlr-foreign-toplevel-management-unstable-v1 \
-  src/services/wayland/wlr-gamma-control-unstable-v1
-GENERATED_SOURCES := $(addsuffix .c,$(DBUS_BASES) $(WAYLAND_BASES))
-GENERATED_HEADERS := $(addsuffix .h,$(DBUS_BASES) $(WAYLAND_BASES))
+GENERATED_SOURCES := $(addsuffix .c,$(DBUS_BASES))
+GENERATED_HEADERS := $(addsuffix .h,$(DBUS_BASES))
 SOURCES := $(sort $(shell find src -type f -name '*.c') $(GENERATED_SOURCES))
 OBJS := $(SOURCES:.c=.o)
 BRIDGE := target/release/libway_shell_bridge.a
 
-.PHONY: all check clean install install-gschema dbus-codegen wlr-protocols
+.PHONY: all check clean install install-gschema dbus-codegen
 all: way-shell cli
 check: all
 	$(CARGO) test --workspace $(CARGO_BUILD_FLAGS)
@@ -68,13 +66,7 @@ $(eval $(call dbus_binding,src/services/status_notifier_service/status_notifier_
 $(eval $(call dbus_binding,src/services/status_notifier_service/status_notifier_item_dbus,org.kde.StatusNotifierItem,org.kde.))
 $(eval $(call dbus_binding,src/services/status_notifier_service/status_notifier_watcher_dbus,org.kde.StatusNotifierWatcher,org.kde.))
 
-$(WAYLAND_BASES:%=%.h): src/services/wayland/%.h: data/wlr-protocols/unstable/%.xml
-	wayland-scanner client-header $< $@
-$(WAYLAND_BASES:%=%.c): src/services/wayland/%.c: data/wlr-protocols/unstable/%.xml
-	wayland-scanner private-code $< $@
-
 dbus-codegen: $(addsuffix .c,$(DBUS_BASES)) $(addsuffix .h,$(DBUS_BASES))
-wlr-protocols: $(addsuffix .c,$(WAYLAND_BASES)) $(addsuffix .h,$(WAYLAND_BASES))
 
 .PHONY: cli
 cli:

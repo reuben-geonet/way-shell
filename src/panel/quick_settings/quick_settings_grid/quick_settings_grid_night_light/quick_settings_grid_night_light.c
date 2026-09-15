@@ -26,6 +26,14 @@ static void on_gamma_control_disabled(WaylandGammaControlService *gamma,
     quick_settings_grid_button_set_toggled(&self->button, false);
 }
 
+static void on_availability_changed(WaylandGammaControlService *gamma,
+                                     QuickSettingsGridNightLightButton *self) {
+    gboolean available = wayland_gamma_control_service_available(gamma);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.toggle), available);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.reveal_button), available);
+    if (!available) quick_settings_grid_button_set_toggled(&self->button, false);
+}
+
 static void on_toggle_button_clicked(GtkButton *button,
                                      QuickSettingsGridNightLightButton *self) {
     g_debug(
@@ -60,6 +68,9 @@ quick_settings_grid_night_light_button_init() {
                      G_CALLBACK(on_gamma_control_enabled), self);
     g_signal_connect(w, "gamma-control-disabled",
                      G_CALLBACK(on_gamma_control_disabled), self);
+    g_signal_connect(w, "availability-changed",
+                     G_CALLBACK(on_availability_changed), self);
+    on_availability_changed(w, self);
 
     gboolean enabled = wayland_gamma_control_service_enabled(w);
     if (enabled) {

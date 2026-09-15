@@ -6,11 +6,10 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test power-profiles-test wayland-state-test power-boundary-test logind-test brightness-test
+check: core-test ipc-test power-profiles-test power-boundary-test logind-test brightness-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/power-profiles-test
-	cd .. && tests/wayland-state-test
 	cd .. && tests/power-boundary-test
 	cd .. && GSETTINGS_SCHEMA_DIR=tests tests/logind-test
 	cd .. && GSETTINGS_SCHEMA_DIR=tests GSETTINGS_BACKEND=memory tests/brightness-test
@@ -25,10 +24,6 @@ ipc-test: ipc.c ../src/services/ipc_service/ipc_service.c ../src/services/ipc_se
 power-profiles-test: power-profiles.c ../src/services/power_profiles_service/power_profiles_service.c \
   ../src/services/power_profiles_service/power_profiles_dbus.c ../src/services/power_profiles_service/power_profiles_dbus.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) power-profiles.c ../src/services/power_profiles_service/power_profiles_dbus.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
-
-wayland-state-test: wayland-state.c ../src/services/wayland/foreign_toplevel_service/foreign_toplevel.c \
-  ../src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) wayland-state.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 wayland-client) -o $@
 
 power-boundary-test: power-boundary.c ../src/services/upower_service.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 upower-glib) -o $@
@@ -59,7 +54,7 @@ brightness-test: brightness.c ../src/services/brightness_service/brightness_serv
 	$(CC) $(CPPFLAGS) $(CFLAGS) brightness.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
 
 clean:
-	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test wayland-state-test power-boundary-test
+	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test power-profiles-test power-boundary-test
 	rm -f power-profiles-widgets-test
 	rm -f logind-test gschemas.compiled
 	rm -f brightness-test

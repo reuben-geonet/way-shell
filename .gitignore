@@ -17,7 +17,6 @@ gresources.h
 /tests/niri-test
 /tests/power-profiles-test
 /tests/power-profiles-widgets-test
-/tests/wayland-state-test
 /tests/power-boundary-test
 /tests/logind-test
 /tests/brightness-test
@@ -49,7 +48,3 @@ gschemas.compiled
 /src/services/status_notifier_service/status_notifier_item_dbus.h
 /src/services/status_notifier_service/status_notifier_watcher_dbus.c
 /src/services/status_notifier_service/status_notifier_watcher_dbus.h
-/src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.c
-/src/services/wayland/wlr-foreign-toplevel-management-unstable-v1.h
-/src/services/wayland/wlr-gamma-control-unstable-v1.c
-/src/services/wayland/wlr-gamma-control-unstable-v1.h

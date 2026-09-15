@@ -20,7 +20,6 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             glib
-            wayland-scanner
             python3
             cargo
             rustc
@@ -77,6 +76,9 @@
               sh tests/wayland-component.sh target/debug/examples/niri-compat niri
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
               sh tests/wayland-component.sh target/debug/examples/theme-compat niri
+            cargo build -p way-shell --example wayland-compat --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-compat
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-compat niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

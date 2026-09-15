@@ -21,7 +21,7 @@ a claim that the complete migration is ready to install.
 - [x] 15. Migrate clock scheduling to Rust.
 - [x] 16. Migrate the Sway backend to Rust.
 - [x] 17. Migrate the Niri backend to Rust.
-- [ ] 18. Migrate Wayland connection and protocol ownership to Rust.
+- [x] 18. Migrate Wayland connection and protocol ownership to Rust.
 - [ ] 19. Migrate UPower integration to Rust.
 - [ ] 20. Migrate logind session actions and inhibitors to Rust.
 - [ ] 21. Migrate power profile management to Rust.
