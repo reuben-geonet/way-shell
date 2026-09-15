@@ -347,12 +347,6 @@ void network_manager_service_ap_join(NetworkManagerService *self,
     g_debug(
         "network_manager_service.c:network_manager_service_wifi_join() called");
 
-    // debug password
-    g_debug(
-        "network_manager_service.c:network_manager_service_wifi_join() "
-        "password: %s",
-        password);
-
     if (!self || !self->client || !dev || !ap) return;
     NMClient *client = self->client;
     GBytes *ap_ssid = nm_access_point_get_ssid(ap);
@@ -416,10 +410,6 @@ void network_manager_service_ap_join(NetworkManagerService *self,
     // this may change tho if it becomes too inconenvient to put in a password
     // when switching between known networks...
     if (password) {
-        g_debug(
-            "network_manager_service.c:network_manager_service_wifi_join() "
-            "setting password: %s",
-            password);
         NMSettingWirelessSecurity *sec_settings =
             NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
         g_object_set(sec_settings, NM_SETTING_WIRELESS_SECURITY_PSK, password,

@@ -236,3 +236,8 @@ Separate bridge and C facade checks cover retained array entries, callback
 teardown, delayed startup and VPN removal signal lifetimes. Local Cargo tests,
 Clippy, the linked application and remaining C tests pass. Offline Fedora and
 native package checks remain recorded separately in migration-checklist.md.
+
+A C baseline regression reproduced Wi-Fi passwords appearing in debug output,
+including calls rejected for missing devices. Both password-bearing messages
+are removed before the connection port; diagnostics must never include supplied
+credentials. The fixture uses a dummy value and captures log messages locally.

@@ -141,10 +141,22 @@ static void daemon_loss_clears_vpn_snapshot(void) {
     g_object_unref(service);
     teardown();
 }
+static void capture_credentials(const gchar *domain, GLogLevelFlags level,
+    const gchar *message, gpointer data) {
+    if (strstr(message, "fixture-secret-do-not-log")) *(gboolean *)data = TRUE;
+}
+static void credentials_are_not_logged(void) {
+    gboolean exposed = FALSE;
+    guint handler = g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, capture_credentials, &exposed);
+    network_manager_service_ap_join(NULL, NULL, NULL, "fixture-secret-do-not-log");
+    g_log_remove_handler(NULL, handler);
+    g_assert_false(exposed);
+}
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/network/inventory-recovery-ownership", inventory_recovery_and_ownership);
     g_test_add_func("/network/vpn-snapshot-ownership", vpn_snapshot_owns_connections);
     g_test_add_func("/network/daemon-loss-clears-vpn", daemon_loss_clears_vpn_snapshot);
+    g_test_add_func("/network/credentials-not-logged", credentials_are_not_logged);
     return g_test_run();
 }
