@@ -93,6 +93,8 @@ a claim that the complete migration is ready to install.
 - [x] Clean native notification application/schema checks at `ff6a042`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/notifications-native-schemas` -> `/nix/store/spb53v4cfmn57wzqy8gbpmwgg59lhq35-way-shell-native-schemas-check`.
 - [x] Rust tray/menu services and adapter: owned item/menu snapshots, unique registration, malformed images/layouts, cancellation, restart, deadlines, queued callbacks and disposal; full workspace tests, formatting, Clippy, clean linked build and existing tray widgets on Sway/Niri pass.
 - [ ] Native/Fedora package matrix for the Rust tray and menu cutover.
+- [x] Clean native tray application/schema checks at `6b79c1d`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/tray-native-schemas` -> `/nix/store/l9380vg0grsd4al26b8y3pgmv9z08b88-way-shell-native-schemas-check`.
+- [x] Reproduce and correct Fedora guest image-loader configuration discovery: inherited Nix data paths hid installed Glycin loaders; a Rust probe in the exact Fedora 43 image fails before and decodes/encodes PNG after restoring Fedora data paths. Full RPM rerun remains pending.
 - [x] Rust window foundation: transition/popup-policy tests, interrupted animations, underlay ownership, repeated destruction, GTK focus chain and theme cycles on Sway/Niri; real Sway output removal and GDK invalidation on both.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.

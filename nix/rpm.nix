@@ -43,6 +43,9 @@
           # Keep Cargo artifacts on the sparse guest disk instead.
           buildPhase = ''
             runHook preBuild
+            # stdenv contributes Nix data paths; guest libraries such as Glycin
+            # must discover the configuration installed by Fedora packages.
+            export XDG_DATA_DIRS=/usr/local/share:/usr/share
             srcName="$(rpmspec --srpm -q --qf '%{source}' *.spec)"
             cp "$src" "$srcName"
             rpmout=/var/tmp/way-shell-rpm

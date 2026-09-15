@@ -731,3 +731,16 @@ The headless seat has no physical keyboard, so these checks verify the requested
 keyboard mode and GTK focus chain; real keyboard acceptance remains pending.
 The native Nix check runs both compositor probes. Theme compatibility is the
 first adopter; application panel and popup adoption follows in the UI ports.
+
+## Fedora image-loader discovery
+
+The tray package gate exposed inherited Nix `XDG_DATA_DIRS` in the RPM build
+guest. Fedora's Glycin loader configuration was installed, but its discovery
+searched the Nix tool directories and returned empty codec tables. A small
+Rust probe in the exact Fedora 43 image reproduces failed static PNG decoding
+and passes decoding plus encoding after setting the Fedora data directories.
+
+The RPM build now sets `XDG_DATA_DIRS=/usr/local/share:/usr/share`, matching
+the existing installation check. This requires no added packages or lock
+changes. Evidence: `glycin-fedora43-probe.log`; full RPM verification is
+tracked separately in the checklist.
