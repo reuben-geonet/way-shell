@@ -180,29 +180,31 @@ static void update_menu_layout(DbusDbusmenu *menu, StatusNotifierItem *item) {
             "status_notifier_service.c:update_menu_layout() failed to get "
             "layout: %s",
             error->message);
+        g_error_free(error);
         return;
     }
 
     libdbusmenu_parse_layout(layout, NULL, item);
+    g_variant_unref(layout);
 }
 
 static void on_property_update(DbusDbusmenu *menu, GVariant *arg_1,
                                GVariant *arg_2, StatusNotifierItem *item) {
     g_debug("status_notifier_service.c:on_property_update() called");
-    g_signal_emit(item, signals[status_notifier_item_menu_will_update], 0,
+    StatusNotifierService *s = status_notifier_service_get_global();
+    g_signal_emit(s, signals[status_notifier_item_menu_will_update], 0,
                   item);
     update_menu_layout(menu, item);
-    StatusNotifierService *s = status_notifier_service_get_global();
     g_signal_emit(s, signals[status_notifier_item_menu_updated], 0, item);
 }
 
 static void on_menu_layout_update(DbusDbusmenu *menu, guint arg_1, gint arg_2,
                                   StatusNotifierItem *item) {
     g_debug("status_notifier_service.c:on_menu_layout_update() called");
-    g_signal_emit(item, signals[status_notifier_item_menu_will_update], 0,
+    StatusNotifierService *s = status_notifier_service_get_global();
+    g_signal_emit(s, signals[status_notifier_item_menu_will_update], 0,
                   item);
     update_menu_layout(menu, item);
-    StatusNotifierService *s = status_notifier_service_get_global();
     g_signal_emit(s, signals[status_notifier_item_menu_updated], 0, item);
 }
 

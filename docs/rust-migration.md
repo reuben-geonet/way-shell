@@ -626,3 +626,11 @@ lifetime. Evidence: `tray-{overflow,ownership,overlay}-before.log`,
 reproductions show that duplicate registration repeats discovery and two
 object paths from one owner collide; the Rust watcher contract tests cover
 those intentional identity fixes.
+
+The menu baseline also fixes signals emitted on a plain item pointer instead
+of the service GObject, releases layout replies, and balances GMenu, GMenuItem,
+section and variant ownership. Three sanitizer tests preserve labels,
+visibility, sections, submenus and action targets while verifying replacement
+cleanup and will-update/did-update signal ordering. Before and after evidence:
+`tray-menu-signal-before.log`, `tray-menu-parse-before.log`,
+`tray-menu-baseline-after.log` and `tray-menu-baseline-integrated.log`.

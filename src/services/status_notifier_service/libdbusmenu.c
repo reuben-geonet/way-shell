@@ -46,8 +46,7 @@ gboolean libdbusmenu_parse_properties(GMenuItem *item, gchar *prop,
             "status_notifier_service.c:libdbusmenu_parse_properties() setting "
             "label to %s",
             g_variant_get_string(value, NULL));
-        g_menu_item_set_label(item,
-                              g_strdup(g_variant_get_string(value, NULL)));
+        g_menu_item_set_label(item, g_variant_get_string(value, NULL));
     }
     return false;
 }
@@ -181,24 +180,29 @@ void libdbusmenu_parse_layout(GVariant *layout, GMenuItem *parent_menu_item,
         }
 
     skip_append:
+        g_object_unref(menu_item);
         g_variant_unref(child_props);
         g_variant_unref(child);
         position++;
     }
 
     // append any pending section to our menu...
-    if (current_section)
+    if (current_section) {
         g_menu_append_section(menu, NULL, G_MENU_MODEL(current_section));
+        g_object_unref(current_section);
+    }
+    g_variant_unref(children_variant);
 
     // if our parent_menu_item is null, this is the root iteration and we attach
     // our menu to the SNI
-    if (parent_menu_item == NULL)
+    if (parent_menu_item == NULL) {
         item->menu_model = menu;
-    else if (position > 0)
+    } else {
         // otherwise, this is a submenu iteration, if we wound up creating a
         // menu due to there being submenu items, attach this menu to our
         // parent.
-        g_menu_item_set_submenu(parent_menu_item, G_MENU_MODEL(menu));
-    else
-        g_free(menu);
+        if (position > 0)
+            g_menu_item_set_submenu(parent_menu_item, G_MENU_MODEL(menu));
+        g_object_unref(menu);
+    }
 }
