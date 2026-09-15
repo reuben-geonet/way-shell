@@ -41,6 +41,11 @@ power-profiles-widgets-test: power-profiles-widgets.c \
 gschemas.compiled: ../data/org.ldelossa.way-shell.gschema.xml
 	glib-compile-schemas --strict --targetdir=. ../data
 
+battery-widgets-test: battery-widgets.c \
+  ../src/panel/quick_settings/quick_settings_header/quick_settings_battery_menu.c \
+  ../src/panel/quick_settings/quick_settings_menu_widget.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) battery-widgets.c ../src/panel/quick_settings/quick_settings_menu_widget.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 upower-glib) -o $@
+
 logind-test: logind.c ../src/services/logind_service/logind_service.c \
   ../src/services/logind_service/logind_manager_dbus.c ../src/services/logind_service/logind_session_dbus.c gschemas.compiled
 	$(CC) $(CPPFLAGS) $(CFLAGS) logind.c ../src/services/logind_service/logind_manager_dbus.c ../src/services/logind_service/logind_session_dbus.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
@@ -53,3 +58,4 @@ clean:
 	rm -f power-profiles-widgets-test
 	rm -f logind-test gschemas.compiled
 	rm -f brightness-test
+	rm -f battery-widgets-test

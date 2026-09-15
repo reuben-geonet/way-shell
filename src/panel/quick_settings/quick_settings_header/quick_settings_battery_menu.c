@@ -10,6 +10,7 @@
 enum signals { signals_n };
 
 typedef struct _QuickSettingsBatteryMenu {
+    GObject parent_instance;
     QuickSettingsMenuWidget menu;
     GtkScale *battery_scale;
     GtkLabel *battery_time;

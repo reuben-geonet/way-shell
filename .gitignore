@@ -21,6 +21,7 @@ gresources.h
 /tests/power-boundary-test
 /tests/logind-test
 /tests/brightness-test
+/tests/battery-widgets-test
 __pycache__/
 
 # Build outputs
