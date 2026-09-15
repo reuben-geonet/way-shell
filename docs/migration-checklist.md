@@ -72,7 +72,8 @@ a claim that the complete migration is ready to install.
 - [x] Native package/schema check for the services through `767efca`, built from `2f40bf7`; artifact `../artifacts/power-services-native-schemas`.
 - [ ] Fedora package matrix for those services, running from checkpoint `2f40bf7`.
 - [x] Network inventory/radio private D-Bus fixtures using real libnm, C facade recovery, ownership, full local build/workspace checks and Clippy.
-- [ ] Native/Fedora package matrix for the network inventory port.
+- [x] Clean native application/schema package checks for network inventory (`3c5ac97`), including existing Sway/Niri component coverage; artifact `../artifacts/network-inventory-native-schemas`.
+- [ ] Fedora package matrix for the network inventory port.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
