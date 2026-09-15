@@ -241,3 +241,12 @@ A C baseline regression reproduced Wi-Fi passwords appearing in debug output,
 including calls rejected for missing devices. Both password-bearing messages
 are removed before the connection port; diagnostics must never include supplied
 credentials. The fixture uses a dummy value and captures log messages locally.
+
+The connection baseline also reproduced device mix-ups between concurrent Wi-Fi
+joins, an incorrect async finish function for saved connections, and uncancelled
+requests after owner destruction. Each C request now retains its own client and
+device, holds a weak service reference, and is cancelled on daemon or owner loss.
+Completion calls the matching libnm finish function and releases returned objects.
+Fixtures cover both new and saved joins, denied writes, concurrent devices,
+credential-free diagnostics, cancellation and result ownership before the Rust
+replacement takes over this behavior.
