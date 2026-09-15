@@ -408,6 +408,12 @@ Evidence is in `audio-controls-fedora-locks-resumed.log`,
 Clippy and the linked application pass in `audio-controls-final-workspace.log`.
 Clean native and Fedora package results are tracked separately in the checklist.
 
+The first clean native audio-control run found the policy executable missing
+from `PATH`: host library inputs do not supply build-time tools under Nix's
+strict dependency handling. WirePlumber is now an explicit native check input
+and RPM build requirement. The Fedora locked closures already contain it.
+The failure is retained in `audio-controls-native-build.log`.
+
 ## MPRIS metadata baseline fixes
 
 Metadata replacement now clears omitted fields, accepts empty artist arrays,

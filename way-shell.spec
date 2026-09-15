@@ -23,6 +23,7 @@ BuildRequires: cargo >= 1.90
 BuildRequires: clang-devel
 BuildRequires: pipewire
 BuildRequires: pipewire-pulseaudio
+BuildRequires: wireplumber
 BuildRequires: dbus-daemon
 
 BuildRequires: pkgconfig(libadwaita-1)

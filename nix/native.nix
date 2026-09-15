@@ -51,7 +51,7 @@
             cargo build --workspace --frozen --jobs 1
           '';
           doCheck = true;
-          nativeCheckInputs = [ pkgs.pipewire pkgs.sway pkgs.niri pkgs.dbus ];
+          nativeCheckInputs = [ pkgs.pipewire pkgs.wireplumber pkgs.sway pkgs.niri pkgs.dbus ];
           checkTarget = "check";
           WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
           preCheck = ''
