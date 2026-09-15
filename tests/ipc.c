@@ -1,5 +1,10 @@
 #include <glib.h>
 #include "../src/services/ipc_service/ipc_protocol.h"
+/* Fixture replacements must not export production names: Rust may place a
+ * needed bridge function in the same archive object as the real audio API. */
+#define wire_plumber_service_get_global fixture_audio_get_global
+#define wire_plumber_service_get_default_sink fixture_audio_get_default_sink
+#define wire_plumber_service_set_volume fixture_audio_set_volume
 /* Keep the production dispatcher private while testing its volume handler.
  * Unused UI sections are discarded by the test linker's --gc-sections. */
 #include "../src/services/ipc_service/ipc_service.c"

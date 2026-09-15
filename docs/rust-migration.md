@@ -357,3 +357,10 @@ and no request when already full; all five C audio tests pass. Evidence:
 `audio-volume-c-clamp-regression-before.log` and
 `audio-volume-c-clamp-regression-after.log`. Rust control tests carry this case
 forward alongside finite-value validation and mute/channel checks.
+
+The clean native build of `e9a3a5f` exposed duplicate symbols between the IPC
+fixture's audio replacements and the Rust static archive. Archive object grouping
+varies with build settings, so the fixture now gives its replacements private
+names before including the dispatcher. The IPC regressions pass with the linked
+Rust bridge (`ipc-fixture-symbols.log`). The original native failure is recorded
+in `audio-inventory-native-resumed.log`; that package gate awaits a corrected run.
