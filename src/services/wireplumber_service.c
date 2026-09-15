@@ -218,7 +218,7 @@ void wire_plumber_service_volume_up(WirePlumberService *self,
             "already at max");
         return;
     }
-    double volume = node->volume + .05;
+    double volume = MIN(node->volume + .05, 1.0);
     g_debug("wireplumber_service.c:wire_plumber_service_volume_up() volume: %f",
             volume);
     wire_plumber_service_set_volume(self, node, volume);

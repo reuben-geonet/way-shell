@@ -13,6 +13,7 @@ static void fixture_mixer_class_init(FixtureMixerClass *klass) {
 }
 static void fixture_mixer_init(FixtureMixer *self) {}
 static unsigned mute_requests, volume_requests;
+static double requested_volume;
 static GObject *test_mixer;
 GObject *way_shell_audio_ref_mixer(WirePlumberService *self) { return test_mixer ? g_object_ref(test_mixer) : NULL; }
 static GHashTable *test_db;
@@ -21,7 +22,10 @@ GHashTable *wire_plumber_service_get_db(WirePlumberService *self) { return test_
 static gboolean mixer_request(GObject *object, guint id, GVariant *value, gpointer data) {
     gboolean mute; gdouble volume;
     if (g_variant_lookup(value, "mute", "b", &mute)) mute_requests++;
-    if (g_variant_lookup(value, "volume", "d", &volume)) volume_requests++;
+    if (g_variant_lookup(value, "volume", "d", &volume)) {
+        volume_requests++;
+        requested_volume = volume;
+    }
     return TRUE;
 }
 float volume_to_linear(double volume, int scale) { return volume * volume * volume; }
@@ -39,6 +43,25 @@ static void stream_mute_keeps_record_bounds(void) {
     g_assert_cmpfloat(record.canary, ==, .91);
     g_assert_cmpuint(mute_requests, ==, 2);
     g_assert_cmpuint(volume_requests, ==, 0);
+}
+
+static void volume_up_stops_at_full_volume(void) {
+    g_autoptr(GObject) mixer = g_object_new(fixture_mixer_get_type(), NULL);
+    g_signal_connect(mixer, "set-volume", G_CALLBACK(mixer_request), NULL);
+    test_mixer = mixer;
+    WirePlumberService *service = (WirePlumberService *)mixer;
+    WirePlumberServiceNode node = {.id=42, .volume=.90};
+    volume_requests = 0;
+    wire_plumber_service_volume_up(service, &node);
+    g_assert_cmpfloat_with_epsilon(requested_volume, .95 * .95 * .95, .000001);
+    node.volume = .98;
+    wire_plumber_service_volume_up(service, &node);
+    g_assert_cmpfloat(requested_volume, ==, 1.0);
+    g_assert_cmpuint(volume_requests, ==, 2);
+    node.volume = 1.0;
+    wire_plumber_service_volume_up(service, &node);
+    g_assert_cmpuint(volume_requests, ==, 2);
+    test_mixer = NULL;
 }
 
 static void failed_pulse_queries_are_ignored(void) {
@@ -132,6 +155,7 @@ static void disconnected_pulse_cancels_queries(void) {
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     g_test_add_func("/audio-controls/stream-mute-bounds", stream_mute_keeps_record_bounds);
+    g_test_add_func("/audio-controls/volume-up-bound", volume_up_stops_at_full_volume);
     g_test_add_func("/audio-controls/failed-pulse-query", failed_pulse_queries_are_ignored);
     g_test_add_func("/audio-controls/concurrent-routes", concurrent_routes_keep_their_targets);
     g_test_add_func("/audio-controls/disconnected-pulse-query", disconnected_pulse_cancels_queries);

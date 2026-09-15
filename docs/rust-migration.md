@@ -349,3 +349,11 @@ The regression covers concurrent destinations, normal completion, cancellation
 and both terminal connection states. The linked application and baseline checks
 pass; evidence is `audio-route-concurrency-before.log`,
 `audio-route-concurrency-resumed.log` and `audio-route-concurrency-reviewed.log`.
+
+The volume-up action also now caps its final five-percent increment at full
+volume. A C mixer fixture reproduced a request for 103% from a 98% starting
+level. Its regression checks ordinary increments, the final partial increment,
+and no request when already full; all five C audio tests pass. Evidence:
+`audio-volume-c-clamp-regression-before.log` and
+`audio-volume-c-clamp-regression-after.log`. Rust control tests carry this case
+forward alongside finite-value validation and mute/channel checks.
