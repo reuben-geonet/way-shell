@@ -1014,3 +1014,20 @@ tests cover all actions, pathname/abstract clients, error responses, deadlines,
 ownership replacement and nested shutdown. They and strict workspace Clippy
 pass in `ipc-integrated.log`. Activation joins Rust startup in step 44, avoiding
 another temporary C command dispatcher.
+
+## Rust installation schema probe
+
+Packaging now compiles the test-only `schema-probe` Cargo example with the same
+compiler and native libraries as the application. Native builds expose it in a
+separate `testHelpers` output, and Fedora `%check` exports it outside the RPM
+payload. Fresh installation checks execute that artifact instead of compiling
+C in the installation VM. It reads every key in every requested schema and
+requires the memory backend; missing schemas and unexpected backends fail.
+
+The native check still reuses the installed shell's exact wrapper environment
+and verifies dconf discovery. The helper must be an unwrapped ELF binary.
+Fedora checks still verify loader/library paths and reject Nix dependencies,
+now including the Rust helper. Three Rust tests, executable exit-status checks,
+strict Clippy, syntax checks and Nix derivation evaluation pass; evidence is in
+`schema-probe-rust.log` and `schema-probe-executable.log`. Installed-environment
+acceptance remains part of the native and Fedora package matrix.

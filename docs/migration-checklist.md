@@ -46,7 +46,7 @@ a claim that the complete migration is ready to install.
 - [x] 40. Migrate calendar and media presentation to Rust.
 - [x] 41. Migrate OSD and dialog overlays to Rust.
 - [ ] 42. Replace the shell IPC server with Rust.
-- [ ] 43. Replace the packaging schema probe with Rust.
+- [x] 43. Replace the packaging schema probe with Rust.
 - [ ] 44. Move startup and shutdown into Rust.
 - [ ] 45. Make Cargo the sole application build tool; remove C and the bridge.
 - [ ] 46. Remove obsolete build dependencies.
@@ -116,6 +116,8 @@ a claim that the complete migration is ready to install.
 - [ ] Native/Fedora package matrix for the Rust message-tray cutover.
 - [x] Rust level OSD is active with the existing confirmation dialog. Audio/brightness updates, default-device suppression, animation/timer cancellation, removed devices, reentrancy and cleanup pass on Sway/Niri; affected Rust tests, strict Clippy and linked build pass.
 - [x] Permanent Rust IPC server: five real-socket tests cover all 33 actions, malformed datagrams, replies, deadlines, concurrency, socket ownership and immediate cancellation. Normal workspace integration and strict Clippy pass; application activation joins step 44.
+- [x] Rust schema helper: all application schemas/keys, missing IDs, wrong backend and exit statuses pass. Native and Fedora checks now consume separately compiled helper artifacts; native derivations evaluate and packaging syntax passes.
+- [ ] Native/Fedora installed-environment checks using the new Rust schema artifacts.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

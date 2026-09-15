@@ -51,6 +51,8 @@
             rpmout=/var/tmp/way-shell-rpm
             mkdir -p "$rpmout"/{BUILD,BUILDROOT,SPECS,SOURCES,RPMS,SRPMS}
             export CARGO_HOME="$rpmout/cargo-home"
+            # Export the Fedora-built test helper separately from the RPM payload.
+            export WAY_SHELL_TEST_ARTIFACTS="$out/test-helpers"
             df -h /tmp "$rpmout"
             rustc --version
             cargo --version
@@ -71,7 +73,7 @@
             ''
               export RPM_DIRECTORY=${builds.${release}}/rpms/fedora-${release}-x86_64
               export POWER_PROVIDER=${cfg.fedora.releases.${release}.powerProvider}
-              export SCHEMA_PROBE_SOURCE=${./tests/schema-probe.c}
+              export SCHEMA_PROBE=${builds.${release}}/test-helpers/schema-probe
               export EXPECTED_SCHEMAS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.schemaIds)}
               source ${./tests/fedora-install.sh}
             ''

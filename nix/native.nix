@@ -14,6 +14,8 @@
           inherit (config.wayShell) version;
           src = config.wayShell.source;
           strictDeps = true;
+          outputs = [ "out" "testHelpers" ];
+          wrapGAppsInOutputs = [ "out" ];
           enableParallelBuilding = false;
           cargoDeps = config.wayShell.cargoVendor;
           CARGO_BUILD_FLAGS = "--frozen";
@@ -49,6 +51,7 @@
           installFlags = [ "PREFIX=$(out)" ];
           preBuild = ''
             cargo build --workspace --frozen --jobs 1
+            cargo build -p way-shell --example schema-probe --frozen --jobs 1
           '';
           doCheck = true;
           nativeCheckInputs = [ pkgs.pipewire pkgs.wireplumber pkgs.sway pkgs.niri pkgs.dbus ];
@@ -119,6 +122,7 @@
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';
           postInstall = ''
+            install -Dm755 target/debug/examples/schema-probe "$testHelpers/bin/schema-probe"
             glib-compile-schemas "$out/share/glib-2.0/schemas"
             install -Dm644 LICENSE "$out/share/licenses/way-shell/LICENSE"
             cp -r ${config.wayShell.dependencyLicenses} "$out/share/licenses/way-shell/dependencies"

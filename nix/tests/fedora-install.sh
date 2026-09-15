@@ -55,19 +55,21 @@ test -s /usr/share/licenses/way-shell/LICENSE
 test -s /usr/share/glib-2.0/schemas/gschemas.compiled
 /usr/bin/way-shell --help
 
-# pkg-config emits a list of compiler/linker arguments.
-# shellcheck disable=SC2046
-gcc "$SCHEMA_PROBE_SOURCE" -o /tmp/schema-probe $(pkg-config --cflags --libs gio-2.0)
+# This artifact was compiled by the same Fedora compiler as the package.
+# Keep test helpers outside the installed application payload.
+test -x "$SCHEMA_PROBE"
+if grep -E '/schema-probe$' "$out/logs/owned-files.txt"; then exit 1; fi
 # Word splitting is intentional: the IDs are derived from our schema XML.
 # shellcheck disable=SC2086
-/tmp/schema-probe $EXPECTED_SCHEMAS
+"$SCHEMA_PROBE" $EXPECTED_SCHEMAS
 gsettings list-schemas > "$out/logs/schemas.txt"
 
-for executable in way-shell way-sh; do
-    readelf -l -d "/usr/bin/$executable" > "$out/logs/$executable-elf.txt"
-    grep -F 'Requesting program interpreter: /lib64/ld-linux-x86-64.so.2' "$out/logs/$executable-elf.txt"
-    ldd "/usr/bin/$executable" > "$out/logs/$executable-ldd.txt"
-    if grep -E '/nix/store|not found' "$out/logs/$executable-elf.txt" "$out/logs/$executable-ldd.txt"; then
+for executable in /usr/bin/way-shell /usr/bin/way-sh "$SCHEMA_PROBE"; do
+    executable_name=${executable##*/}
+    readelf -l -d "$executable" > "$out/logs/$executable_name-elf.txt"
+    grep -F 'Requesting program interpreter: /lib64/ld-linux-x86-64.so.2' "$out/logs/$executable_name-elf.txt"
+    ldd "$executable" > "$out/logs/$executable_name-ldd.txt"
+    if grep -E '/nix/store|not found' "$out/logs/$executable_name-elf.txt" "$out/logs/$executable_name-ldd.txt"; then
         exit 1
     fi
 done

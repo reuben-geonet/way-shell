@@ -24,3 +24,7 @@ pkg-config.workspace = true
 
 [lints]
 workspace = true
+
+[[example]]
+name = "schema-probe"
+test = true

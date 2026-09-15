@@ -8,16 +8,7 @@
     }:
     let
       package = config.packages.way-shell;
-      schemaProbe =
-        pkgs.runCommandCC "way-shell-schema-probe"
-          {
-            nativeBuildInputs = [ pkgs.pkg-config ];
-            buildInputs = [ pkgs.glib ];
-          }
-          ''
-            mkdir -p "$out/bin"
-            $CC ${./tests/schema-probe.c} -o "$out/bin/schema-probe" $(pkg-config --cflags --libs gio-2.0)
-          '';
+      schemaProbe = package.testHelpers;
     in
     {
       checks =
@@ -30,6 +21,7 @@
             mkdir -p "$out"
             test -x ${package}/bin/way-shell
             test -x ${package}/bin/way-sh
+            test ! -e ${package}/bin/schema-probe
             test -s ${package}/share/licenses/way-shell/LICENSE
             test -s ${package}/share/gsettings-schemas/${package.name}/glib-2.0/schemas/gschemas.compiled
             grep -Fx 'ExecStart=${package}/bin/way-shell' ${package}/lib/systemd/user/way-shell.service
@@ -40,7 +32,10 @@
             set -x
             mkdir -p "$out" empty home
             # Reuse the installed application's wrapper verbatim up to exec.
-            # Only substitute its final executable with the GLib schema probe.
+            # Only substitute its final executable with the Rust/GIO schema probe.
+            test -x ${schemaProbe}/bin/schema-probe
+            # The helper must not add its own wrapper environment to this test.
+            test "$(head -c 4 ${schemaProbe}/bin/schema-probe)" = "$(printf '\177ELF')"
             grep -q '^exec ' ${package}/bin/way-shell
             grep -F '${lib.getLib pkgs.dconf}/lib/gio/modules' ${package}/bin/way-shell
             sed '/^exec /,$d' ${package}/bin/way-shell > probe-wrapper
