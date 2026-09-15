@@ -3,7 +3,11 @@
 The migration starts at `nix` commit `a9c7a1e1978bf1ce8453fce6e51349b5f2257c2b`.
 Only the RPM power-provider change from
 `05ab8e1b889ffda2e68cce6891d2ecb64c704b82` is carried over from Bluetooth work.
-Keep the C shell working until each replacement passes its behavioral checks.
+The C shell remained operational during the incremental ports. Application
+code, the CLI and test helpers are now Rust; Cargo owns their builds and tests.
+The records below describe the intermediate stages and the fixes found there.
+Current package and laptop acceptance is tracked in [the checklist](migration-checklist.md).
+New tests are written directly in Rust, following the user's updated direction.
 
 ## Public contracts
 
@@ -16,7 +20,7 @@ Keep the C shell working until each replacement passes its behavioral checks.
 - Preserve GTK4, libadwaita, gtk4-layer-shell, CSS resource paths and user
   theme files/hooks. Native daemons continue running independently.
 - IPC uses a Unix datagram socket at `$XDG_RUNTIME_DIR/way-shell.sock`.
-  Opcodes are the stable integers 0–33 in `ipc_commands.h`. Encode the
+  Opcodes retain the stable integers 0–33 in `crates/core/src/ipc.rs`. Encode the
   existing x86_64 wire layout explicitly: little-endian `u32`, followed by
   an IEEE-754 little-endian `f32` only for volume-set (opcode 4). Replies are
   exactly four bytes, little-endian 0 or 1. Do not serialize Rust/C structs.
@@ -48,8 +52,9 @@ The Rust theme service keeps `changed::light-theme` as a one-way observation:
 one setting change produces one `theme-changed` signal and one hook invocation.
 The C observer wrote the same setting through its setter, duplicating updates.
 Repeating a theme command still reloads the CSS. Memory-backed settings tests
-cover external changes and callback cleanup. Embedded CSS remains byte-for-byte
-identical to the baseline, including its existing GTK parser diagnostics.
+cover external changes and callback cleanup. At that stage the embedded CSS
+remained byte-for-byte identical to the baseline. The later full application
+checks led to the parser and scrollbar corrections recorded below.
 
 The Sway stream fixture reproduced incorrect partial reads and writes: the C
 loops advanced a byte count instead of the buffer pointer, and could spin on
@@ -96,16 +101,17 @@ and reject malformed lengths before replacing this protocol implementation.
 
 Rust 2024, minimum Rust 1.90, one Cargo.lock, shared workspace dependencies.
 Permanent crates: `way-shell-core` (no GTK), `way-shell` (services/ui/platform),
-`way-sh` (CLI, no GTK). A temporary static `way-shell-bridge` serves C callers.
-Keep adapters outside permanent crates; own snapshots/handles explicitly,
-disconnect callbacks before releasing owners, and never unwind over C ABI.
+`way-sh` (CLI, no GTK). The temporary static `way-shell-bridge` served C callers
+during migration and is now removed. Permanent crates stayed independent of
+those adapters. Own snapshots and handles explicitly and disconnect callbacks
+before releasing owners.
 Keep a single GLib main loop and use asynchronous service operations and weak
 widget references. Services expose application-owned types.
 
-Audio uses saivert/wireplumber.rs with `v0_5`, initially revision
-`04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc`. Prove its compiler, plugin,
-connection and cleanup compatibility in Nix and both Fedora environments
-before replacing C audio. Retain PulseAudio stream routing. NetworkManager
+Audio uses saivert/wireplumber.rs with `v0_5`, pinned to revision
+`04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc`. Its compiler, plugin,
+connection and cleanup checks passed in Nix and both Fedora environments
+before the C audio replacement. PulseAudio stream routing is retained. NetworkManager
 uses narrowly scoped libnm declarations with safe ownership wrappers.
 Wayland uses wayland-client and wayland-protocols-wlr; migrate the separate
 connection and all its proxies together. GDK retains shortcut inhibition.
@@ -120,15 +126,16 @@ Generated-file cleanup and local editor configuration are separate commits.
 
 ## Verification gates
 
-1. Establish baseline native package/schema checks and Fedora 43/44 offline
-   build/install/uninstall checks. Add GLib core tests, CLI socket tests,
-   volume/channel tests, gamma golden values, and Sway fixtures before ports.
+1. Baseline native package/schema checks and Fedora 43/44 offline
+   build/install/uninstall checks established the original contracts. Core,
+   CLI socket, volume/channel, gamma and compositor fixtures now run in Rust;
+   the obsolete C tests have been removed. Add new regression tests in Rust.
 2. Run affected tests per commit and the full package matrix before accepting
    a port. Test malformed/partial IPC, concurrent clients, timeouts, compositor
    reconnects, daemon restarts, removed hardware, failed operations, canceled
    callbacks and descriptor cleanup. Transfer fixtures to Rust as ports land.
 3. Clean builds regenerate required bindings/resources and do not change
-   tracked files. Cargo eventually owns all application compilation and tests;
+   tracked files. Cargo owns all application compilation and tests;
    Nix, POSIX installation/packaging scripts and the Python lock updater stay.
 4. Native Nix uses rustPlatform, bindgenHook when needed, wrapGAppsHook4 and
    installed-schema/dconf checks. Offline RPM sources contain dereferenced
@@ -1101,3 +1108,19 @@ fixture counters producing the same directory name. GLib UUIDs keep separately
 included fixtures isolated; both concurrent cases now pass. Native installed
 schema acceptance through `5de7eee` and both Fedora package checks through
 `4c9bc21` also pass. The final Cargo-only package matrix remains a separate gate.
+
+## Terminal compositor cleanup
+
+A retained closed desktop kept strong compositor handles after runtime shutdown.
+The Rust runtime regression reproduced the live IPC connection; explicit stop
+operations now disconnect settings, cancel retries, close sockets, clear state
+and reject further actions even when another owner retains the service. Queued
+notifications stop immediately, including a stop inside a Wayland Ready callback.
+Ordinary transport failures still reconnect until an explicit stop.
+
+Closing a Wayland peer before initialization also reproduced an incorrect success
+result after the initial flush failed. Startup now returns an error before
+installing a source for the closed socket. Both regressions, normal compositor
+reconnection, strict Clippy, actual runtime checks and whole-application smoke on
+Sway and Niri pass. Evidence is recorded in `runtime-stop-before.log`,
+`wayland-startup-stop-before.log` and `runtime-stop-final.log`.

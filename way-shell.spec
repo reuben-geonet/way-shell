@@ -40,8 +40,9 @@ Requires: systemd
 A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,
 libadwaita and gtk4-layer-shell.
 
-Way-Shell expects a Gnome-like environment to be available.
-This means DBus must be running and the following services must be available:
+Way-Shell requires a Wayland session and its selected Sway or Niri compositor.
+A session D-Bus enables notification, tray and media integrations. Desktop
+services supply the corresponding optional controls:
 
 - Logind
 - NetworkManager
@@ -49,7 +50,7 @@ This means DBus must be running and the following services must be available:
 - power-profiles-daemon or tuned-ppd
 - UPower
 
-If you're using Fedora these services should be available by default.
+Unavailable optional services disable their controls until they recover.
 
 %prep
 %setup -q

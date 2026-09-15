@@ -51,7 +51,7 @@ a claim that the complete migration is ready to install.
 - [x] 45. Make Cargo the sole application build tool; remove C and the bridge.
 - [x] 46. Remove obsolete build dependencies.
 - [x] 47. Add packaged Wayland smoke coverage.
-- [ ] 48. Complete Rust development and migration documentation.
+- [x] 48. Complete Rust development and migration documentation.
 - [ ] 49. Advance the RPM release over the installed package.
 
 ## Package and deployment gates
