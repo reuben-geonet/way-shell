@@ -301,3 +301,9 @@ both Sway and Niri, including widgets retained after controller destruction.
 Native package checks now include this fixture. Evidence is in the
 `audio-widgets-*.log` files; the main checkout's linked build and C checks pass in
 `audio-static-bridge-build.log`.
+
+A stream mute canary test reproduces the C control writing `last_volume` beyond
+an application stream's shorter record. Mute and unmute now send only the mixer
+mute flag; WirePlumber retains the volume independently. The C canary regression,
+Rust adapter ownership tests, private PipeWire volume/mute inventory and workspace
+Clippy pass (`audio-stream-mute-before.log`, `audio-stream-and-adapter-checks.log`).

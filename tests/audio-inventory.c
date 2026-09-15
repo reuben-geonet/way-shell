@@ -62,6 +62,36 @@ static void mixer_step_and_missing_values(void) {
     g_assert_cmpfloat(volume, ==, 0); g_assert_false(mute);
     g_assert_cmpfloat(step, ==, 0); g_assert_cmpfloat(base, ==, 1);
 }
+typedef struct { GObject parent_instance; } FixtureMixer;
+typedef struct { GObjectClass parent_class; } FixtureMixerClass;
+G_DEFINE_TYPE(FixtureMixer, fixture_mixer, G_TYPE_OBJECT)
+static void fixture_mixer_class_init(FixtureMixerClass *klass) {
+    g_signal_new("set-volume", G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST, 0,
+                 NULL, NULL, NULL, G_TYPE_BOOLEAN, 2, G_TYPE_UINT, G_TYPE_VARIANT);
+}
+static void fixture_mixer_init(FixtureMixer *self) {}
+static unsigned mute_requests, volume_requests;
+static gboolean mixer_request(GObject *object, guint id, GVariant *value, gpointer data) {
+    gboolean mute; gdouble volume;
+    if (g_variant_lookup(value, "mute", "b", &mute)) mute_requests++;
+    if (g_variant_lookup(value, "volume", "d", &volume)) volume_requests++;
+    return TRUE;
+}
+float volume_to_linear(double volume, int scale) { return volume * volume * volume; }
+static void stream_mute_keeps_record_bounds(void) {
+    g_autoptr(GObject) mixer = g_object_new(fixture_mixer_get_type(), NULL);
+    g_signal_connect(mixer, "set-volume", G_CALLBACK(mixer_request), NULL);
+    WirePlumberService service = { .mixer_api = (WpPlugin *)mixer };
+    struct { WirePlumberServiceAudioStream stream; gdouble canary; } record = {
+      .stream = {.type=WIRE_PLUMBER_SERVICE_TYPE_OUTPUT_AUDIO_STREAM, .id=42, .volume=.7}, .canary=.91 };
+    mute_requests = volume_requests = 0;
+    wire_plumber_service_volume_mute(&service, (WirePlumberServiceNode *)&record.stream);
+    g_assert_cmpfloat(record.canary, ==, .91);
+    wire_plumber_service_volume_unmute(&service, (WirePlumberServiceNode *)&record.stream);
+    g_assert_cmpfloat(record.canary, ==, .91);
+    g_assert_cmpuint(mute_requests, ==, 2);
+    g_assert_cmpuint(volume_requests, ==, 0);
+}
 int main(int argc, char **argv) {
     g_test_init(&argc, &argv, NULL);
     wp_init(WP_INIT_PIPEWIRE);
@@ -69,5 +99,6 @@ int main(int argc, char **argv) {
     g_test_add_func("/audio-inventory/removed-default", removed_default_is_cleared);
     g_test_add_func("/audio-inventory/copied-names", copied_node_names_are_released);
     g_test_add_func("/audio-inventory/mixer-values", mixer_step_and_missing_values);
+    g_test_add_func("/audio-inventory/stream-mute-bounds", stream_mute_keeps_record_bounds);
     return g_test_run();
 }

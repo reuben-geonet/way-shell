@@ -1163,9 +1163,6 @@ void wire_plumber_service_volume_mute(WirePlumberService *self,
 
     if (!node) return;
 
-    // record the volume before mute, since mute sets node's volume to 0
-    node->last_volume = node->volume;
-
     g_debug("wireplumber_service.c:wire_plumber_service_volume_mute() called");
 
     g_auto(GVariantBuilder) b = G_VARIANT_BUILDER_INIT(G_VARIANT_TYPE_VARDICT);
@@ -1202,9 +1199,6 @@ void wire_plumber_service_volume_unmute(WirePlumberService *self,
 
     g_signal_emit_by_name(self->mixer_api, "set-volume", node->id, variant,
                           &res);
-
-    // restore the recorded volume before mute occurred.
-    wire_plumber_service_set_volume(self, node, node->last_volume);
 
     g_debug(
         "wireplumber_service.c:wire_plumber_service_volume_mute() id: %d, res: "
