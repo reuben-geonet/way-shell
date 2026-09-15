@@ -113,7 +113,7 @@ fn closed(peers: &RefCell<Vec<UnixStream>>, index: usize) -> bool {
 
 #[test]
 fn session_actions_inhibitors_cancellation_restart_and_cleanup() {
-    let (_bus, address) = bus();
+    let (mut bus, address) = bus();
     let context = glib::MainContext::new();
     context.with_thread_default(|| {
         let daemon = connection(&address); let client = connection(&address);
@@ -222,7 +222,16 @@ fn session_actions_inhibitors_cancellation_restart_and_cleanup() {
         wait(&context, || closed(&peers, 4));
         for _ in 0..20 { let service = LogindService::on_connection(&client, settings.clone(), identity.clone()); let weak = service.downgrade(); drop(service); assert!(weak.upgrade().is_none()); }
         settings.set_boolean("idle-inhibitor", true).unwrap(); context.block_on(glib::timeout_future(Duration::from_millis(20)));
+        let service = LogindService::on_connection(&client, settings.clone(), identity);
+        wait(&context, || service.state().inhibited && service.state().session.is_some());
+        let last_inhibitor = peers.borrow().len() - 1;
+        bus.0.kill().unwrap();
+        bus.0.wait().unwrap();
+        wait(&context, || !service.state().available && closed(&peers, last_inhibitor));
+        assert_eq!(service.state(), way_shell::services::logind::LoginState::default());
+        let weak = service.downgrade();
+        drop(service);
+        assert!(weak.upgrade().is_none());
         for registration in registrations { daemon.unregister_object(registration).unwrap(); }
-        client.close_sync(gio::Cancellable::NONE).unwrap(); daemon.close_sync(gio::Cancellable::NONE).unwrap();
     }).unwrap();
 }

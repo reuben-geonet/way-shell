@@ -1,4 +1,5 @@
 //! Asynchronous login1 actions, current-session lookup and owned inhibitor FDs.
+use crate::platform::bus_watch::Watcher;
 use gio::prelude::*;
 use glib::{
     subclass::prelude::*,
@@ -16,7 +17,6 @@ const PATH: &str = "/org/freedesktop/login1";
 const MANAGER: &str = "org.freedesktop.login1.Manager";
 const SESSION: &str = "org.freedesktop.login1.Session";
 const TIMEOUT: i32 = 2_000;
-type Teardown = Box<dyn FnOnce()>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(usize)]
@@ -85,7 +85,7 @@ mod imp {
         pub inhibit_generation: Cell<u64>,
         pub owner: RefCell<Option<(gio::DBusConnection, String)>>,
         pub generation: Cell<u64>,
-        pub unwatch: RefCell<Option<Teardown>>,
+        pub(super) watcher: RefCell<Option<Watcher>>,
         pub subscription: RefCell<Option<gio::SignalSubscription>>,
         pub tasks: RefCell<Vec<glib::JoinHandle<()>>>,
         pub session_task: RefCell<Option<glib::JoinHandle<()>>>,
@@ -128,16 +128,15 @@ impl LogindService {
         let service = Self::configured(settings, identity);
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name(
+        let watcher = Watcher::on_bus(
             gio::BusType::System,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.reset();
                     glib::g_message!(
@@ -147,10 +146,7 @@ impl LogindService {
                 }
             },
         );
-        service
-            .imp()
-            .unwatch
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         Ok(service)
     }
     pub fn on_connection(
@@ -161,25 +157,21 @@ impl LogindService {
         let service = Self::configured(settings, identity);
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name_on_connection(
+        let watcher = Watcher::on_connection(
             connection,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.reset();
                 }
             },
         );
-        service
-            .imp()
-            .unwatch
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         service
     }
     fn configured(settings: gio::Settings, identity: SessionIdentity) -> Self {
@@ -199,9 +191,7 @@ impl LogindService {
         service
     }
     pub fn stop(&self) {
-        if let Some(unwatch) = self.imp().unwatch.borrow_mut().take() {
-            unwatch();
-        }
+        self.imp().watcher.borrow_mut().take();
         if let Some((settings, handler)) = self.imp().settings.borrow_mut().take() {
             settings.disconnect(handler);
         }

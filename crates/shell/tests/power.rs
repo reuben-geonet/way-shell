@@ -75,14 +75,16 @@ impl Bus {
         }
     }
     fn connect(&self) -> gio::DBusConnection {
-        gio::DBusConnection::for_address_sync(
+        let connection = gio::DBusConnection::for_address_sync(
             &self.address,
             gio::DBusConnectionFlags::AUTHENTICATION_CLIENT
                 | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION,
             None,
             gio::Cancellable::NONE,
         )
-        .unwrap()
+        .unwrap();
+        connection.set_exit_on_close(false);
+        connection
     }
 }
 impl Drop for Bus {
@@ -426,6 +428,32 @@ fn inventory_changes_removal_restart_pending_requests_and_cleanup() {
             }
             context.block_on(glib::timeout_future(Duration::from_millis(50)));
             connection.close_sync(gio::Cancellable::NONE).unwrap();
+        })
+        .unwrap();
+}
+
+#[test]
+fn bus_disconnection_clears_device_inventory_and_releases_service() {
+    let context = glib::MainContext::new();
+    context
+        .with_thread_default(|| {
+            let mut bus = Bus::new();
+            let connection = bus.connect();
+            let mut daemon = Daemon::new(&bus);
+            daemon.add(BATTERY, 2, true);
+            daemon.own();
+            let service = PowerService::on_connection(&connection);
+            wait(&context, || service.primary_device().is_some());
+            assert!(service.state().available);
+
+            bus.process.kill().unwrap();
+            bus.process.wait().unwrap();
+            wait(&context, || !service.state().available);
+            assert!(service.devices().is_empty());
+            assert!(service.primary_device().is_none());
+            let weak = service.downgrade();
+            drop(service);
+            assert!(weak.upgrade().is_none());
         })
         .unwrap();
 }

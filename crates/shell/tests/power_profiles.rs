@@ -120,7 +120,7 @@ fn changed(connection: &gio::DBusConnection, property: &str, value: glib::Varian
 
 #[test]
 fn provider_contract_property_changes_failures_restart_and_cleanup() {
-    let (_bus, address) = Bus::start();
+    let (mut bus, address) = Bus::start();
     let context = glib::MainContext::new();
     context.with_thread_default(|| {
         let daemon = connect(&address);
@@ -216,9 +216,17 @@ fn provider_contract_property_changes_failures_restart_and_cleanup() {
         }
         changed(&daemon, "ActiveProfile", "balanced".to_variant());
         context.block_on(glib::timeout_future(Duration::from_millis(20)));
+        // A lost bus supplies a null connection to the name-vanished callback.
+        let service = PowerProfilesService::on_connection(&client);
+        wait(&context, || service.state().available());
+        bus.0.kill().unwrap();
+        bus.0.wait().unwrap();
+        wait(&context, || !service.state().available());
+        assert_eq!(service.state(), power_profiles::ProfilesState::default());
+        let weak = service.downgrade();
+        drop(service);
+        assert!(weak.upgrade().is_none());
         daemon.unregister_object(registration).unwrap();
-        client.close_sync(gio::Cancellable::NONE).unwrap();
-        daemon.close_sync(gio::Cancellable::NONE).unwrap();
     }).unwrap();
 }
 

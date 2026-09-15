@@ -1,4 +1,5 @@
 //! The shared power-profiles-daemon / tuned-ppd D-Bus contract.
+use crate::platform::bus_watch::Watcher;
 use gio::prelude::*;
 use glib::subclass::prelude::*;
 use std::{
@@ -46,7 +47,7 @@ mod imp {
     #[derive(Default)]
     pub struct PowerProfilesService {
         pub state: RefCell<ProfilesState>,
-        pub unwatch: RefCell<Option<Box<dyn FnOnce()>>>,
+        pub(super) watcher: RefCell<Option<Watcher>>,
         pub owner: RefCell<Option<(gio::DBusConnection, String)>>,
         pub(super) proxy: RefCell<Option<Proxy>>,
         pub cancellable: RefCell<Option<gio::Cancellable>>,
@@ -64,9 +65,7 @@ mod imp {
             SIGNALS.get_or_init(|| vec![glib::subclass::Signal::builder("changed").build()])
         }
         fn dispose(&self) {
-            if let Some(unwatch) = self.unwatch.borrow_mut().take() {
-                unwatch();
-            }
+            self.watcher.borrow_mut().take();
             self.obj().reset();
             self.owner.borrow_mut().take();
         }
@@ -83,50 +82,42 @@ impl PowerProfilesService {
         let service: Self = glib::Object::new();
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name(
+        let watcher = Watcher::on_bus(
             gio::BusType::System,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.vanished();
                 }
             },
         );
-        service
-            .imp()
-            .unwatch
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         service
     }
     pub fn on_connection(connection: &gio::DBusConnection) -> Self {
         let service: Self = glib::Object::new();
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name_on_connection(
+        let watcher = Watcher::on_connection(
             connection,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.vanished();
                 }
             },
         );
-        service
-            .imp()
-            .unwatch
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         service
     }
     pub fn state(&self) -> ProfilesState {

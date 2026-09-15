@@ -1,4 +1,5 @@
 //! UPower inventory and state. D-Bus proxies stay private to the service.
+use crate::platform::bus_watch::Watcher;
 use gio::prelude::*;
 use glib::{subclass::prelude::*, variant::ObjectPath};
 use std::{
@@ -201,7 +202,7 @@ mod imp {
 
     #[derive(Default)]
     pub struct PowerService {
-        pub watcher: RefCell<Option<Box<dyn FnOnce()>>>,
+        pub(super) watcher: RefCell<Option<Watcher>>,
         pub owner: RefCell<Option<(gio::DBusConnection, String)>>,
         pub generation: Cell<u64>,
         pub disposed: Cell<bool>,
@@ -232,9 +233,7 @@ mod imp {
 
         fn dispose(&self) {
             self.disposed.set(true);
-            if let Some(watcher) = self.watcher.borrow_mut().take() {
-                watcher();
-            }
+            self.watcher.borrow_mut().take();
             self.obj().reset();
             self.owner.borrow_mut().take();
         }
@@ -254,27 +253,21 @@ impl PowerService {
         let service: Self = glib::Object::new();
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name(
+        let watcher = Watcher::on_bus(
             gio::BusType::System,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.vanished();
                 }
             },
         );
-        // gio 0.21 exposes two distinct WatcherId types; retain the inferred
-        // bus watcher in its teardown closure instead of naming the hidden type.
-        service
-            .imp()
-            .watcher
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         service
     }
 
@@ -283,27 +276,21 @@ impl PowerService {
         let service: Self = glib::Object::new();
         let appeared = service.downgrade();
         let vanished = service.downgrade();
-        let watcher = gio::bus_watch_name_on_connection(
+        let watcher = Watcher::on_connection(
             connection,
             NAME,
-            gio::BusNameWatcherFlags::NONE,
-            move |connection, _, owner| {
+            move |connection, owner| {
                 if let Some(service) = appeared.upgrade() {
                     service.appeared(connection, owner);
                 }
             },
-            move |_, _| {
+            move || {
                 if let Some(service) = vanished.upgrade() {
                     service.vanished();
                 }
             },
         );
-        // gio 0.21 exposes two distinct WatcherId types; retain the inferred
-        // bus watcher in its teardown closure instead of naming the hidden type.
-        service
-            .imp()
-            .watcher
-            .replace(Some(Box::new(move || gio::bus_unwatch_name(watcher))));
+        service.imp().watcher.replace(Some(watcher));
         service
     }
 
