@@ -54,6 +54,7 @@
           nativeCheckInputs = [ pkgs.pipewire pkgs.wireplumber pkgs.sway pkgs.niri pkgs.dbus ];
           checkTarget = "check";
           WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
+          FONTCONFIG_FILE = "${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}";
           preCheck = ''
             cargo test --workspace --frozen --jobs 1
             cargo build -p way-shell --example audio-compat --frozen --jobs 1

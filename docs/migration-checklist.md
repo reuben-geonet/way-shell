@@ -97,7 +97,8 @@ a claim that the complete migration is ready to install.
 - [x] Reproduce and correct Fedora guest image-loader configuration discovery: inherited Nix data paths hid installed Glycin loaders; a Rust probe in the exact Fedora 43 image fails before and decodes/encodes PNG after restoring Fedora data paths. Full RPM rerun remains pending.
 - [x] Rust window foundation: transition/popup-policy tests, interrupted animations, underlay ownership, repeated destruction, GTK focus chain and theme cycles on Sway/Niri; real Sway output removal and GDK invalidation on both.
 - [x] Rust panels: clock/DND, workspace identity, status updates, tray menus, output removal, nested notifications and retained-widget cleanup pass on Sway/Niri; workspace tests, formatting, Clippy and a clean linked application build pass.
-- [ ] Native/Fedora package matrix for the Rust panel cutover (`b297300`), running from its committed source.
+- [ ] Native/Fedora package matrix for the Rust panel cutover: `b297300` Fedora builds are running; its native GTK check exposed missing default schemas and will be rerun with the verified harness fix.
+- [x] Reproduce native GTK schema-source failure with empty data paths; supplying the private compiled schema source passes the Rust tray probe on Sway and Niri with fatal warnings enabled. Native checks now also provide a font configuration.
 - [x] Rust shared/application switchers: selection, filtering, activation, shortcut ownership, nested updates, reopening and disposal pass on Sway/Niri; full workspace, formatting, Clippy and clean linked application checks pass.
 - [x] Rust workspace/output/rename views: full-width identifiers, literal names, raw move-window mode, failed dispatch, reordering and owned destruction pass; affected Rust/bridge tests, Clippy, clean application build and real Sway/Niri probes pass.
 - [ ] Native/Fedora package matrix for the Rust switcher cutover.

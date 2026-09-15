@@ -836,3 +836,19 @@ startup/command exports remain for C callers. With the Rust application
 switcher owning its Wayland interactions, the unused C toplevel snapshot and
 shortcut adapters, their headers and obsolete snapshot test are removed too.
 The permanent Rust Wayland and switcher tests retain their behavioral coverage.
+
+
+## Isolated GTK test environment
+
+The clean native panel build reached the new Rust tray probe but aborted in
+GTK's default-schema lookup: unlike the development shell, the build sandbox
+had no default schema source. The same probe reproduces exit 134 with empty
+data paths and succeeds when only its schema source is supplied.
+
+The shared Wayland component harness now compiles the tracked schema XML into
+its private runtime directory and gives GTK a private cache. The native Nix
+check supplies the same font configuration already used by the theme probes
+to all GTK components. No warnings are suppressed. The empty-data-path check
+passes on both Sway and Niri with fatal warnings enabled; evidence is in
+`native-schema-environment{,-fixed}.log`. The full native package rerun remains
+an independent gate.

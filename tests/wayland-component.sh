@@ -23,6 +23,12 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 export XDG_RUNTIME_DIR="$runtime"
+export XDG_CACHE_HOME="$runtime/cache"
+# GTK/libadwaita also consult the default schema source. Give raw component
+# binaries the same application schemas even in an otherwise empty Nix sandbox.
+export GSETTINGS_SCHEMA_DIR="$runtime/schemas"
+mkdir -p "$XDG_CACHE_HOME" "$GSETTINGS_SCHEMA_DIR"
+glib-compile-schemas --strict --targetdir="$GSETTINGS_SCHEMA_DIR" data
 export GSETTINGS_BACKEND=memory
 export GTK_A11Y=none
 unset G_MESSAGES_DEBUG
