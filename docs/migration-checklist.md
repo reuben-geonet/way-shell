@@ -27,7 +27,7 @@ a claim that the complete migration is ready to install.
 - [x] 21. Migrate power profile management to Rust.
 - [x] 22. Migrate display and keyboard brightness to Rust.
 - [x] 23. Migrate network inventory and radio state to Rust.
-- [ ] 24. Migrate network connection management to Rust.
+- [x] 24. Migrate network connection management to Rust.
 - [ ] 25. Migrate WirePlumber object tracking to Rust.
 - [ ] 26. Migrate volume and stream routing to Rust.
 - [ ] 27. Migrate MPRIS integration to Rust.
@@ -74,6 +74,8 @@ a claim that the complete migration is ready to install.
 - [x] Network inventory/radio private D-Bus fixtures using real libnm, C facade recovery, ownership, full local build/workspace checks and Clippy.
 - [x] Clean native application/schema package checks for network inventory (`3c5ac97`), including existing Sway/Niri component coverage; artifact `../artifacts/network-inventory-native-schemas`.
 - [ ] Fedora package matrix for the network inventory port.
+- [x] Rust Wi-Fi, saved profiles, VPN/WireGuard actions, concurrent requests, cancellation, raw SSIDs, removal/restart, C argument ownership, workspace tests, Clippy and linked application checks.
+- [ ] Native/Fedora package matrix for the network connection port.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -86,10 +88,10 @@ are verification artifacts, not the final upgrade.
 
 ## Current work
 
-Rust owns the Wayland connection, power services, and NetworkManager inventory
-and radio state. The network port uses asynchronous libnm initialization and
-operations, cancels requests when the daemon changes, and preserves the observed
-state after denial or timeout. Its temporary C facade retains native objects for
-the existing widgets and connection operations. Step 24 will migrate Wi-Fi,
-saved connections, VPN and WireGuard operations. The full local workspace tests
-and linked C/Rust shell pass; package and real laptop checks remain separate.
+Rust owns the Wayland connection, power services, NetworkManager inventory and
+connection operations. Wi-Fi, saved profiles, scanning, disconnect and VPN or
+WireGuard actions run through the Rust service. The remaining C network facade
+mirrors native objects and signals for C widgets; it no longer owns asynchronous
+connection requests. The obsolete C operation fixture has transferred to private
+Rust D-Bus and bridge checks. Audio object tracking and controls are next. Package
+and real laptop checks remain separate from the passing local implementation.

@@ -15,3 +15,6 @@ gboolean way_shell_network_inventory_networking_enabled(GObject *inventory);
 gboolean way_shell_network_inventory_available(GObject *inventory);
 void way_shell_network_inventory_set_wireless(GObject *inventory, gboolean enabled);
 void way_shell_network_inventory_set_networking(GObject *inventory, gboolean enabled);
+void way_shell_network_inventory_join(GObject *inventory, const char *device, const char *access_point, const char *password);
+void way_shell_network_inventory_disconnect(GObject *inventory, const char *device);
+void way_shell_network_inventory_set_vpn(GObject *inventory, const char *name, gboolean enabled);

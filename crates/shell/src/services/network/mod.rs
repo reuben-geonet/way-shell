@@ -1,4 +1,6 @@
 //! NetworkManager inventory owns libnm state; callers receive owned domain values.
+mod actions;
+mod connections;
 mod native;
 use gio::prelude::*;
 use glib::subclass::prelude::*;
@@ -14,6 +16,41 @@ pub struct Device {
     pub interface: String,
     pub kind: u32,
     pub state: u32,
+    pub active_connection: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AccessPoint {
+    pub id: String,
+    pub device: String,
+    pub ssid: Vec<u8>,
+    pub name: String,
+    pub strength: u8,
+    pub flags: u32,
+    pub wpa_flags: u32,
+    pub rsn_flags: u32,
+    pub active: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SavedConnection {
+    pub id: String,
+    pub uuid: String,
+    pub name: String,
+    pub kind: String,
+    pub ssid: Option<Vec<u8>>,
+}
+impl SavedConnection {
+    pub fn is_vpn(&self) -> bool {
+        matches!(self.kind.as_str(), "vpn" | "wireguard")
+    }
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ActiveConnection {
+    pub id: String,
+    pub connection: Option<String>,
+    pub name: String,
+    pub kind: String,
+    pub state: u32,
+    pub devices: Vec<String>,
 }
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct NetworkState {
@@ -24,6 +61,9 @@ pub struct NetworkState {
     pub wireless_hardware_enabled: bool,
     pub primary: Option<String>,
     pub devices: Vec<Device>,
+    pub access_points: Vec<AccessPoint>,
+    pub connections: Vec<SavedConnection>,
+    pub active_connections: Vec<ActiveConnection>,
 }
 impl NetworkState {
     pub fn has_wifi(&self) -> bool {
@@ -199,6 +239,9 @@ impl NetworkService {
         for object in std::iter::once(client.object())
             .chain(client.devices())
             .chain(client.active())
+            .chain(client.all_active())
+            .chain(client.connections())
+            .chain(client.access_points())
         {
             if !seen.insert(object.as_ptr() as usize) {
                 continue;
@@ -208,6 +251,19 @@ impl NetworkService {
                 if let Some(service) = weak.upgrade() {
                     service.refresh();
                 }
+            });
+            watchers.push(Subscription {
+                object,
+                handler: Some(handler),
+            });
+        }
+        for object in client.connections() {
+            let weak = self.downgrade();
+            let handler = object.connect_local("changed", false, move |_| {
+                if let Some(service) = weak.upgrade() {
+                    service.refresh();
+                }
+                None
             });
             watchers.push(Subscription {
                 object,
@@ -279,43 +335,21 @@ impl NetworkService {
     }
     fn operation(
         &self,
-        interface: &str,
-        method: &str,
+        interface: &'static str,
+        method: &'static str,
         parameters: &glib::Variant,
         done: impl FnOnce(Result<(), glib::Error>) + 'static,
     ) -> gio::Cancellable {
-        let cancel = gio::Cancellable::new();
-        let client = self.imp().client.borrow().clone();
-        let Some(client) = client.filter(|_| self.state().available) else {
-            done(Err(glib::Error::new(
-                gio::IOErrorEnum::NotConnected,
-                "NetworkManager is unavailable",
-            )));
-            return cancel;
-        };
-        let generation = self.imp().generation.get();
-        let id = self.imp().next_operation.get();
-        self.imp().next_operation.set(id.wrapping_add(1));
-        self.imp()
-            .operations
-            .borrow_mut()
-            .insert(id, cancel.clone());
-        let weak = self.downgrade();
-        client.call(interface, method, parameters, &cancel, move |result| {
-            let current = weak.upgrade().is_some_and(|service| {
-                service.imp().operations.borrow_mut().remove(&id);
-                service.imp().generation.get() == generation
-            });
-            if current {
-                done(result)
-            } else {
-                done(Err(glib::Error::new(
-                    gio::IOErrorEnum::Cancelled,
-                    "NetworkManager owner changed",
-                )))
-            }
-        });
-        cancel
+        self.execute(
+            Ok(vec![actions::Call {
+                path: "/org/freedesktop/NetworkManager".into(),
+                interface,
+                method,
+                parameters: parameters.clone(),
+                reply: "()",
+            }]),
+            done,
+        )
     }
     /// Temporary Rust-to-C adapter access; permanent widgets use state().
     #[doc(hidden)]

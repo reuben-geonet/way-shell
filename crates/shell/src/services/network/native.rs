@@ -57,7 +57,7 @@ pub(super) fn create(
         move |result| done(result.map(|object| Client { object })),
     );
 }
-unsafe fn objects(array: *const glib::ffi::GPtrArray) -> Vec<glib::Object> {
+pub(super) unsafe fn objects(array: *const glib::ffi::GPtrArray) -> Vec<glib::Object> {
     if array.is_null() {
         return Vec::new();
     }
@@ -75,6 +75,9 @@ unsafe fn objects(array: *const glib::ffi::GPtrArray) -> Vec<glib::Object> {
             }
         })
         .collect()
+}
+pub(super) fn device_kind(device: &glib::Object) -> u32 {
+    unsafe { nm_device_get_device_type(device.as_ptr()) }
 }
 pub(super) fn path(object: &glib::Object) -> String {
     let value = unsafe { nm_object_get_path(object.as_ptr()) };
@@ -142,6 +145,9 @@ impl Client {
             wireless_enabled: self.object.property("wireless-enabled"),
             wireless_hardware_enabled: self.object.property("wireless-hardware-enabled"),
             primary,
+            access_points: self.access_point_snapshot(),
+            connections: self.saved_snapshot(),
+            active_connections: self.active_snapshot(),
             devices: self
                 .devices()
                 .iter()
@@ -152,15 +158,14 @@ impl Client {
                         .unwrap_or_default(),
                     kind: unsafe { nm_device_get_device_type(device.as_ptr()) },
                     state: unsafe { nm_device_get_state(device.as_ptr()) },
+                    active_connection: super::connections::device_active(device),
                 })
                 .collect(),
         }
     }
     pub fn call(
         &self,
-        interface: &str,
-        method: &str,
-        parameters: &glib::Variant,
+        call: &super::actions::Call,
         cancel: &gio::Cancellable,
         done: impl FnOnce(Result<(), glib::Error>) + 'static,
     ) {
@@ -196,8 +201,10 @@ impl Client {
                 glib::g_critical!("way-shell", "NetworkManager callback panicked");
             }
         }
-        let interface = CString::new(interface).unwrap();
-        let method = CString::new(method).unwrap();
+        let interface = CString::new(call.interface).unwrap();
+        let method = CString::new(call.method).unwrap();
+        let path = CString::new(call.path.as_str()).unwrap();
+        let reply = glib::VariantTy::new(call.reply).unwrap();
         let data = Box::into_raw(Box::new(Callback {
             client: self.clone(),
             done: Box::new(done),
@@ -205,11 +212,11 @@ impl Client {
         unsafe {
             nm_client_dbus_call(
                 self.object.as_ptr(),
-                c"/org/freedesktop/NetworkManager".as_ptr(),
+                path.as_ptr(),
                 interface.as_ptr(),
                 method.as_ptr(),
-                parameters.to_glib_none().0,
-                glib::VariantTy::UNIT.as_ptr(),
+                call.parameters.to_glib_none().0,
+                reply.as_ptr(),
                 2000,
                 cancel.to_glib_none().0,
                 Some(finish),

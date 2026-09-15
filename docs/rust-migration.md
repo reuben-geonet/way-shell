@@ -250,3 +250,26 @@ Completion calls the matching libnm finish function and releases returned object
 Fixtures cover both new and saved joins, denied writes, concurrent devices,
 credential-free diagnostics, cancellation and result ownership before the Rust
 replacement takes over this behavior.
+
+## Network connection verification
+
+Connection operations now run through Rust using libnm's owning D-Bus connection.
+Owned snapshots include access points, raw SSID bytes, saved profiles and active
+connections. Requests copy settings before applying a supplied password. An
+unchanged saved profile activates without an unnecessary settings write. A single
+cancellation handle covers settings persistence and activation; failed writes do
+not activate the profile or change the observed cache. Expected reply signatures
+are checked and each D-Bus call has a two-second deadline.
+
+The private real-libnm fixture covers new and saved Wi-Fi, scanning, disconnects,
+non-UTF-8 SSIDs, rejected updates, concurrent devices, cancellation at each stage,
+VPN/WireGuard, duplicate display names, live property changes, removal, daemon
+restart and service destruction. A bridge fixture drops the C caller's strings
+before processing the request to verify that the Rust operation owns its inputs.
+The earlier C operation fixture is retired; C facade ownership tests remain until
+the corresponding widgets move to Rust. C widgets still identify VPN profiles by
+display name, preserving their existing behavior; permanent Rust APIs identify
+profiles by object path. The network UI port must use those stable identifiers.
+
+The workspace tests, bridge tests, Clippy and linked application pass locally.
+Native and Fedora package checks for each checkpoint are recorded separately.

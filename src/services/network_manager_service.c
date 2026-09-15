@@ -30,24 +30,14 @@ struct _NetworkManagerService {
     gboolean has_vpn;
     GHashTable *vpn_conns;
     GHashTable *active_vpn_conns;
-    GPtrArray *wireless_operations;
 };
 static guint signals[signals_n] = {0};
 G_DEFINE_TYPE(NetworkManagerService, network_manager_service, G_TYPE_OBJECT);
 
-static void cancel_wireless_operations(NetworkManagerService *self) {
-    if (!self->wireless_operations) return;
-    for (guint i = 0; i < self->wireless_operations->len; ++i)
-        g_cancellable_cancel(g_ptr_array_index(self->wireless_operations, i));
-    g_ptr_array_set_size(self->wireless_operations, 0);
-}
-
-// Temporary C connection operations are cancelled before releasing their owner.
+/* Temporary native-object and signal facade for the remaining C widgets. */
 static void network_manager_service_dispose(GObject *gobject) {
     NetworkManagerService *self = NETWORK_MANAGER_SERVICE(gobject);
 
-    cancel_wireless_operations(self);
-    g_clear_pointer(&self->wireless_operations, g_ptr_array_unref);
     if (self->inventory)
         g_signal_handlers_disconnect_by_data(self->inventory, self);
     g_clear_object(&self->inventory);
@@ -165,11 +155,10 @@ static void on_active_vpn_connection_removed(NMClient *client,
     g_signal_emit(self, signals[vpn_deactivated], 0, conn);
 }
 
-/* C connection operations remain temporarily attached to the Rust-owned client. */
+/* Mirror libnm objects and signals for C widgets; Rust owns connection operations. */
 static void on_inventory_changed(GObject *inventory, NetworkManagerService *self) {
     NMClient *client = way_shell_network_inventory_client(inventory);
     if (client != self->client) {
-        cancel_wireless_operations(self);
         if (self->client)
             g_signal_handlers_disconnect_by_data(self->client, self);
 
@@ -213,7 +202,6 @@ static void on_inventory_changed(GObject *inventory, NetworkManagerService *self
 static void network_manager_service_init(NetworkManagerService *self) {
     self->vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     self->active_vpn_conns = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
-    self->wireless_operations = g_ptr_array_new_with_free_func(g_object_unref);
     self->inventory = way_shell_network_inventory_new();
     g_signal_connect(self->inventory, "changed", G_CALLBACK(on_inventory_changed), self);
     on_inventory_changed(self->inventory, self);
@@ -291,177 +279,16 @@ char *network_manager_service_ap_to_name(NMAccessPoint *ap) {
     return ssid;
 }
 
-typedef struct {
-    GWeakRef owner;
-    NMClient *client;
-    NMDevice *device;
-    GCancellable *cancel;
-    gboolean create;
-} WirelessOperation;
-
-static void wireless_operation_free(WirelessOperation *operation) {
-    NetworkManagerService *self = g_weak_ref_get(&operation->owner);
-    if (self && self->wireless_operations)
-        g_ptr_array_remove_fast(self->wireless_operations, operation->cancel);
-    g_clear_object(&self);
-    g_weak_ref_clear(&operation->owner);
-    g_clear_object(&operation->client);
-    g_clear_object(&operation->device);
-    g_clear_object(&operation->cancel);
-    g_free(operation);
-}
-
-static void on_ap_join(GObject *source_object, GAsyncResult *res, gpointer data) {
-    WirelessOperation *operation = data;
-    GError *error = NULL;
-    NMActiveConnection *connection = operation->create
-        ? nm_client_add_and_activate_connection_finish(NM_CLIENT(source_object), res, &error)
-        : nm_client_activate_connection_finish(NM_CLIENT(source_object), res, &error);
-    if (error && !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-        g_debug("Wi-Fi activation failed: %s", error->message);
-    g_clear_error(&error);
-    g_clear_object(&connection);
-    wireless_operation_free(operation);
-}
-
-static void on_remote_conn_sync(GObject *source_object, GAsyncResult *res, gpointer data) {
-    WirelessOperation *operation = data;
-    GError *error = NULL;
-    gboolean committed = nm_remote_connection_commit_changes_finish(
-        NM_REMOTE_CONNECTION(source_object), res, &error);
-    NetworkManagerService *self = g_weak_ref_get(&operation->owner);
-    gboolean current = self && self->client == operation->client &&
-        !g_cancellable_is_cancelled(operation->cancel);
-    g_clear_object(&self);
-    if (!committed || !current) {
-        if (error && !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-            g_debug("Wi-Fi settings update failed: %s", error->message);
-        g_clear_error(&error);
-        wireless_operation_free(operation);
-        return;
-    }
-    nm_client_activate_connection_async(operation->client, NM_CONNECTION(source_object),
-        operation->device, NULL, operation->cancel, on_ap_join, operation);
-}
-
 void network_manager_service_ap_join(NetworkManagerService *self,
-                                     NMDeviceWifi *dev, NMAccessPoint *ap,
-                                     const char *password) {
-    g_debug(
-        "network_manager_service.c:network_manager_service_wifi_join() called");
-
-    if (!self || !self->client || !dev || !ap) return;
-    NMClient *client = self->client;
-    GBytes *ap_ssid = nm_access_point_get_ssid(ap);
-    NMConnection *found_conn = NULL;
-    gboolean new = false;
-    if (!ap_ssid || nm_utils_is_empty_ssid(g_bytes_get_data(ap_ssid, NULL),
-                                          g_bytes_get_size(ap_ssid))) {
-        g_debug(
-            "network_manager_service.c:network_manager_service_wifi_join() "
-            "missing required arguments");
-        return;
-    }
-
-    const GPtrArray *connections = nm_client_get_connections(self->client);
-
-    for (int i = 0; i < connections->len; i++) {
-        NMConnection *conn = connections->pdata[i];
-        NMSettingWireless *wireless = nm_connection_get_setting_wireless(conn);
-        if (!wireless) continue;
-
-        GBytes *conn_ssid = nm_setting_wireless_get_ssid(wireless);
-        if (conn_ssid && g_bytes_equal(ap_ssid, conn_ssid)) {
-            g_debug(
-                "network_manager_service.c:network_manager_service_wifi_join() "
-                "found matching connection");
-            found_conn = conn;
-            break;
-        }
-    }
-
-    // didn't find one...
-    if (!found_conn) {
-        new = true;
-        g_autofree char *ssid_name = network_manager_service_ap_to_name(ap);
-        found_conn = nm_simple_connection_new();
-
-        NMSettingConnection *conn_settings =
-            NM_SETTING_CONNECTION(nm_setting_connection_new());
-        g_object_set(conn_settings, NM_SETTING_CONNECTION_ID, ssid_name,
-                     NM_SETTING_CONNECTION_AUTOCONNECT, true, NULL);
-        nm_connection_add_setting(found_conn, NM_SETTING(conn_settings));
-
-        NMSettingWireless *wireless_settings =
-            NM_SETTING_WIRELESS(nm_setting_wireless_new());
-        g_object_set(wireless_settings, NM_SETTING_WIRELESS_SSID, ap_ssid,
-                     NULL);
-        nm_connection_add_setting(found_conn, NM_SETTING(wireless_settings));
-
-        g_debug(
-            "network_manager_service.c:network_manager_service_wifi_join() "
-            "created new connection [%s] and connecting...",
-            ssid_name);
-    }
-
-    // update the password even if we found a conn, the UI does not currently
-    // check for cached passwords and requires the user to enter a password.
-    //
-    // this is kinda useful because if the password has changed, they can just
-    // re-enter it withou any special conditions in the UI code.
-    // this may change tho if it becomes too inconenvient to put in a password
-    // when switching between known networks...
-    if (password) {
-        NMSettingWirelessSecurity *sec_settings =
-            NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
-        g_object_set(sec_settings, NM_SETTING_WIRELESS_SECURITY_PSK, password,
-                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
-        nm_connection_add_setting(found_conn, NM_SETTING(sec_settings));
-    }
-
-    WirelessOperation *operation = g_new0(WirelessOperation, 1);
-    g_weak_ref_init(&operation->owner, self);
-    operation->client = g_object_ref(client);
-    operation->device = g_object_ref(NM_DEVICE(dev));
-    operation->cancel = g_cancellable_new();
-    operation->create = new;
-    g_ptr_array_add(self->wireless_operations, g_object_ref(operation->cancel));
-    if (new) {
-        nm_client_add_and_activate_connection_async(client, found_conn, NM_DEVICE(dev),
-            NULL, operation->cancel, on_ap_join, operation);
-        g_object_unref(found_conn);
-    } else {
-        nm_remote_connection_commit_changes_async(NM_REMOTE_CONNECTION(found_conn),
-            true, operation->cancel, on_remote_conn_sync, operation);
-    }
+    NMDeviceWifi *dev, NMAccessPoint *ap, const char *password) {
+    if (!self || !dev || !ap) return;
+    way_shell_network_inventory_join(self->inventory,
+        nm_object_get_path(NM_OBJECT(dev)), nm_object_get_path(NM_OBJECT(ap)), password);
 }
 
-static void on_wifi_disconnect(GObject *source_object, GAsyncResult *res,
-                               gpointer data) {
-    GError *error = NULL;
-    NMClient *client = NM_CLIENT(source_object);
-    nm_client_deactivate_connection_finish(client, res, &error);
-
-    if (error) {
-        g_debug(
-            "network_manager_service.c:on_ap_join() failed to disconnect wifi: "
-            "%s",
-            error->message);
-        g_error_free(error);
-        return;
-    }
-}
-
-void network_manager_service_ap_disconnect(NetworkManagerService *self,
-                                           NMDeviceWifi *dev) {
-    if (!self || !self->client || !dev) return;
-    NMActiveConnection *active_con =
-        nm_device_get_active_connection(NM_DEVICE(dev));
-
-    if (!active_con) return;
-
-    nm_client_deactivate_connection_async(self->client, active_con, NULL,
-                                          on_wifi_disconnect, self);
+void network_manager_service_ap_disconnect(NetworkManagerService *self, NMDeviceWifi *dev) {
+    if (!self || !dev) return;
+    way_shell_network_inventory_disconnect(self->inventory, nm_object_get_path(NM_OBJECT(dev)));
 }
 
 void network_manager_service_wireless_enable(NetworkManagerService *self,
@@ -487,78 +314,8 @@ GHashTable *network_manager_get_vpn_connections(NetworkManagerService *self) {
     return self->vpn_conns;
 }
 
-static void on_vpn_activated(GObject *source_object, GAsyncResult *res,
-                             gpointer data) {
-    GError *error = NULL;
-    NMClient *client = NM_CLIENT(source_object);
-    NMActiveConnection *connection = nm_client_activate_connection_finish(client, res, &error);
-    g_clear_object(&connection);
-
-    if (error) {
-        g_debug(
-            "network_manager_service.c:on_vpn_activated() failed to activate "
-            "vpn: %s",
-            error->message);
-        g_error_free(error);
-        return;
-    }
-}
-
-static void on_vpn_deactivated(GObject *source_object, GAsyncResult *res,
-                               gpointer data) {
-    GError *error = NULL;
-    NMClient *client = NM_CLIENT(source_object);
-    nm_client_deactivate_connection_finish(client, res, &error);
-
-    if (error) {
-        g_debug(
-            "network_manager_service.c:on_vpn_activated() failed to deactivate "
-            "vpn: %s",
-            error->message);
-        g_error_free(error);
-        return;
-    }
-}
-
-void network_manager_activate_vpn(NetworkManagerService *self, const gchar *id,
-                                  gboolean activate) {
-    if (!self || !self->client || !id) return;
-    NMConnection *conn = g_hash_table_lookup(self->vpn_conns, id);
-    if (!conn) return;
-
-    if (activate) {
-        NMDevice *dev = self->primary_dev;
-
-        const char *type = nm_connection_get_connection_type(conn);
-
-        if (g_strcmp0(type, "wireguard") == 0) {
-            // wireguard connections setup their own interfaces on created,
-            // so we don't need to provide a base device.
-            dev = NULL;
-        }
-
-        nm_client_activate_connection_async(self->client, conn, dev, NULL, NULL,
-                                            on_vpn_activated, self);
-    } else {
-        NMActiveConnection *active_conn = NULL;
-
-        // determine if the desired conn is actually active...
-        const GPtrArray *active_conns =
-            nm_client_get_active_connections(self->client);
-
-        for (int i = 0; i < active_conns->len; i++) {
-            NMActiveConnection *ac = active_conns->pdata[i];
-            if (g_strcmp0(nm_active_connection_get_id(ac), id) == 0) {
-                active_conn = ac;
-                break;
-            }
-        }
-
-        if (!active_conn) return;
-
-        nm_client_deactivate_connection_async(self->client, active_conn, NULL,
-                                              on_vpn_deactivated, self);
-    }
+void network_manager_activate_vpn(NetworkManagerService *self, const gchar *id, gboolean activate) {
+    if (self && id) way_shell_network_inventory_set_vpn(self->inventory, id, activate);
 }
 
 GHashTable *network_manager_service_get_active_vpn_connections(

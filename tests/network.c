@@ -36,6 +36,9 @@ gboolean way_shell_network_inventory_networking_enabled(GObject *inventory) { re
 gboolean way_shell_network_inventory_available(GObject *inventory) { return online; }
 void way_shell_network_inventory_set_wireless(GObject *inventory, gboolean enabled) {}
 void way_shell_network_inventory_set_networking(GObject *inventory, gboolean enabled) {}
+void way_shell_network_inventory_join(GObject *inventory, const char *device, const char *ap, const char *password) {}
+void way_shell_network_inventory_disconnect(GObject *inventory, const char *device) {}
+void way_shell_network_inventory_set_vpn(GObject *inventory, const char *name, gboolean enabled) {}
 static void setup(void) {
     client_fixture = g_object_new(fixture_object_get_type(), NULL);
     inventory_fixture = g_object_new(fixture_object_get_type(), NULL);

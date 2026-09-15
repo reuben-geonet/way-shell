@@ -7,11 +7,8 @@
 
 G_BEGIN_DECLS
 
-// Simple clock service which emits a 'tick' signal on every minute.
-// The clock is synchronized to the next minute boundary following its
-// construction.
-//
-// `tick` event provides a GDateTime as its first argument.
+// Temporary native-object and signal facade for C widgets.
+// The Rust service owns inventory, radio state and connection requests.
 struct _NetworkManagerService;
 #define NETWORK_MANAGER_SERVICE_TYPE network_manager_service_get_type()
 G_DECLARE_FINAL_TYPE(NetworkManagerService, network_manager_service,
@@ -21,7 +18,7 @@ G_END_DECLS
 
 int network_manager_service_global_init(void);
 
-// Get the global clock service
+// Get the global network service
 // Will return NULL if `network_manager_service_global_init` has not been
 // called.
 NetworkManagerService *network_manager_service_get_global();
