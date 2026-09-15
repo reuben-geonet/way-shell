@@ -48,37 +48,34 @@ static void media_player_service_class_init(MediaPlayerServiceClass *klass) {
         NULL, NULL, NULL, G_TYPE_NONE, 1, G_TYPE_POINTER);
 };
 
+static gchar *media_player_metadata_string(GVariant *metadata,
+                                           const gchar *key) {
+    g_autoptr(GVariant) value =
+        g_variant_lookup_value(metadata, key, G_VARIANT_TYPE_STRING);
+    return value ? g_variant_dup_string(value, NULL) : NULL;
+}
+
 static void media_player_fill_metadata(GVariant *metadata,
                                        MediaPlayer *player) {
-    GVariantIter *iter = g_variant_iter_new(metadata);
-    GVariant *value;
-    const gchar *key;
-    while (g_variant_iter_next(iter, "{sv}", &key, &value)) {
-        if (g_strcmp0(key, "xesam:album") == 0) {
-            player->album = g_strdup(g_variant_get_string(value, NULL));
-        }
-        if (g_strcmp0(key, "xesam:title") == 0) {
-            player->title = g_strdup(g_variant_get_string(value, NULL));
-        }
-        if (g_strcmp0(key, "xesam:artist") == 0) {
-            GVariantIter *artist_iter = g_variant_iter_new(value);
-            gchar *value;
-            gchar *artist;
+    /* Metadata replaces the complete previous track, including absent fields. */
+    g_clear_pointer(&player->album, g_free);
+    g_clear_pointer(&player->title, g_free);
+    g_clear_pointer(&player->artist, g_free);
+    g_clear_pointer(&player->art_url, g_free);
+    if (!metadata || !g_variant_is_of_type(metadata, G_VARIANT_TYPE_VARDICT))
+        return;
 
-            g_variant_iter_next(artist_iter, "s", &artist);
+    player->album = media_player_metadata_string(metadata, "xesam:album");
+    player->title = media_player_metadata_string(metadata, "xesam:title");
+    player->art_url = media_player_metadata_string(metadata, "mpris:artUrl");
 
-            while (g_variant_iter_next(artist_iter, "s", &value)) {
-                artist = g_strconcat(artist, ", ", value, NULL);
-            }
-
-            g_variant_iter_free(artist_iter);
-
-            player->artist = artist;
-        }
-        if (g_strcmp0(key, "mpris:artUrl") == 0) {
-            player->art_url = g_strdup(g_variant_get_string(value, NULL));
-        }
-        g_variant_unref(value);
+    g_autoptr(GVariant) artists = g_variant_lookup_value(
+        metadata, "xesam:artist", G_VARIANT_TYPE_STRING_ARRAY);
+    if (artists) {
+        gsize count = 0;
+        g_auto(GStrv) names = g_variant_dup_strv(artists, &count);
+        if (count > 0)
+            player->artist = g_strjoinv(", ", names);
     }
 }
 
@@ -113,8 +110,6 @@ static void on_media_player_property_changed(
             dbus_media_player2_player_get_metadata(player_proxy);
 
         media_player_fill_metadata(metadata, player);
-
-        g_variant_unref(metadata);
 
         g_debug(
             "media_player_service.c:on_media_player_property_changed(): "

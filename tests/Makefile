@@ -6,10 +6,19 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test
+check: core-test ipc-test network-test media-player-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
+	cd .. && tests/media-player-test
+
+../src/services/media_player_service/media_player_dbus.h: ../data/dbus-interfaces/org.mpris.MediaPlayer2.xml
+	$(MAKE) -C .. src/services/media_player_service/media_player_dbus.h
+
+media-player-test: media-player.c ../src/services/media_player_service/media_player_service.c \
+  ../src/services/media_player_service/media_player_service.h \
+  ../src/services/media_player_service/media_player_dbus.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) media-player.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
@@ -53,6 +62,7 @@ clean:
 	rm -f brightness-widgets-test
 	rm -f network-test network-operations-test
 	rm -f audio-widgets-test
+	rm -f media-player-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@

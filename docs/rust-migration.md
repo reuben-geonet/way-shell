@@ -407,3 +407,17 @@ Evidence is in `audio-controls-fedora-locks-resumed.log`,
 `audio-amplified-volume-{before,after}.log`. Full workspace tests, formatting,
 Clippy and the linked application pass in `audio-controls-final-workspace.log`.
 Clean native and Fedora package results are tracked separately in the checklist.
+
+## MPRIS metadata baseline fixes
+
+Metadata replacement now clears omitted fields, accepts empty artist arrays,
+ignores fields with unexpected types and handles an absent or invalid metadata
+container. Strings are copied into the player record and variant references are
+released correctly. The property notification handler no longer unreferences
+the generated getter's borrowed value. This fixes stale album/art/artist data,
+malformed-metadata crashes and retained metadata storage before the Rust port.
+
+Six GLib regressions cover valid multi-artist data, replacement, empty artists,
+wrong types, missing metadata and ownership. They are part of the default test
+suite. Evidence: `media-player-metadata-*-before.log`,
+`media-player-metadata-after.log` and `media-metadata-integrated.log`.

@@ -20,6 +20,7 @@ gresources.h
 /tests/power-widgets-test
 /tests/brightness-widgets-test
 /tests/network-test
+/tests/media-player-test
 /tests/network-operations-test
 __pycache__/
 
