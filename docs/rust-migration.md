@@ -176,3 +176,44 @@ regular GTK window movement and cleanup. Layer-window/theme cycles also pass
 on Niri. Both native checks and nix develop provide Niri and the explicit Mesa
 EGL provider needed for software rendering. Real hardware and final package
 verification remain separate gates.
+
+## Wayland and power service verification
+
+The Rust Wayland connection owns the registry, outputs, seats, foreign-toplevel
+and gamma objects together. Raw protocol fixtures verify capped versions,
+fragmentation, malformed state arrays, 30,000 queued actions under backpressure,
+and exact gamma data transferred through a descriptor. Sway and Niri exercise
+window discovery, activation, title/filter changes, shortcut inhibition and
+repeated destruction; Sway also exercises output removal. Gamma controls become
+unavailable when the protocol is absent or every output rejects it. Cargo's
+protocol crates replace the last C Wayland generator consumers.
+
+UPower uses owned application snapshots and a temporary UpDevice mirror for C
+widgets. Tests cover non-battery devices, invalid readings, hotplug, failed
+property requests, service restart and cancellation. The 90-percent icon
+boundary is an independent baseline regression fix. Battery and power-menu
+construction exposed missing GObject headers; separate GTK regressions cover
+construction, updates and callback disconnection before the Rust service ports.
+
+Logind validates the current session's UID, owns inhibitor descriptors, cancels
+outstanding requests when the service/session changes and waits for actual
+operation results. Baseline regressions cover selecting the user's session,
+applying the initial inhibitor setting, denied requests, invalid descriptor
+indices and descriptor cleanup. Power controls observe capability changes.
+
+Power-profile fixtures cover both provider contracts, inventory/property changes,
+failed writes, restart and cancellation. C menu updates preserve the displayed
+container. Optional services leave subscribed controls disabled until recovery.
+
+Brightness reads observed sysfs values, queues asynchronous logind writes, and
+refreshes the device after completion. It never reports an unconfirmed value as
+observed state. Fixtures cover validation, write failure, cancellation, device
+removal/replacement, settings changes and callback cleanup. Separate C fixes
+preserve readings after a failed write and advance at least one unit on a small
+numeric range. GTK checks cover unavailable keyboard controls, changing ranges,
+failed-write rollback and widgets outliving their controller. The final Rust IPC
+server must await these operation results; the temporary C brightness commands
+retain their existing immediate acknowledgement until step 42.
+
+All of these local checks pass through `767efca`. Package-matrix and real hardware
+acceptance are tracked independently in migration-checklist.md.
