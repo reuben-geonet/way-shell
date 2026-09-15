@@ -364,3 +364,11 @@ varies with build settings, so the fixture now gives its replacements private
 names before including the dispatcher. The IPC regressions pass with the linked
 Rust bridge (`ipc-fixture-symbols.log`). The original native failure is recorded
 in `audio-inventory-native-resumed.log`; that package gate awaits a corrected run.
+
+The full Fedora 43/44 network connection matrix at `0cb7076` passed after
+resumption, including offline builds, installation/uninstall, schema and loader
+checks, and preservation of the selected power-profile providers. Artifact:
+`.cache/rust-migration/artifacts/network-connections-rpms` resolves to
+`/nix/store/h0b9569m0w2kmfxynh6pvmxnsdl5g29h-way-shell-rpms`.
+Build and installation evidence is in `network-connections-rpm-resumed.log` and
+the artifact's `logs` directory.
