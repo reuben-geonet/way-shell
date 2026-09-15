@@ -24,7 +24,6 @@
           nativeBuildInputs = with pkgs; [
             pkg-config
             glib
-            python3
             rustfmt
             clippy
             rustPlatform.bindgenHook
@@ -37,13 +36,10 @@
             gtk4
             gtk4-layer-shell
             libadwaita
-            json-glib
             libpulseaudio
             networkmanager
             pipewire
-            upower
             wayland
-            wayland-protocols
             wireplumber
             dconf
           ];

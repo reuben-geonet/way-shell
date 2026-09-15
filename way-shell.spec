@@ -10,14 +10,9 @@ URL: https://github.com/ldelossa/way-shell
 Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: gcc
-BuildRequires: make
 BuildRequires: pkgconfig
-BuildRequires: meson
-BuildRequires: cmake
-BuildRequires: gtk-doc
 BuildRequires: wayland-devel
 BuildRequires: glib2-devel
-BuildRequires: python3
 BuildRequires: rust >= 1.90
 BuildRequires: cargo >= 1.90
 BuildRequires: clang-devel
@@ -27,17 +22,12 @@ BuildRequires: wireplumber
 BuildRequires: dbus-daemon
 
 BuildRequires: pkgconfig(libadwaita-1)
-BuildRequires: pkgconfig(upower-glib)
 BuildRequires: pkgconfig(wireplumber-0.5)
-BuildRequires: pkgconfig(json-glib-1.0)
 BuildRequires: pkgconfig(libnm)
 BuildRequires: pkgconfig(libpipewire-0.3)
 BuildRequires: pkgconfig(libpulse)
-BuildRequires: pkgconfig(libpulse-simple)
 BuildRequires: pkgconfig(libpulse-mainloop-glib)
 BuildRequires: pkgconfig(wayland-client)
-BuildRequires: pkgconfig(wayland-protocols)
-BuildRequires: pkgconfig(gio-unix-2.0)
 BuildRequires: pkgconfig(gtk4-layer-shell-0)
 
 Requires: NetworkManager
@@ -45,7 +35,6 @@ Requires: wireplumber
 Requires: upower
 Requires: (power-profiles-daemon or tuned-ppd)
 Requires: systemd
-Requires: wayland-devel
 
 %description
 A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,

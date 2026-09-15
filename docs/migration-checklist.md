@@ -49,7 +49,7 @@ a claim that the complete migration is ready to install.
 - [x] 43. Replace the packaging schema probe with Rust.
 - [x] 44. Move startup and shutdown into Rust.
 - [x] 45. Make Cargo the sole application build tool; remove C and the bridge.
-- [ ] 46. Remove obsolete build dependencies.
+- [x] 46. Remove obsolete build dependencies.
 - [ ] 47. Add packaged Wayland smoke coverage.
 - [ ] 48. Complete Rust development and migration documentation.
 - [ ] 49. Advance the RPM release over the installed package.
@@ -123,6 +123,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust application and IPC activation: normal debug/release binaries, explicit backend selection, real volume acknowledgement, network snapshot lifetime, strict Clippy and full runtime checks pass. Actual release executables pass private Sway/Niri smoke and installation staging; the C entry point/server and obsolete IPC test are removed.
 - [ ] Native/Fedora package matrix for the Rust application entry point.
 - [x] Cargo-only workspace build, full Rust tests, formatting and strict Clippy pass. The three permanent crates replace the temporary bridge; all remaining project C, C tests and Makefiles are removed. The shared POSIX installer passes staging checks. The combined tests also reproduced and fixed an audio fixture directory collision between separately included helper modules.
+- [x] Trimmed native dependencies compile and pass the affected Rust/GTK checks. Regenerated Fedora 43/44 locks validate both complete images with Sway/Niri and ordinary-user smoke tools; conditional image requirements remain explicit. Evidence: `final-fedora-lock-update.log`.
+- [x] Retained compositor handles stop immediately during shutdown, queued events cannot restart them, and closed Wayland peers fail startup. Regression, reconnection, strict Clippy, full runtime and application smoke checks pass on both compositors (`a09a4ab`).
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

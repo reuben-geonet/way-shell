@@ -15,10 +15,7 @@
       # requirements; image validation identified these additional providers.
       extraPackages = [
         "tuned-ppd"
-        "python3-setuptools"
         "rpm-plugin-selinux"
-        "pam"
-        "authselect-libs"
       ];
     };
   };
@@ -32,26 +29,19 @@
       pkgs.vmTools.commonFedoraPackages
       ++ [
         "gpgverify"
-        "python3"
         "rust"
         "cargo"
         "clang-devel"
         "libadwaita-devel"
         "gtk4-layer-shell-devel"
-        "upower-devel"
         "wireplumber-devel"
-        "json-glib-devel"
         "NetworkManager-libnm-devel"
         "pipewire-devel"
         "pipewire"
         "pipewire-pulseaudio"
         "pulseaudio-libs-devel"
         "wayland-devel"
-        "wayland-protocols-devel"
         "glib2-devel"
-        "meson"
-        "cmake"
-        "gtk-doc"
         "redhat-rpm-config"
         "NetworkManager"
         "wireplumber"
@@ -59,9 +49,27 @@
         "systemd"
         "dbus-broker"
         "dbus-daemon"
-        "cmake-rpm-macros"
-        "systemd-rpm-macros"
         "binutils"
+        # These conditional requirements belong to the image's native tooling,
+        # even though the application no longer uses systemd macros or Python.
+        "systemd-rpm-macros"
+        "python3-setuptools"
+        # Installed-package smoke checks run both compositors as a private user.
+        "sway"
+        # The pinned resolver selects this provider of the sway-config virtual
+        # package. Selecting another provider would install conflicting configs.
+        "sway-config-upstream"
+        "niri"
+        "util-linux"
+        "shadow-utils"
+        "dejavu-sans-fonts"
+        "fontconfig"
+        "mesa-libEGL"
+        "mesa-dri-drivers"
+        # util-linux has conditional PAM requirements with systemd. The pinned
+        # resolver needs both providers explicitly for either Fedora release.
+        "pam"
+        "authselect-libs"
       ]
     )
   );
