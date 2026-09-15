@@ -42,8 +42,6 @@
             ".gdb_history"
             "src/services/dbus_dbus.c"
             "src/services/dbus_dbus.h"
-            "src/services/media_player_service/media_player_dbus.c"
-            "src/services/media_player_service/media_player_dbus.h"
             "src/services/notifications_service/notifications_dbus.c"
             "src/services/notifications_service/notifications_dbus.h"
             "src/services/status_notifier_service/dbusmenu_dbus.c"

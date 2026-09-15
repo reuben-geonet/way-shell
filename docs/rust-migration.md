@@ -452,3 +452,45 @@ verify startup discovery, replacement and destruction before/after discovery.
 The six metadata tests remain green. Evidence is in
 `media-discovery-{existing,replacement}-before.log`,
 `media-discovery-after.log` and `media-discovery-integrated.log`.
+
+## D-Bus availability and Rust MPRIS
+
+Private-bus tests reproduced process aborts in the GLib 0.21 binding's name-watch
+helper when GIO supplies a null connection after bus loss or failed startup.
+A private owning watcher now handles that callback for UPower, login1 and power
+profiles. Tests verify cleared inventories and inhibitor descriptor release as
+well as startup without a system bus. Evidence: `bus-watch-loss-before.log`,
+`bus-watch-unavailable-before.log` and `bus-watch-loss-after.log`.
+
+The Rust media service owns player discovery, properties and all seven existing
+commands. It subscribes before enumerating names, guards asynchronous results
+with connection and owner generations, and keeps native GIO proxies private.
+Commands use the selected unique owner, report actual replies and errors, and
+have a two-second deadline. Lost owners cancel pending work. Session-bus loss
+clears the inventory and retries the connection.
+
+Initial proxy creation can succeed before a player exports its properties.
+A regression reproduced permanently blank players in that case. The service
+now checks the required initial property types and retries incomplete exports;
+valid empty metadata is accepted. Later missing or malformed metadata clears
+the affected fields. Private-bus fixtures cover discovery races, replacement,
+actions, cancellation, deadlines, teardown and production-constructor recovery
+from an absent or restarted session bus.
+
+The temporary adapter retains stable C records during callbacks and defers
+reentrant updates. It keeps the stopped global object alive for C teardown and
+copies command names before returning. Its private-bus tests exercise the
+actual exported C commands. Evidence: `media-rust-contract.log`,
+`media-delayed-export-{before,after}.log`, `media-production-bus-recovery.log`,
+`media-bridge-shutdown-before.log` and `media-bridge-contract.log`.
+
+Tray reconstruction now seeds already-discovered players and disconnects the
+previous service subscriptions. Its controller owns the root widget, releases
+both GSettings bindings, and safely clears its arrays on repeated disposal.
+Tests reproduced missing initial players and four callbacks after three
+reinitializations; all three regression cases now pass on Sway and Niri.
+Evidence: `media-widget-{seed,reinitialize}-before.log` and
+`media-widgets-after.log`. The C MPRIS implementation, generated bindings and
+obsolete C service fixtures are removed; the XML remains tracked. Full workspace
+tests, formatting, Clippy and the linked application pass in
+`media-integrated-workspace.log`.

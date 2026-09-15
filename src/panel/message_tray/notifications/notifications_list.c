@@ -10,11 +10,11 @@
 #include "gtk/gtk.h"
 #include "notification_widget.h"
 
-enum signals { signals_n };
-
 struct _NotificationsList {
     GObject parent_instance;
-    MessageTray *tray;
+    GWeakRef notification_source;
+    GWeakRef media_source;
+    GWeakRef tray_source;
     GtkBox *container;
     GtkBox *list_container;
     GtkScrolledWindow *scroll;
@@ -28,7 +28,6 @@ struct _NotificationsList {
     GHashTable *notification_groups;
     GPtrArray *media_players;
 };
-static guint signals[signals_n] = {0};
 G_DEFINE_TYPE(NotificationsList, notifications_list, G_TYPE_OBJECT);
 
 void apply_scrolling_policy(NotificationsList *self, gboolean shrink) {
@@ -146,58 +145,97 @@ void on_notifications_added(NotificationsService *service,
                             nw);
 
         // connect to signals
-        g_signal_connect(nw, "notification-group-empty",
-                         G_CALLBACK(on_notification_group_empty), self);
-        g_signal_connect(nw, "notification-group-expanded",
-                         G_CALLBACK(on_notification_group_expand), self);
-        g_signal_connect(nw, "notification-group-will-expand",
-                         G_CALLBACK(on_notification_group_will_expand), self);
-        g_signal_connect(nw, "notification-group-collapsed",
-                         G_CALLBACK(on_notification_group_collapsed), self);
+        g_signal_connect_object(nw, "notification-group-empty",
+                                G_CALLBACK(on_notification_group_empty), self, 0);
+        g_signal_connect_object(nw, "notification-group-expanded",
+                                G_CALLBACK(on_notification_group_expand), self, 0);
+        g_signal_connect_object(nw, "notification-group-will-expand",
+                                G_CALLBACK(on_notification_group_will_expand), self, 0);
+        g_signal_connect_object(nw, "notification-group-collapsed",
+                                G_CALLBACK(on_notification_group_collapsed), self, 0);
 
-        g_signal_connect(nw, "notification-group-notification-added",
-                         G_CALLBACK(on_notification_group_expand), self);
-        g_signal_connect(nw, "notification-group-notification-closed",
-                         G_CALLBACK(on_notification_group_collapsed), self);
-        g_signal_connect(nw, "notification-group-notification-expanded",
-                         G_CALLBACK(on_notification_group_expand), self);
-        g_signal_connect(nw, "notification-group-notification-collapsed",
-                         G_CALLBACK(on_notification_group_collapsed), self);
+        g_signal_connect_object(nw, "notification-group-notification-added",
+                                G_CALLBACK(on_notification_group_expand), self, 0);
+        g_signal_connect_object(nw, "notification-group-notification-closed",
+                                G_CALLBACK(on_notification_group_collapsed), self, 0);
+        g_signal_connect_object(nw, "notification-group-notification-expanded",
+                                G_CALLBACK(on_notification_group_expand), self, 0);
+        g_signal_connect_object(nw, "notification-group-notification-collapsed",
+                                G_CALLBACK(on_notification_group_collapsed), self, 0);
 
         apply_scrolling_policy(self, false);
         swap_no_notifications_page(self);
     }
 }
 
-static void on_message_tray_hidden(MessageTray *tray, NotificationsList *self);
+static void disconnect_source(GWeakRef *source, NotificationsList *self) {
+    g_autoptr(GObject) object = g_weak_ref_get(source);
+    if (object)
+        g_signal_handlers_disconnect_by_data(object, self);
+    g_weak_ref_set(source, NULL);
+}
 
-// stub out dispose, finalize, class_init and init methods.
+static void notifications_list_clear_layout(NotificationsList *self) {
+    disconnect_source(&self->notification_source, self);
+    disconnect_source(&self->media_source, self);
+    disconnect_source(&self->tray_source, self);
+
+    if (self->clear)
+        g_signal_handlers_disconnect_by_data(self->clear, self);
+    if (self->dnd_switch) {
+        g_settings_unbind(self->dnd_switch, "active");
+        // G_SETTINGS_BIND_DEFAULT also binds key writability to sensitivity.
+        g_settings_unbind(self->dnd_switch, "sensitive");
+    }
+
+    if (self->notification_groups) {
+        GHashTableIter iter;
+        gpointer group;
+        g_hash_table_iter_init(&iter, self->notification_groups);
+        while (g_hash_table_iter_next(&iter, NULL, &group))
+            g_signal_handlers_disconnect_by_data(group, self);
+    }
+
+    // The controller owns its root, so layout pointers stay valid even after
+    // the containing window is destroyed. Detach children before releasing
+    // their controllers; an externally retained old layout must stay inert.
+    if (self->list) {
+        GtkWidget *child;
+        while ((child = gtk_widget_get_first_child(GTK_WIDGET(self->list))))
+            gtk_box_remove(self->list, child);
+    }
+    if (self->notification_groups)
+        g_hash_table_remove_all(self->notification_groups);
+    if (self->media_players)
+        g_ptr_array_set_size(self->media_players, 0);
+
+    g_clear_object(&self->container);
+    self->list_container = NULL;
+    self->scroll = NULL;
+    self->list = NULL;
+    self->controls = NULL;
+    self->dnd_switch = NULL;
+    self->status = NULL;
+    self->clear = NULL;
+}
+
 static void notifications_list_dispose(GObject *gobject) {
     NotificationsList *self = NOTIFICATIONS_LIST(gobject);
-
-    // cancel signals
-    NotificationsService *service = notifications_service_get_global();
-    g_signal_handlers_disconnect_by_func(service, on_notifications_added, self);
-
-    MessageTray *mt = message_tray_get_global();
-    g_signal_handlers_disconnect_by_func(mt, on_message_tray_hidden, self);
-
-    // unref osd
-    g_object_unref(self->osd);
-
-    // remove all NotificationGroups, unrefing each one.
-    g_hash_table_remove_all(self->notification_groups);
-
-    for (int i = 0; i < self->media_players->len; i++) {
-        NotificationWidget *mp = g_ptr_array_index(self->media_players, i);
-        g_object_unref(mp);
-    }
+    notifications_list_clear_layout(self);
+    g_clear_object(&self->osd);
+    g_clear_object(&self->settings);
+    g_clear_pointer(&self->notification_groups, g_hash_table_unref);
+    g_clear_pointer(&self->media_players, g_ptr_array_unref);
 
     // Chain-up
     G_OBJECT_CLASS(notifications_list_parent_class)->dispose(gobject);
 };
 
 static void notifications_list_finalize(GObject *gobject) {
+    NotificationsList *self = NOTIFICATIONS_LIST(gobject);
+    g_weak_ref_clear(&self->notification_source);
+    g_weak_ref_clear(&self->media_source);
+    g_weak_ref_clear(&self->tray_source);
     // Chain-up
     G_OBJECT_CLASS(notifications_list_parent_class)->finalize(gobject);
 };
@@ -220,6 +258,7 @@ static void on_clear_all_clicked(GtkButton *button, NotificationsList *self) {
         // each group will fire an empty signal, so we'll unref them at
         // that signal handler 'on_notification_group_empty'.
     }
+    g_list_free(notification_groups);
 }
 
 NotificationWidget *search_media_players_by_name(gchar *name,
@@ -238,6 +277,8 @@ static void on_media_players_changed(MediaPlayerService *mps,
                                      MediaPlayer *player,
                                      NotificationsList *self) {
     g_debug("notifications_list.c:on_media_players_changed() called");
+
+    if (!player || !player->name) return;
 
     NotificationWidget *widget =
         search_media_players_by_name(player->name, self);
@@ -258,6 +299,7 @@ static void on_media_players_changed(MediaPlayerService *mps,
 static void media_players_on_media_player_removed(MediaPlayerService *serv,
                                                   MediaPlayer *player,
                                                   NotificationsList *self) {
+    if (!player || !player->name) return;
     NotificationWidget *widget =
         search_media_players_by_name(player->name, self);
 
@@ -278,7 +320,7 @@ static void on_message_tray_hidden(MessageTray *tray, NotificationsList *self) {
 
 static void notifications_list_init_layout(NotificationsList *self) {
     // container
-    self->container = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+    self->container = g_object_ref_sink(GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0)));
     gtk_widget_set_name(GTK_WIDGET(self->container), "notifications-list");
 
     // scolled window containing notification list
@@ -321,8 +363,8 @@ static void notifications_list_init_layout(NotificationsList *self) {
     self->clear = GTK_BUTTON(gtk_button_new_with_label("Clear"));
     gtk_widget_add_css_class(GTK_WIDGET(self->clear),
                              "notifications-list-clear");
-    g_signal_connect(self->clear, "clicked", G_CALLBACK(on_clear_all_clicked),
-                     self);
+    g_signal_connect_object(self->clear, "clicked", G_CALLBACK(on_clear_all_clicked),
+                            self, 0);
 
     // wire it up
 
@@ -348,56 +390,60 @@ static void notifications_list_init_layout(NotificationsList *self) {
 
     // setup notification service signals and seed notifications
     NotificationsService *service = notifications_service_get_global();
-    GPtrArray *notifications = notifications_service_get_notifications(service);
-    for (int i = 0; i < notifications->len; i++) {
-        Notification *n = g_ptr_array_index(notifications, i);
-        on_notifications_added(service, notifications, n->id, i, self);
+    g_weak_ref_set(&self->notification_source, service);
+    if (service) {
+        g_signal_connect_object(service, "notification-added",
+                                G_CALLBACK(on_notifications_added), self, 0);
+        GPtrArray *notifications = notifications_service_get_notifications(service);
+        for (guint i = 0; notifications && i < notifications->len; i++) {
+            Notification *n = g_ptr_array_index(notifications, i);
+            on_notifications_added(service, notifications, n->id, i, self);
+        }
     }
-    g_signal_connect(service, "notification-added",
-                     G_CALLBACK(on_notifications_added), self);
 
     // listen for notifications gsetting changes and bind DND switch.
-    self->settings = g_settings_new("org.ldelossa.way-shell.notifications");
     g_settings_bind(self->settings, "do-not-disturb", self->dnd_switch,
                     "active", G_SETTINGS_BIND_DEFAULT);
 
     // listen for created and removed media.
     MediaPlayerService *mps = media_player_service_get_global();
-    g_signal_connect(mps, "media-player-changed",
-                     G_CALLBACK(on_media_players_changed), self);
-    g_signal_connect(mps, "media-player-removed",
-                     G_CALLBACK(media_players_on_media_player_removed), self);
+    g_weak_ref_set(&self->media_source, mps);
+    if (mps) {
+        g_signal_connect_object(mps, "media-player-changed",
+                                G_CALLBACK(on_media_players_changed), self, 0);
+        g_signal_connect_object(mps, "media-player-removed",
+                                G_CALLBACK(media_players_on_media_player_removed), self, 0);
+        GPtrArray *players = media_player_service_get_players(mps);
+        for (guint i = 0; players && i < players->len; i++)
+            on_media_players_changed(mps, g_ptr_array_index(players, i), self);
+    }
 
     MessageTray *mt = message_tray_get_global();
-
-    g_signal_connect(mt, "message-tray-hidden",
-                     G_CALLBACK(on_message_tray_hidden), self);
+    g_weak_ref_set(&self->tray_source, mt);
+    if (mt)
+        g_signal_connect_object(mt, "message-tray-hidden",
+                                G_CALLBACK(on_message_tray_hidden), self, 0);
+    swap_no_notifications_page(self);
 }
 
 void notifications_list_reinitialize(NotificationsList *self) {
     g_debug("notifications_list.c:notifications_list_reinitialize() called");
 
-    // kill our signals
-    NotificationsService *service = notifications_service_get_global();
-    g_signal_handlers_disconnect_by_func(service, on_notifications_added, self);
-
-    MessageTray *mt = message_tray_get_global();
-    g_signal_handlers_disconnect_by_func(mt, on_message_tray_hidden, self);
-
-    // remove all NotificationGroups, unrefing each one.
-    g_hash_table_remove_all(self->notification_groups);
-
-    // remove all media players
-    g_ptr_array_set_size(self->media_players, 0);
+    if (!self->media_players) return;
+    notifications_list_clear_layout(self);
 
     // init our layout again
     notifications_list_init_layout(self);
 }
 
 static void notifications_list_init(NotificationsList *self) {
+    g_weak_ref_init(&self->notification_source, NULL);
+    g_weak_ref_init(&self->media_source, NULL);
+    g_weak_ref_init(&self->tray_source, NULL);
     self->notification_groups =
         g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_object_unref);
     self->media_players = g_ptr_array_new_full(0, g_object_unref);
+    self->settings = g_settings_new("org.ldelossa.way-shell.notifications");
 
     self->osd = g_object_new(NOTIFICATIONS_OSD_TYPE, NULL);
     notification_osd_set_notification_list(self->osd, self);

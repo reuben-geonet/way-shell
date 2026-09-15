@@ -20,8 +20,6 @@ gresources.h
 /tests/power-widgets-test
 /tests/brightness-widgets-test
 /tests/network-test
-/tests/media-player-test
-/tests/media-discovery-test
 /tests/network-operations-test
 __pycache__/
 
@@ -31,8 +29,6 @@ __pycache__/
 gschemas.compiled
 /src/services/dbus_dbus.c
 /src/services/dbus_dbus.h
-/src/services/media_player_service/media_player_dbus.c
-/src/services/media_player_service/media_player_dbus.h
 /src/services/notifications_service/notifications_dbus.c
 /src/services/notifications_service/notifications_dbus.h
 /src/services/status_notifier_service/dbusmenu_dbus.c
@@ -45,5 +41,6 @@ gschemas.compiled
 /src/services/status_notifier_service/status_notifier_watcher_dbus.h
 
 /tests/audio-widgets-test
+/tests/media-widgets-test
 
 /nix/fedora/locks/.update-*/

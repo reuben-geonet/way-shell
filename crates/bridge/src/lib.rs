@@ -6,6 +6,7 @@ mod audio_fixture;
 mod brightness;
 mod clock;
 mod logind;
+mod media;
 mod network;
 mod power;
 mod power_profiles;

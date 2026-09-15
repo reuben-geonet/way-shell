@@ -17,7 +17,6 @@ LDFLAGS += -Wl,--gc-sections
 
 .DEFAULT_GOAL := all
 DBUS_BASES := src/services/dbus_dbus \
-  src/services/media_player_service/media_player_dbus \
   src/services/notifications_service/notifications_dbus \
   src/services/status_notifier_service/dbusmenu_dbus \
   src/services/status_notifier_service/status_notifier_host_dbus \
@@ -55,7 +54,6 @@ $(1).c $(1).h &: data/dbus-interfaces/$(2).xml
 	  --interface-prefix $(3) --output-directory $(dir $(1)) $$<
 endef
 $(eval $(call dbus_binding,src/services/dbus_dbus,org.freedesktop.DBus,org.freedesktop.))
-$(eval $(call dbus_binding,src/services/media_player_service/media_player_dbus,org.mpris.MediaPlayer2,org.mpris.))
 $(eval $(call dbus_binding,src/services/notifications_service/notifications_dbus,org.freedesktop.Notifications,org.freedesktop.))
 $(eval $(call dbus_binding,src/services/status_notifier_service/dbusmenu_dbus,com.canonical.dbusmenu,com.canonical.))
 $(eval $(call dbus_binding,src/services/status_notifier_service/status_notifier_host_dbus,org.kde.StatusNotifierHost,org.kde.))

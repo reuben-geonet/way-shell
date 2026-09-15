@@ -121,6 +121,7 @@ pub extern "C" fn way_shell_rust_shutdown() {
         crate::clock::shutdown();
         crate::brightness::shutdown();
         crate::logind::shutdown();
+        crate::media::shutdown();
         crate::network::shutdown();
         crate::power::shutdown();
         crate::power_profiles::shutdown();

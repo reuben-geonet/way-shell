@@ -74,6 +74,9 @@
             make -C tests audio-widgets-test
             sh tests/wayland-component.sh tests/audio-widgets-test
             sh tests/wayland-component.sh tests/audio-widgets-test niri
+            make -C tests media-widgets-test
+            sh tests/wayland-component.sh tests/media-widgets-test
+            sh tests/wayland-component.sh tests/media-widgets-test niri
             make -C tests brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test niri

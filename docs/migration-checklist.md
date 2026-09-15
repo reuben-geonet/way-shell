@@ -30,7 +30,7 @@ a claim that the complete migration is ready to install.
 - [x] 24. Migrate network connection management to Rust.
 - [x] 25. Migrate WirePlumber object tracking to Rust.
 - [x] 26. Migrate volume and stream routing to Rust.
-- [ ] 27. Migrate MPRIS integration to Rust.
+- [x] 27. Migrate MPRIS integration to Rust.
 - [ ] 28. Migrate the notification service to Rust.
 - [ ] 29. Migrate tray watcher and item tracking to Rust.
 - [ ] 30. Migrate D-Bus menu handling to Rust.
@@ -84,6 +84,8 @@ a claim that the complete migration is ready to install.
 - [ ] Native/Fedora package matrix for the completed Rust audio service.
 - [x] Clean native audio application/schema checks at `6571864`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/audio-controls-native-schemas` -> `/nix/store/nkdsb5q80kgkyc71i95pwbvqyqbszz69-way-shell-native-schemas-check`.
 - [ ] Corrected Fedora audio matrix: the first Fedora 43 run exposed a test-writer mixer-scale assumption; the explicit linear-scale fixture passes locally.
+- [x] Rust MPRIS discovery, metadata, commands, owner replacement, late property export, session-bus restart, C ownership, Sway/Niri tray reconstruction, workspace tests, formatting, Clippy and linked application checks.
+- [ ] Native/Fedora package matrix for Rust MPRIS.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -103,5 +105,5 @@ branch is preserved. The former cache worktree is detached and inactive.
 
 Rust owns Wayland, power, networking and the complete audio service, including
 volume and PulseAudio stream routing. The audio adapter preserves stable C
-records for the remaining widgets. MPRIS migration is next; package and laptop
-acceptance remain separate gates.
+records for the remaining widgets. MPRIS now runs in Rust; notification service
+migration is underway. Package and laptop acceptance remain separate gates.
