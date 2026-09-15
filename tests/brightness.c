@@ -37,6 +37,12 @@ static void failed_writes_keep_observed_state(void) {
     brightness_service_keyboard_down(&service);
     g_assert_cmpuint(requested, ==, 1);
     g_assert_cmpuint(service.keyboard_brightness, ==, 2);
+    service.max_backlight_brightness = 5;
+    brightness_service_backlight_up(&service);
+    g_assert_cmpuint(requested, ==, 3);
+    brightness_service_backlight_down(&service);
+    g_assert_cmpuint(requested, ==, 1);
+    g_assert_cmpuint(service.backlight_brightness, ==, 2);
     g_unlink(path);
     g_rmdir(directory);
 }
