@@ -446,6 +446,17 @@ pub unsafe extern "C" fn wayland_ksi_inhibit_destroy(
     }))
     .unwrap_or(0)
 }
+
+/// Share the running service with Rust UI during the startup migration.
+pub(crate) fn service() -> Option<WaylandService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .and_then(|adapter| adapter.service())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

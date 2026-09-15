@@ -33,6 +33,5 @@ gschemas.compiled
 /tests/media-presentation-test
 /tests/notification-presentation-test
 /tests/notification-replacement-test
-/tests/tray-widgets-test
 
 /nix/fedora/locks/.update-*/

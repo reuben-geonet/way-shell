@@ -86,9 +86,13 @@
             make -C tests notification-replacement-test
             sh tests/wayland-component.sh tests/notification-replacement-test
             sh tests/wayland-component.sh tests/notification-replacement-test niri
-            make -C tests tray-widgets-test
-            sh tests/wayland-component.sh tests/tray-widgets-test
-            sh tests/wayland-component.sh tests/tray-widgets-test niri
+            cargo build -p way-shell --example tray-ui-compat --example panel-status-compat --example panel-compat --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat niri
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-compat
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-compat niri
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat niri
             make -C tests brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test
             sh tests/wayland-component.sh tests/brightness-widgets-test niri

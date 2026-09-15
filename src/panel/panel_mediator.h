@@ -2,8 +2,6 @@
 
 #include <adwaita.h>
 
-typedef struct _Panel Panel;
-
 G_BEGIN_DECLS
 
 // The mediator which aggregates and emits signals on behavior of Panels.
@@ -19,13 +17,6 @@ struct _PanelMediator;
 G_DECLARE_FINAL_TYPE(PanelMediator, panel_mediator, PANEL, MEDIATOR, GObject);
 
 G_END_DECLS
-
-// Emits the "notification_tray_toggle_request" signal for the give Panel.
-void panel_mediator_emit_msg_tray_toggle_request(PanelMediator *pm,
-                                                 Panel *panel);
-
-// Emits the "quick_settings_toggle_request" signal for the give Panel.
-void panel_mediator_emit_qs_toggle_request(PanelMediator *pm, Panel *panel);
 
 // Connects the PanelMediator to all other Mediator's signals required.
 void panel_mediator_connect(PanelMediator *mediator);

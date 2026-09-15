@@ -117,6 +117,7 @@ pub extern "C" fn way_shell_get_resource() -> *mut gio::ffi::GResource {
 #[unsafe(no_mangle)]
 pub extern "C" fn way_shell_rust_shutdown() {
     let _ = catch_unwind(AssertUnwindSafe(|| {
+        crate::panel::shutdown();
         crate::audio::shutdown();
         crate::clock::shutdown();
         crate::brightness::shutdown();

@@ -12,6 +12,7 @@ mod media;
 mod media_fixture;
 mod network;
 mod notifications;
+mod panel;
 mod power;
 mod power_profiles;
 mod theme;

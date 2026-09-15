@@ -725,6 +725,16 @@ pub extern "C" fn wire_plumber_service_map_source_vol_icon(
     .as_ptr()
 }
 
+/// Share the running service with Rust UI during the startup migration.
+pub(crate) fn service() -> Option<AudioService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .and_then(|adapter| adapter.imp().service.borrow().clone())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

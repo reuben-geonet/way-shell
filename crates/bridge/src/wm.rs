@@ -9,6 +9,13 @@ use std::{
 use way_shell::services::wm::WindowManager;
 use way_shell_core::wm::{Action, Output, Workspace, WorkspaceTarget};
 
+thread_local! {
+    static ACTIVE: RefCell<Option<glib::WeakRef<WindowManager>>> = const { RefCell::new(None) };
+}
+pub(crate) fn service() -> Option<WindowManager> {
+    ACTIVE.with(|active| active.borrow().as_ref().and_then(|weak| weak.upgrade()))
+}
+
 #[repr(C)]
 struct CWorkspace {
     name: *mut c_char,
@@ -134,6 +141,7 @@ impl Manager {
         outputs_changed: Option<Notify>,
         data: *mut c_void,
     ) -> Self {
+        ACTIVE.with(|active| active.replace(Some(service.downgrade())));
         let workspaces = Rc::new(RefCell::new(Array::workspaces(&service.workspaces())));
         let outputs = Rc::new(RefCell::new(Array::outputs(&service.outputs())));
         let snapshot = workspaces.clone();

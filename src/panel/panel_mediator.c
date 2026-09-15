@@ -56,56 +56,25 @@ static void hide_intelligent(gpointer component) {
 }
 
 static void on_message_tray_visible(MessageTray *tray) {
-    g_debug("panel_mediator.c:on_message_tray_visible() called.");
-
-    GHashTable *panels = panel_get_all_panels();
-    GList *values = g_hash_table_get_values(panels);
-    for (GList *l = values; l; l = l->next) {
-        Panel *panel = PANEL_PANEL(l->data);
-        g_debug("panel_mediator.c:on_message_tray_hidden() panel pointer: %p",
-                panel);
-        panel_on_msg_tray_visible(panel);
-    }
-
+    panel_set_message_tray_visible(TRUE);
     hide_intelligent(tray);
 }
-
 static void on_message_tray_hidden(MessageTray *tray) {
-    g_debug("panel_mediator.c:on_message_tray_hidden() called.");
-    GHashTable *panels = panel_get_all_panels();
-    GList *values = g_hash_table_get_values(panels);
-    for (GList *l = values; l; l = l->next) {
-        Panel *panel = PANEL_PANEL(l->data);
-        panel_on_msg_tray_hidden(panel);
-    }
+    panel_set_message_tray_visible(FALSE);
 }
-
 static void on_quick_settings_visible(QuickSettings *qs) {
-    g_debug("panel_mediator.c:on_quick_settings_visible() called.");
-
-    GHashTable *panels = panel_get_all_panels();
-    GList *values = g_hash_table_get_values(panels);
-    for (GList *l = values; l; l = l->next) {
-        Panel *panel = PANEL_PANEL(l->data);
-        panel_on_qs_visible(panel);
-    }
-
+    panel_set_quick_settings_visible(TRUE);
     hide_intelligent(qs);
 }
-
 static void on_quick_settings_hidden(QuickSettings *qs) {
-    g_debug("panel_mediator.c:on_quick_settings_hidden() called.");
-    GHashTable *panels = panel_get_all_panels();
-    GList *values = g_hash_table_get_values(panels);
-    for (GList *l = values; l; l = l->next) {
-        Panel *panel = PANEL_PANEL(l->data);
-        panel_on_qs_hidden(panel);
-    }
+    panel_set_quick_settings_visible(FALSE);
 }
-
 static void on_overlay_visible(Activities *a, PanelMediator *self) {
-    g_debug("panel.c:on_activites_visible() called.");
+    panel_set_activities_visible(TRUE);
     hide_intelligent(a);
+}
+static void on_overlay_hidden(Activities *a, PanelMediator *self) {
+    panel_set_activities_visible(FALSE);
 }
 
 void panel_mediator_connect(PanelMediator *mediator) {
@@ -123,5 +92,7 @@ void panel_mediator_connect(PanelMediator *mediator) {
 
     Activities *a = activities_get_global();
     g_signal_connect(a, "activities-will-show", G_CALLBACK(on_overlay_visible),
+                     mediator);
+    g_signal_connect(a, "activities-will-hide", G_CALLBACK(on_overlay_hidden),
                      mediator);
 };

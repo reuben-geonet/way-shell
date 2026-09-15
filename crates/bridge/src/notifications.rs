@@ -573,6 +573,16 @@ pub unsafe extern "C" fn notifications_service_send_notification(
     }));
 }
 
+/// Share the running service with Rust UI during the startup migration.
+pub(crate) fn service() -> Option<NotificationsService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .and_then(|adapter| adapter.imp().service.borrow().clone())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

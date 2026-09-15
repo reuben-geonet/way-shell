@@ -57,7 +57,6 @@ clean:
 	rm -f media-presentation-test
 	rm -f notification-presentation-test
 	rm -f notification-replacement-test
-	rm -f tray-widgets-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
@@ -79,9 +78,3 @@ notification-replacement-test: notification-replacement.c gschemas.compiled \
   ../src/panel/message_tray/notifications/notification_osd.c \
   ../src/panel/message_tray/notifications/notifications_list.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) notification-replacement.c ../src/panel/message_tray/notifications/notification_widget.c $(LDFLAGS) $(shell pkg-config --libs gtk4-layer-shell-0 libadwaita-1) -o $@
-
-tray-widgets-test: tray-widgets.c \
-  ../src/panel/indicator_bar/indicator_widget.c \
-  ../src/panel/indicator_bar/indicator_bar.c \
-  ../src/services/status_notifier_service/status_notifier_service.h
-	$(CC) $(CPPFLAGS) $(CFLAGS) tray-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@

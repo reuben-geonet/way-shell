@@ -328,6 +328,17 @@ pub unsafe extern "C" fn way_shell_network_inventory_set_vpn(
     }));
 }
 
+/// Share the running service with Rust UI during the startup migration.
+pub(crate) fn service() -> Option<NetworkService> {
+    GLOBAL.with(|global| {
+        global
+            .borrow()
+            .as_ref()
+            .and_then(|weak| weak.upgrade())
+            .and_then(|adapter| adapter.service())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

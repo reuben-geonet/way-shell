@@ -87,3 +87,8 @@ pub unsafe extern "C" fn clock_service_set_enabled(
     }))
     .unwrap_or(0)
 }
+
+/// Share the running service with Rust UI during the startup migration.
+pub(crate) fn service() -> Option<ClockService> {
+    GLOBAL.with(|global| global.borrow().clone())
+}

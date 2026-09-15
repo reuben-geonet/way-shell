@@ -744,3 +744,43 @@ The RPM build now sets `XDG_DATA_DIRS=/usr/local/share:/usr/share`, matching
 the existing installation check. This requires no added packages or lock
 changes. Evidence: `glycin-fedora43-probe.log`; full RPM verification is
 tracked separately in the checklist.
+
+
+## Rust panel widgets
+
+Rust now owns each monitor's panel window, clock, workspace buttons, status
+indicators and tray items. The panels share the running service handles and
+retain the existing layout, CSS names and popup interactions. A small C startup
+shim and the existing popup mediator remain until those callers migrate.
+Monitor reconciliation handles batched additions/removals and stops cleanly
+if a widget's destruction triggers shutdown. Workspace buttons retain full
+compositor identifiers across inventory changes.
+
+Clock and status updates use weak subscriptions; retained widgets become inert
+after their controller is dropped. DND is read at creation. Unavailable network
+services no longer appear as airplane mode, removed access points clear stale
+signal strength, and missing audio defaults show an unavailable control. Nested
+clock, workspace and status updates are coalesced so the latest service state
+wins. Multi-monitor visibility updates also re-read the current state after
+each widget notification, preventing nested updates from leaving stale CSS.
+
+The Rust tray widgets now consume the Rust item and menu services directly.
+Their temporary C record/menu adapter, C widget implementations and obsolete C
+widget tests are removed. Rust tests retain menu actions, owner identity,
+endpoint changes, malformed images, asynchronous icon loading and cleanup.
+A tracked PNG fixture checks actual image decoding in native and Fedora builds.
+
+The full workspace, formatting, strict Clippy, clean linked application and
+remaining existing tests pass in `panel-cutover-integrated.log`. Rust panel,
+status and tray probes pass on both Sway and Niri; they cover repeated lifetimes,
+private network/power service changes, nested callbacks and stale widgets.
+Sway also exercises actual output addition/removal and shutdown during widget
+destruction. Evidence includes `panel-widgets-verified.log`,
+`panel-status-{sway,niri}.log` and `tray-ui-{sway,niri}-final.log`. Package gates
+remain separately recorded in the checklist.
+
+The final panel review reproduces and fixes nested visibility changes across
+three Sway outputs and NetworkManager stopping during a GTK property update.
+Both panel/status probes pass on Sway and Niri after the fixes; eight affected
+Rust tests and strict Clippy pass. Evidence: `panel-visibility-before.log`,
+`panel-status-reentry-before.log` and `panel-reentry-{rust-checks,sway,niri}.log`.
