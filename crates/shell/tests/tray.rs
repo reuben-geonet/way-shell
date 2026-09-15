@@ -1,10 +1,10 @@
 use gio::prelude::*;
 use std::{cell::RefCell, rc::Rc, time::Duration};
 use way_shell::services::tray::{ItemCommand, ItemKey, Orientation, TrayEvent, TrayService};
-#[path = "common/media.rs"]
-mod media_fixture;
 #[path = "common/tray.rs"]
 mod fixture;
+#[path = "common/media.rs"]
+mod media_fixture;
 use fixture::*;
 
 #[test]

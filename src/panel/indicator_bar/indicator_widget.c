@@ -2,7 +2,6 @@
 
 #include <adwaita.h>
 
-#include "../../services/status_notifier_service/status_notifier_item_dbus.h"
 #include "../../services/status_notifier_service/status_notifier_service.h"
 
 struct _IndicatorWidget {
@@ -71,12 +70,7 @@ static void on_button_clicked(GtkButton *button, IndicatorWidget *self) {
         status_notifier_item_about_to_show(self->sni, 0);
         return;
     }
-    GError *error = NULL;
-    dbus_item_v0_gen_call_activate_sync(
-        status_notifier_item_get_proxy(self->sni), 0, 0, NULL, &error);
-    if (error) {
-        g_error_free(error);
-    }
+    status_notifier_item_activate(self->sni, 0, 0);
 }
 
 static void indicator_widget_init_layout(IndicatorWidget *self) {

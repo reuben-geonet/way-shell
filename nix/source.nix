@@ -40,16 +40,6 @@
             "gresources.h"
             "compile_commands.json"
             ".gdb_history"
-            "src/services/dbus_dbus.c"
-            "src/services/dbus_dbus.h"
-            "src/services/status_notifier_service/dbusmenu_dbus.c"
-            "src/services/status_notifier_service/dbusmenu_dbus.h"
-            "src/services/status_notifier_service/status_notifier_host_dbus.c"
-            "src/services/status_notifier_service/status_notifier_host_dbus.h"
-            "src/services/status_notifier_service/status_notifier_item_dbus.c"
-            "src/services/status_notifier_service/status_notifier_item_dbus.h"
-            "src/services/status_notifier_service/status_notifier_watcher_dbus.c"
-            "src/services/status_notifier_service/status_notifier_watcher_dbus.h"
           ])
           && !(lib.hasSuffix ".o" name)
           && !(lib.hasSuffix ".d" name);

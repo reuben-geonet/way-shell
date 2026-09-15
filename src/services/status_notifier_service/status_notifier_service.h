@@ -2,16 +2,15 @@
 
 #include <adwaita.h>
 
-#include "dbusmenu_dbus.h"
-#include "status_notifier_item_dbus.h"
-
 #define SNI_GACTION_PREFIX "sni"
 #define SNI_GRACTION_ITEM_CLICKED "sni.item-clicked"
 #define SNI_GRACTION_MENU_ABOUT_TO_SHOW "sni.about-to-show"
 
+// Borrowed Rust-owned record, valid through update/removal signal delivery.
+// Do not mutate or free fields. All calls run on the application GLib thread.
 typedef struct StatusNotifierItem {
-    DbusItemV0Gen *proxy;
-    DbusDbusmenu *menu_proxy;
+    gpointer proxy;      // Reserved ABI slot; always NULL.
+    gpointer menu_proxy; // Reserved ABI slot; always NULL.
     GActionGroup *action_group;
     GMenu *menu_model;
     gchar *bus_name;
@@ -41,8 +40,14 @@ typedef struct StatusNotifierItem {
 void status_notifier_item_about_to_show(StatusNotifierItem *self,
                                         gint32 menu_item_id);
 
-GdkPixbuf *pixbuf_from_icon_data(GVariant *icon_data);
-void *status_notifier_item_init(StatusNotifierItem *self, DbusItemV0Gen *proxy);
+const gchar *status_notifier_item_get_key(StatusNotifierItem *self);
+void status_notifier_item_activate(StatusNotifierItem *self, gint32 x, gint32 y);
+void status_notifier_item_secondary_activate(StatusNotifierItem *self, gint32 x,
+                                             gint32 y);
+void status_notifier_item_context_menu(StatusNotifierItem *self, gint32 x,
+                                       gint32 y);
+void status_notifier_item_scroll(StatusNotifierItem *self, gint32 delta,
+                                gboolean horizontal);
 const gchar *status_notifier_item_get_category(StatusNotifierItem *self);
 const gchar *status_notifier_item_get_id(StatusNotifierItem *self);
 const gchar *status_notifier_item_get_title(StatusNotifierItem *self);
@@ -63,17 +68,12 @@ const gchar *status_notifier_item_get_attention_movie_name(
 // TODO: get_tooltip
 const gboolean status_notifier_item_get_item_is_menu(StatusNotifierItem *self);
 const gchar *status_notifier_item_get_menu(StatusNotifierItem *self);
-DbusItemV0Gen *status_notifier_item_get_proxy(StatusNotifierItem *self);
-void status_notifier_item_free(StatusNotifierItem *self);
 
 G_BEGIN_DECLS
 
-// A Service which acts as a org.freedesktop.Notification daemon.
-//
-// Listens on DBUS for notifications and provides an API for acting upon
-// them.
+// Temporary C facade for the Rust StatusNotifier watcher and item service.
 struct _StatusNotifierService;
-#define NOTIFICATIONS_SERVICE_TYPE status_notifier_service_get_type()
+#define STATUS_NOTIFIER_SERVICE_TYPE status_notifier_service_get_type()
 G_DECLARE_FINAL_TYPE(StatusNotifierService, status_notifier_service,
                      STATUS_NOTIFIER, SERVICE, GObject);
 
@@ -81,6 +81,7 @@ G_END_DECLS
 
 int status_notifier_service_global_init();
 
+// Borrowed table keyed by unique bus owner plus object path. Do not mutate.
 GHashTable *status_notifier_service_get_items(StatusNotifierService *self);
 
 StatusNotifierService *status_notifier_service_get_global();

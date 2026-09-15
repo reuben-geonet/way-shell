@@ -696,3 +696,21 @@ Owned snapshot signals preserve order when observers stop or replace a menu.
 Seven private-bus integration tests, three parser tests and strict Clippy
 pass in `tray-menu-rust-verified.log`. The C tray remains active until the
 combined watcher/menu adapter cutover.
+
+The combined cutover now runs the watcher, item actions and menus in Rust.
+The adapter owns the GMenu, action group, icon data and stable borrowed C
+records. Updates and removals are queued through all observers; explicit
+disposal cancels a pending model swap safely. Old menu actions become inert
+when their endpoint changes. File-based icon loading is asynchronous and
+ignores stale generations.
+
+Twelve Rust adapter tests cover C layout, real D-Bus actions, menu model
+parity, callback reentrancy and disposal. The full workspace, formatting,
+strict Clippy, a clean linked build, remaining C checks and six existing
+tray widget tests on each of Sway and Niri pass. Evidence:
+`tray-rust-menus-bridge-final.log` and `tray-cutover-integrated.log`.
+
+The old C tray, menu parser and shared D-Bus service are removed together
+with the last five generated D-Bus binding pairs and their Make rules.
+Protocol XML remains tracked. Rust coverage replaces the old C tray/menu
+service tests; the existing C widget tests remain until the panel port.

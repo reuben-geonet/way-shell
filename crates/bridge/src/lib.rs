@@ -15,6 +15,7 @@ mod notifications;
 mod power;
 mod power_profiles;
 mod theme;
+mod tray;
 mod wayland;
 mod wm;
 use std::{

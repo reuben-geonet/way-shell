@@ -13,7 +13,6 @@
 #include "./rename_switcher/rename_switcher.h"
 #include "./services/brightness_service/brightness_service.h"
 #include "./services/clock_service.h"
-#include "./services/dbus_service.h"
 #include "./services/ipc_service/ipc_service.h"
 #include "./services/logind_service/logind_service.h"
 #include "./services/media_player_service/media_player_service.h"
@@ -74,10 +73,6 @@ static void activate(AdwApplication *app, gpointer user_data) {
     // Service activation //
 
     g_debug("main.c: activate(): activating services");
-
-    if (dbus_service_global_init() != 0) {
-        g_error("main.c: activate(): failed to initialize dbus service.");
-    }
 
     if (clock_service_global_init() != 0) {
         g_error("main.c: activate(): failed to initialize clock service.");

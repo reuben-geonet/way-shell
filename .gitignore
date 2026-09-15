@@ -27,24 +27,12 @@ __pycache__/
 /target/
 *.d
 gschemas.compiled
-/src/services/dbus_dbus.c
-/src/services/dbus_dbus.h
-/src/services/status_notifier_service/dbusmenu_dbus.c
-/src/services/status_notifier_service/dbusmenu_dbus.h
-/src/services/status_notifier_service/status_notifier_host_dbus.c
-/src/services/status_notifier_service/status_notifier_host_dbus.h
-/src/services/status_notifier_service/status_notifier_item_dbus.c
-/src/services/status_notifier_service/status_notifier_item_dbus.h
-/src/services/status_notifier_service/status_notifier_watcher_dbus.c
-/src/services/status_notifier_service/status_notifier_watcher_dbus.h
 
 /tests/audio-widgets-test
 /tests/media-widgets-test
 /tests/media-presentation-test
 /tests/notification-presentation-test
 /tests/notification-replacement-test
-/tests/tray-baseline-test
-/tests/tray-menu-test
 /tests/tray-widgets-test
 
 /nix/fedora/locks/.update-*/

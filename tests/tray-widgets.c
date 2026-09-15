@@ -1,10 +1,6 @@
 #include <adwaita.h>
 #include "../src/services/status_notifier_service/status_notifier_service.h"
 
-/* These adapter entry points replace direct generated-proxy access at cutover. */
-const gchar *status_notifier_item_get_key(StatusNotifierItem *item);
-void status_notifier_item_activate(StatusNotifierItem *item, gint32 x, gint32 y);
-
 #include "../src/panel/indicator_bar/indicator_widget.c"
 #include "../src/panel/indicator_bar/indicator_bar.c"
 
@@ -35,12 +31,6 @@ const gchar *status_notifier_item_get_icon_name(StatusNotifierItem *item) { retu
 GdkPixbuf *status_notifier_item_get_icon_pixmap(StatusNotifierItem *item) { return item->icon_pixmap; }
 void status_notifier_item_activate(StatusNotifierItem *item, gint32 x, gint32 y) { activations++; }
 void status_notifier_item_about_to_show(StatusNotifierItem *item, gint32 id) { menu_requests++; }
-DbusItemV0Gen *status_notifier_item_get_proxy(StatusNotifierItem *item) { return NULL; }
-gboolean dbus_item_v0_gen_call_activate_sync(DbusItemV0Gen *proxy, gint x, gint y,
-                                           GCancellable *cancel, GError **error) {
-    activations++;
-    return TRUE;
-}
 static void setup(void) {
     source = g_object_new(fixture_tray_get_type(), NULL);
     items = g_hash_table_new(g_str_hash, g_str_equal);

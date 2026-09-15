@@ -126,6 +126,7 @@ pub extern "C" fn way_shell_rust_shutdown() {
         crate::notifications::shutdown();
         crate::power::shutdown();
         crate::power_profiles::shutdown();
+        crate::tray::shutdown();
         crate::wayland::shutdown();
         GLOBAL.with(|global| {
             global.borrow_mut().take();

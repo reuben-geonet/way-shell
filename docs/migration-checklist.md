@@ -32,8 +32,8 @@ a claim that the complete migration is ready to install.
 - [x] 26. Migrate volume and stream routing to Rust.
 - [x] 27. Migrate MPRIS integration to Rust.
 - [x] 28. Migrate the notification service to Rust.
-- [ ] 29. Migrate tray watcher and item tracking to Rust.
-- [ ] 30. Migrate D-Bus menu handling to Rust.
+- [x] 29. Migrate tray watcher and item tracking to Rust.
+- [x] 30. Migrate D-Bus menu handling to Rust.
 - [ ] 31. Introduce Rust window and visibility controllers.
 - [ ] 32. Migrate panel indicators and workspaces to Rust.
 - [ ] 33. Migrate shared and application switchers to Rust.
@@ -91,6 +91,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust notification IDs, validation, D-Bus ownership/recovery, expiration, actions, C interoperability and replacement presentation; real Sway/Niri widgets, controller AddressSanitizer tests, workspace tests, formatting, Clippy and linked application checks.
 - [x] Native/Fedora package matrix for Rust notifications (`ff6a042`): both offline builds, installation, schemas, loading, libraries and uninstall checks pass. Artifact `.cache/rust-migration/artifacts/notifications-rpms` -> `/nix/store/cblvnd4jj2wjxq03kv48h9k8qlgmybs2-way-shell-rpms`; Fedora 43 retains PPD and Fedora 44 retains TuneD throughout installation and removal.
 - [x] Clean native notification application/schema checks at `ff6a042`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/notifications-native-schemas` -> `/nix/store/spb53v4cfmn57wzqy8gbpmwgg59lhq35-way-shell-native-schemas-check`.
+- [x] Rust tray/menu services and adapter: owned item/menu snapshots, unique registration, malformed images/layouts, cancellation, restart, deadlines, queued callbacks and disposal; full workspace tests, formatting, Clippy, clean linked build and existing tray widgets on Sway/Niri pass.
+- [ ] Native/Fedora package matrix for the Rust tray and menu cutover.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
@@ -111,10 +113,10 @@ branch is preserved. The former cache worktree is detached and inactive.
 Rust owns Wayland, power, networking and the complete audio service, including
 volume and PulseAudio stream routing. The audio adapter preserves stable C
 records for the remaining widgets. MPRIS and notifications now run in Rust;
-tray watcher and item migration is underway. Package and laptop acceptance
-remain separate gates.
+the tray watcher, items and menus also run in Rust. Window and panel migration
+is underway. Package and laptop acceptance remain separate gates.
 
 Following the user's updated direction, new migration tests are written in
 Rust. Existing C checks remain useful until their consumers migrate; no new
-C test harnesses are added. The tray and menu services will switch together
+C test harnesses are added. The tray and menu services switched together
 after their Rust integration checks, avoiding a temporary C menu adapter.
