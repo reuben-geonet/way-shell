@@ -273,3 +273,15 @@ profiles by object path. The network UI port must use those stable identifiers.
 
 The workspace tests, bridge tests, Clippy and linked application pass locally.
 Native and Fedora package checks for each checkpoint are recorded separately.
+## Audio inventory baseline corrections
+
+Before replacing object tracking, the C fixture reproduced a removed capture
+device remaining in the database when no playback device existed, a dangling
+default-device pointer, and incomplete cleanup of copied node/stream names.
+The source-array guard and default references are corrected, all copied names
+are released, and transient WirePlumber iterators, lookup references, mixer
+variants and the pruning set use scoped ownership. Three regression cases and
+the linked application with the remaining C suite pass. Evidence is recorded in
+`audio-inventory-before.log`, `audio-default-before.log`, `audio-names-before.log`
+and `audio-inventory-after.log` under the migration cache's `evidence` directory.
+These checks use an empty object manager and do not touch desktop audio.

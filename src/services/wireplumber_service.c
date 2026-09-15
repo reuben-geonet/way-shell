@@ -153,12 +153,14 @@ static void wire_plumber_service_clean_audio_node(
     node->name = NULL;
     g_free((void *)node->app_name);
     node->app_name = NULL;
+    g_free((void *)node->media_name);
+    node->media_name = NULL;
 }
 
 static void wire_plumber_service_fill_audio_stream(
     WirePlumberServiceAudioStream *node, WpGlobalProxy *proxy,
     WirePlumberService *self) {
-    GVariant *mixer_values = NULL;
+    g_autoptr(GVariant) mixer_values = NULL;
 
     // clean the node of any alloc'd data before we reset the fields.
     wire_plumber_service_clean_audio_node(node);
@@ -211,12 +213,14 @@ static void wire_plumber_service_clean_source_sink_node(
     node->name = NULL;
     g_free((void *)node->nick_name);
     node->nick_name = NULL;
+    g_free((void *)node->proper_name);
+    node->proper_name = NULL;
 }
 
 static void wire_plumber_service_fill_node(WirePlumberServiceNode *node,
                                            WpGlobalProxy *proxy,
                                            WirePlumberService *self) {
-    GVariant *mixer_values = NULL;
+    g_autoptr(GVariant) mixer_values = NULL;
 
     // clean the node of any alloc'd data before we reset the fields.
     wire_plumber_service_clean_source_sink_node(node);
@@ -311,7 +315,7 @@ WirePlumberServiceLink *wire_plumber_service_link_new(
 static void on_mixer_changed(void *_, guint id, WirePlumberService *self) {
     g_debug("wireplumber_service.c:on_mixer_changed() called");
 
-    WpGlobalProxy *pw = wp_object_manager_lookup(self->om, WP_TYPE_GLOBAL_PROXY,
+    g_autoptr(WpGlobalProxy) pw = wp_object_manager_lookup(self->om, WP_TYPE_GLOBAL_PROXY,
                                                  WP_CONSTRAINT_TYPE_G_PROPERTY,
                                                  "bound-id", "=u", id, NULL);
     if (!pw) {
@@ -401,8 +405,8 @@ static void on_state_change(WpNode *node, WpNodeState old_state,
 
 static void wire_plumber_service_prune_db(WirePlumberService *self) {
     g_auto(GValue) value = G_VALUE_INIT;
-    WpIterator *it = NULL;
-    GHashTable *set = g_hash_table_new(g_direct_hash, g_direct_equal);
+    g_autoptr(WpIterator) it = NULL;
+    g_autoptr(GHashTable) set = g_hash_table_new(g_direct_hash, g_direct_equal);
 
     // create set
     it = wp_object_manager_new_iterator(self->om);
@@ -434,6 +438,7 @@ static void wire_plumber_service_prune_db(WirePlumberService *self) {
         for (int i = self->sinks->len - 1; i >= 0; i--) {
             WirePlumberServiceNode *node = g_ptr_array_index(self->sinks, i);
             if (!g_hash_table_contains(set, GUINT_TO_POINTER(node->id))) {
+                if (self->default_sink == node) self->default_sink = NULL;
                 g_ptr_array_remove_index(self->sinks, i);
                 wire_plumber_service_clean_source_sink_node(node);
                 g_free(node);
@@ -441,10 +446,11 @@ static void wire_plumber_service_prune_db(WirePlumberService *self) {
         }
 
     // prune source array
-    if (self->sinks->len > 0)
+    if (self->sources->len > 0)
         for (int i = self->sources->len - 1; i >= 0; i--) {
             WirePlumberServiceNode *node = g_ptr_array_index(self->sources, i);
             if (!g_hash_table_contains(set, GUINT_TO_POINTER(node->id))) {
+                if (self->default_source == node) self->default_source = NULL;
                 g_ptr_array_remove_index(self->sources, i);
                 wire_plumber_service_clean_source_sink_node(node);
                 g_free(node);
@@ -501,7 +507,7 @@ static void on_object_manager_change_get_source_sinks(WpObjectManager *om,
                                                       WirePlumberService *self,
                                                       char *media_class) {
     g_auto(GValue) value = G_VALUE_INIT;
-    WpIterator *it = NULL;
+    g_autoptr(WpIterator) it = NULL;
     GPtrArray *node_array = NULL;
     WirePlumberServiceNode **default_node;
     guint32 default_node_id = 0;
@@ -550,7 +556,7 @@ static void on_object_manager_change_get_source_sinks(WpObjectManager *om,
 static void on_object_manager_change_get_links(WpObjectManager *om,
                                                WirePlumberService *self) {
     g_auto(GValue) value = G_VALUE_INIT;
-    WpIterator *it = NULL;
+    g_autoptr(WpIterator) it = NULL;
 
     g_debug(
         "wireplumber_service.c:on_object_manager_change_get_links() called");
@@ -576,7 +582,7 @@ static void on_object_manager_change_get_links(WpObjectManager *om,
 static void on_object_manager_change_get_audio_streams(
     WpObjectManager *om, WirePlumberService *self) {
     g_auto(GValue) value = G_VALUE_INIT;
-    WpIterator *it = NULL;
+    g_autoptr(WpIterator) it = NULL;
 
     g_debug(
         "wireplumber_service.c:on_object_manager_change_get_audio_streams() "

@@ -6,13 +6,17 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test network-test
+check: core-test ipc-test network-test audio-inventory-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
 	cd .. && tests/network-test
+	cd .. && tests/audio-inventory-test
 
 network-test: network.c ../src/services/network_manager_service.c ../src/services/network_inventory.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) network.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 libnm) -o $@
+
+audio-inventory-test: audio-inventory.c ../src/services/wireplumber_service.c ../src/services/wireplumber_service.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(shell pkg-config --cflags libpipewire-0.3 libpulse-mainloop-glib) audio-inventory.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 wireplumber-0.5) -o $@
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -52,3 +56,4 @@ clean:
 	rm -f power-widgets-test
 	rm -f brightness-widgets-test
 	rm -f network-test network-operations-test
+	rm -f audio-inventory-test
