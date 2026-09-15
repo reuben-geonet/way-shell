@@ -928,3 +928,12 @@ that captured output excludes the entered password. Evidence:
 `quick-settings-network-integrated.log`. Libadwaita's `v1_4` binding feature
 exposes the SwitchRow already used by the existing interface; locked versions
 are unchanged. These controls join the active view in the mixer cutover.
+
+The permanent Rust confirmation dialog preserves the full-output overlay,
+centered content, CSS and Confirm/Cancel flow. Pending responses resolve exactly
+once on confirmation, cancellation, replacement, native close and final drop.
+Revision guards let newer requests from callbacks win without being hidden or
+overwritten by stale work. The normal workspace build and strict Clippy pass;
+real Sway/Niri tests cover response reentrancy, native hide/reopen, replacement
+and retained widgets in `quick-settings-audio-dialog-integrated.log`.
+The dialog switches into the application with the composed quick-settings view.

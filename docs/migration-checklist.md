@@ -97,7 +97,7 @@ a claim that the complete migration is ready to install.
 - [x] Reproduce and correct Fedora guest image-loader configuration discovery: inherited Nix data paths hid installed Glycin loaders; a Rust probe in the exact Fedora 43 image fails before and decodes/encodes PNG after restoring Fedora data paths. Full RPM rerun remains pending.
 - [x] Rust window foundation: transition/popup-policy tests, interrupted animations, underlay ownership, repeated destruction, GTK focus chain and theme cycles on Sway/Niri; real Sway output removal and GDK invalidation on both.
 - [x] Rust panels: clock/DND, workspace identity, status updates, tray menus, output removal, nested notifications and retained-widget cleanup pass on Sway/Niri; workspace tests, formatting, Clippy and a clean linked application build pass.
-- [ ] Native/Fedora package matrix for the Rust panel cutover: `b297300` Fedora builds are running; its native GTK check exposed missing default schemas and will be rerun with the verified harness fix.
+- [ ] Native/Fedora package matrix for the Rust panel cutover: the `b297300` Fedora 43 offline build passes and Fedora 44 is building; native acceptance passes through `bb4f612` below.
 - [x] Reproduce native GTK schema-source failure with empty data paths; supplying the private compiled schema source passes the Rust tray probe on Sway and Niri with fatal warnings enabled. Native checks now also provide a font configuration.
 - [x] Rust shared/application switchers: selection, filtering, activation, shortcut ownership, nested updates, reopening and disposal pass on Sway/Niri; full workspace, formatting, Clippy and clean linked application checks pass.
 - [x] Rust workspace/output/rename views: full-width identifiers, literal names, raw move-window mode, failed dispatch, reordering and owned destruction pass; affected Rust/bridge tests, Clippy, clean application build and real Sway/Niri probes pass.
@@ -107,6 +107,8 @@ a claim that the complete migration is ready to install.
 - [x] Reproduce and fix stopping audio from a native volume callback: direct Rust regression, inventory/restart and routing checks pass; refreshes are delivered after native dispatch returns.
 - [x] Permanent Rust quick-settings system widgets and window lifecycle: focused tests, strict Clippy and private-service GTK probes pass on Sway/Niri. Runtime composition with network/audio remains pending.
 - [x] Permanent Rust network controls: three focused tests, strict workspace Clippy and private libnm fixtures on Sway/Niri pass, including radio state, saved Wi-Fi, VPN/WireGuard, cancellation/restart and password-log checks. Runtime composition remains pending.
+- [x] Clean native package/schema checks through activities (`bb4f612`), covering the panel, all switchers and the corrected schema/font environment. Artifacts `.cache/rust-migration/artifacts/activities-native` -> `/nix/store/3cvw4yhjbmllbk63a3lg9gc01mw680pl-way-shell-native-package-check` and `activities-native-1` -> `/nix/store/8m5p34m110pb36g1mild8g0nyvn124my-way-shell-native-schemas-check`.
+- [x] Permanent Rust confirmation dialog: strict Clippy and real Sway/Niri ownership/cancellation/reentrancy checks pass. Runtime cutover joins quick settings; level OSD work remains in step 41.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
