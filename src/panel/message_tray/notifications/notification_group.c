@@ -45,6 +45,8 @@ enum signals {
 // not implemented by the NotificationGroup.
 typedef struct _NotificationGroup {
     GObject parent_instance;
+    GWeakRef notification_source;
+    GWeakRef tray_source;
     GtkBox *container;
 
     // notification list header
@@ -93,22 +95,31 @@ static void on_message_tray_will_hide(MessageTray *m, NotificationGroup *self);
 
 // stub out dispose, finalize, class_init and init methods.
 static void notification_group_dispose(GObject *object) {
-    G_OBJECT_CLASS(notification_group_parent_class)->dispose(object);
-
     NotificationGroup *self = NOTIFICATION_GROUP(object);
-
-    g_hash_table_remove_all(self->notification_widgets);
-
-    // kill signals
-    NotificationsService *ns = notifications_service_get_global();
-    g_signal_handlers_disconnect_by_func(ns, on_notification_added, object);
-    g_signal_handlers_disconnect_by_func(ns, on_notification_closed, object);
-
-    MessageTray *mt = message_tray_get_global();
-    g_signal_handlers_disconnect_by_func(mt, on_message_tray_will_hide, object);
+    g_autoptr(GObject) notifications = g_weak_ref_get(&self->notification_source);
+    g_autoptr(GObject) tray = g_weak_ref_get(&self->tray_source);
+    if (notifications) g_signal_handlers_disconnect_by_data(notifications, self);
+    if (tray) g_signal_handlers_disconnect_by_data(tray, self);
+    g_weak_ref_set(&self->notification_source, NULL);
+    g_weak_ref_set(&self->tray_source, NULL);
+    if (self->notification_widgets) {
+        GHashTableIter iter;
+        gpointer widget;
+        g_hash_table_iter_init(&iter, self->notification_widgets);
+        while (g_hash_table_iter_next(&iter, NULL, &widget))
+            g_signal_handlers_disconnect_by_data(widget, self);
+    }
+    g_clear_pointer(&self->notification_widgets, g_hash_table_unref);
+    self->head_notification = NULL;
+    g_clear_object(&self->container);
+    G_OBJECT_CLASS(notification_group_parent_class)->dispose(object);
 }
 
 static void notification_group_finalize(GObject *object) {
+    NotificationGroup *self = NOTIFICATION_GROUP(object);
+    g_weak_ref_clear(&self->notification_source);
+    g_weak_ref_clear(&self->tray_source);
+    g_free(self->app);
     G_OBJECT_CLASS(notification_group_parent_class)->finalize(object);
 }
 
@@ -153,6 +164,7 @@ static void notification_group_class_init(NotificationGroupClass *klass) {
 // configures the NotificaionGroup widget appropriately given the state of
 // expansion and the number of notifications the group has registered.
 static void apply_expansion_rules(NotificationGroup *self) {
+    if (!self->notification_widgets || !self->head_notification) return;
     guint size = g_hash_table_size(self->notification_widgets);
 
     if (size == 1) {
@@ -239,7 +251,7 @@ static void on_message_tray_will_hide(MessageTray *tray,
 }
 
 static void notification_group_init_layout(NotificationGroup *self) {
-    self->container = GTK_BOX(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0));
+    self->container = GTK_BOX(g_object_ref_sink(gtk_box_new(GTK_ORIENTATION_VERTICAL, 0)));
 
     // create notification list header
     self->list_header = GTK_CENTER_BOX(gtk_center_box_new());
@@ -253,8 +265,8 @@ static void notification_group_init_layout(NotificationGroup *self) {
     gtk_widget_add_css_class(GTK_WIDGET(self->conceal_button), "circular");
     gtk_widget_add_css_class(GTK_WIDGET(self->conceal_button),
                              "notification-group-conceal-button");
-    g_signal_connect(self->conceal_button, "clicked",
-                     G_CALLBACK(expand_messages_on_click), self);
+    g_signal_connect_object(self->conceal_button, "clicked",
+                            G_CALLBACK(expand_messages_on_click), self, 0);
 
     self->dismiss_button =
         GTK_BUTTON(gtk_button_new_from_icon_name("window-close-symbolic"));
@@ -263,8 +275,8 @@ static void notification_group_init_layout(NotificationGroup *self) {
                              "notification-group-dismiss-button");
     gtk_center_box_set_start_widget(self->list_header,
                                     GTK_WIDGET(self->app_name));
-    g_signal_connect(self->dismiss_button, "clicked",
-                     G_CALLBACK(on_dismiss_button_clicked), self);
+    g_signal_connect_object(self->dismiss_button, "clicked",
+                            G_CALLBACK(on_dismiss_button_clicked), self, 0);
 
     GtkBox *list_header_buttons =
         GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
@@ -281,9 +293,9 @@ static void notification_group_init_layout(NotificationGroup *self) {
     gtk_revealer_set_child(self->notification_list_header_revealer,
                            GTK_WIDGET(self->list_header));
 
-    g_signal_connect(self->notification_list_header_revealer,
-                     "notify::child-revealed",
-                     G_CALLBACK(on_notification_list_revealed), self);
+    g_signal_connect_object(self->notification_list_header_revealer,
+                            "notify::child-revealed",
+                            G_CALLBACK(on_notification_list_revealed), self, 0);
 
     // create head notification container
     self->head_notification_container =
@@ -308,8 +320,8 @@ static void notification_group_init_layout(NotificationGroup *self) {
     gtk_widget_add_css_class(GTK_WIDGET(self->overlay_expand_button),
                              "notification-group-overlay-expand-button");
     gtk_widget_set_visible(GTK_WIDGET(self->overlay_expand_button), false);
-    g_signal_connect(self->overlay_expand_button, "clicked",
-                     G_CALLBACK(expand_messages_on_click), self);
+    g_signal_connect_object(self->overlay_expand_button, "clicked",
+                            G_CALLBACK(expand_messages_on_click), self, 0);
 
     gtk_overlay_add_overlay(self->overlay,
                             GTK_WIDGET(self->overlay_expand_button));
@@ -318,8 +330,9 @@ static void notification_group_init_layout(NotificationGroup *self) {
 
     // wire into message_tray_hidden event
     MessageTray *mt = message_tray_get_global();
-    g_signal_connect(mt, "message-tray-will-hide",
-                     G_CALLBACK(on_message_tray_will_hide), self);
+    g_weak_ref_set(&self->tray_source, mt);
+    if (mt) g_signal_connect_object(mt, "message-tray-will-hide",
+                                    G_CALLBACK(on_message_tray_will_hide), self, 0);
 
     // add overlay to main container
     gtk_box_append(self->container, GTK_WIDGET(self->overlay));
@@ -349,23 +362,20 @@ static void push_new_head(NotificationGroup *self,
     // prepend current head to notification list
     gtk_box_prepend(self->notification_list,
                     notification_widget_get_widget(head));
+    g_object_unref(notification_widget_get_widget(head));
 
     // sway head pointers
     self->head_notification = new_head;
 }
 
 static void clear_head(NotificationGroup *self) {
-    // remove from hashtable, this also unrefs self->head_notification, don't
-    // double unref.
-    g_hash_table_remove(
-        self->notification_widgets,
-        GUINT_TO_POINTER(notification_widget_get_id(self->head_notification)));
-
-    // remove the GtkWidget from its place in head_notification_container
-    gtk_box_remove(self->head_notification_container,
-                   notification_widget_get_widget(self->head_notification));
-
+    NotificationWidget *head = self->head_notification;
+    guint32 id = notification_widget_get_id(head);
     self->head_notification = NULL;
+    // Detach the root while the hash table still owns its controller.
+    gtk_box_remove(self->head_notification_container,
+                   notification_widget_get_widget(head));
+    g_hash_table_remove(self->notification_widgets, GUINT_TO_POINTER(id));
 }
 
 // Pops the top most widget in notifications_list into the notification head.
@@ -392,9 +402,12 @@ static void pop_to_head(NotificationGroup *self) {
     gtk_box_reorder_child_after(
         self->head_notification_container,
         GTK_WIDGET(self->notification_list_header_revealer), NULL);
+    g_object_unref(top);
 }
 
 static void notification_group_init(NotificationGroup *self) {
+    g_weak_ref_init(&self->notification_source, NULL);
+    g_weak_ref_init(&self->tray_source, NULL);
     self->notification_widgets = g_hash_table_new_full(
         g_direct_hash, g_direct_equal, NULL, g_object_unref);
     notification_group_init_layout(self);
@@ -419,14 +432,15 @@ void on_notification_added(NotificationsService *service,
 
     Notification *n = g_ptr_array_index(notifications, index);
     if (g_strcmp0(n->app_name, self->app) != 0) return;
+    if (g_hash_table_contains(self->notification_widgets, GUINT_TO_POINTER(id))) return;
 
     NotificationWidget *new_head =
         notification_widget_from_notification(n, false);
 
-    g_signal_connect(new_head, "notification-expanded",
-                     G_CALLBACK(on_notification_expand), self);
-    g_signal_connect(new_head, "notification-collapsed",
-                     G_CALLBACK(on_notification_collapse), self);
+    g_signal_connect_object(new_head, "notification-expanded",
+                            G_CALLBACK(on_notification_expand), self, 0);
+    g_signal_connect_object(new_head, "notification-collapsed",
+                            G_CALLBACK(on_notification_collapse), self, 0);
 
     g_hash_table_insert(self->notification_widgets, GUINT_TO_POINTER(n->id),
                         new_head);
@@ -452,6 +466,7 @@ void on_notification_closed(NotificationsService *service,
         // we are the only notification, remove ourselves and inform parent
         // we are empty.
         if (g_hash_table_size(self->notification_widgets) == 1) {
+            clear_head(self);
             g_signal_emit(
                 self, notification_group_signals[notification_group_empty], 0);
             return;
@@ -489,6 +504,25 @@ void on_notification_closed(NotificationsService *service,
     apply_expansion_rules(self);
 }
 
+static void group_on_notification_replaced(NotificationsService *service,
+                                           GPtrArray *notifications, guint32 id,
+                                           guint32 index, NotificationGroup *self) {
+    if (!notifications || index >= notifications->len || !self->notification_widgets) return;
+    Notification *notification = g_ptr_array_index(notifications, index);
+    NotificationWidget *existing = g_hash_table_lookup(self->notification_widgets, GUINT_TO_POINTER(id));
+    if (g_strcmp0(notification->app_name, self->app) != 0) {
+        if (existing) on_notification_closed(service, notifications, id, index, self);
+        return;
+    }
+    if (existing) {
+        // Preserve the head, sibling order, and expansion state for updates.
+        notification_widget_set_notification(existing, notification);
+        g_signal_emit(self, notification_group_signals[notification_added], 0);
+    } else {
+        on_notification_added(service, notifications, id, index, self);
+    }
+}
+
 void notification_group_add_notification(NotificationGroup *self,
                                          Notification *n) {
     // set app name
@@ -501,10 +535,10 @@ void notification_group_add_notification(NotificationGroup *self,
     NotificationWidget *new_head =
         notification_widget_from_notification(n, false);
 
-    g_signal_connect(new_head, "notification-expanded",
-                     G_CALLBACK(on_notification_expand), self);
-    g_signal_connect(new_head, "notification-collapsed",
-                     G_CALLBACK(on_notification_collapse), self);
+    g_signal_connect_object(new_head, "notification-expanded",
+                            G_CALLBACK(on_notification_expand), self, 0);
+    g_signal_connect_object(new_head, "notification-collapsed",
+                            G_CALLBACK(on_notification_collapse), self, 0);
 
     self->head_notification = new_head;
 
@@ -521,6 +555,7 @@ void notification_group_add_notification(NotificationGroup *self,
 
     // watch notification for added and removed notifications for our app
     NotificationsService *ns = notifications_service_get_global();
+    g_weak_ref_set(&self->notification_source, ns);
 
     // seed existing notifications
     GPtrArray *notifications = notifications_service_get_notifications(ns);
@@ -544,10 +579,13 @@ void notification_group_add_notification(NotificationGroup *self,
     }
     apply_expansion_rules(self);
 
-    g_signal_connect(ns, "notification-added",
-                     G_CALLBACK(on_notification_added), self);
-    g_signal_connect(ns, "notification-closed",
-                     G_CALLBACK(on_notification_closed), self);
+    g_signal_connect_object(ns, "notification-added",
+                            G_CALLBACK(on_notification_added), self, 0);
+    g_signal_connect_object(ns, "notification-closed",
+                            G_CALLBACK(on_notification_closed), self, 0);
+    if (g_signal_lookup("notification-replaced", G_OBJECT_TYPE(ns)))
+        g_signal_connect_object(ns, "notification-replaced",
+                                G_CALLBACK(group_on_notification_replaced), self, 0);
 }
 
 GtkWidget *notification_group_get_widget(NotificationGroup *self) {
@@ -559,8 +597,11 @@ gchar *notification_group_get_app_name(NotificationGroup *self) {
 }
 
 void notification_group_dismiss_all(NotificationGroup *self) {
+    g_autoptr(NotificationGroup) keep_alive = g_object_ref(self);
     GList *notification_widgets =
         g_hash_table_get_values(self->notification_widgets);
+    for (GList *l = notification_widgets; l; l = l->next)
+        g_object_ref(l->data);
 
     for (GList *l = notification_widgets; l; l = l->next) {
         NotificationWidget *w = l->data;
@@ -569,4 +610,5 @@ void notification_group_dismiss_all(NotificationGroup *self) {
         // created the above method call and will eventually emit an empty
         // signal once all its notifications are closed.
     }
+    g_list_free_full(notification_widgets, g_object_unref);
 }

@@ -394,6 +394,11 @@ static void notifications_list_init_layout(NotificationsList *self) {
     if (service) {
         g_signal_connect_object(service, "notification-added",
                                 G_CALLBACK(on_notifications_added), self, 0);
+        // Groups update existing members; the list creates a destination when
+        // a replacement changes the application name to a new group.
+        if (g_signal_lookup("notification-replaced", G_OBJECT_TYPE(service)))
+            g_signal_connect_object(service, "notification-replaced",
+                                    G_CALLBACK(on_notifications_added), self, 0);
         GPtrArray *notifications = notifications_service_get_notifications(service);
         for (guint i = 0; notifications && i < notifications->len; i++) {
             Notification *n = g_ptr_array_index(notifications, i);

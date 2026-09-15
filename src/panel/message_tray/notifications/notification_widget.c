@@ -51,6 +51,7 @@ typedef struct _NotificationWidget {
     GtkRevealer *action_revealer;
     // container which holds action buttons
     GtkBox *action_container;
+    GtkButton *osd_hide_button;
     // count of action buttons used for applying the correct css.
     int actions_buttons_n;
 
@@ -123,6 +124,7 @@ static void cancel_media_artwork(NotificationWidget *self) {
         g_cancellable_cancel(self->artwork_cancellable);
     g_clear_object(&self->artwork_cancellable);
 }
+static void load_artwork(NotificationWidget *self, const gchar *location);
 
 // stub out dispose, finalize, class_init and init methods.
 static void notification_widget_dispose(GObject *gobject) {
@@ -148,6 +150,10 @@ static void notification_widget_dispose(GObject *gobject) {
     // unref our ref'd datetime.
     g_clear_pointer(&self->created_on, g_date_time_unref);
     g_clear_pointer(&self->media_player_name, g_free);
+    if (self->osd) {
+        g_object_remove_weak_pointer(G_OBJECT(self->osd), (gpointer *)&self->osd);
+        self->osd = NULL;
+    }
     if (self->expand_animation) {
         g_signal_handlers_disconnect_by_data(self->expand_animation, self);
         adw_animation_pause(self->expand_animation);
@@ -235,12 +241,6 @@ static void on_action_button_clicked(GtkButton *button,
     notifications_service_invoke_action(service, self->id, action);
 }
 
-// we need this so we don't leak string allocs.
-static void on_action_button_destroy(GtkButton *button, gpointer _) {
-    gchar *action = g_object_get_data(G_OBJECT(button), "action");
-    if (action) g_free(action);
-}
-
 static void configure_action_revealer(NotificationWidget *self) {
     self->action_revealer = GTK_REVEALER(gtk_revealer_new());
     gtk_revealer_set_transition_type(self->action_revealer,
@@ -270,12 +270,10 @@ static void configure_action_revealer(NotificationWidget *self) {
 
 static void notification_widget_from_notification_action_buttons(
     Notification *n, NotificationWidget *self) {
-    int i = 0;
-    for (char *a = n->actions[i]; a; a = n->actions[i]) {
+    for (guint i = 0; n->actions && n->actions[i] && n->actions[i + 1]; i += 2) {
         // ignore the 'default' action, this will always be called by clicking
         // the notification body.
         if (n->actions[i] && strcmp(n->actions[i], "default") == 0) {
-            i += 2;
             continue;
         }
 
@@ -283,7 +281,6 @@ static void notification_widget_from_notification_action_buttons(
         // see:
         // https://specifications.freedesktop.org/notification-spec/notification-spec-latest.html
         if (!n->actions[i + 1] || strlen(n->actions[i + 1]) == 0) {
-            i += 2;
             continue;
         }
 
@@ -302,19 +299,15 @@ static void notification_widget_from_notification_action_buttons(
         gtk_widget_add_css_class(GTK_WIDGET(action_button),
                                  "notification-widget-action-button");
 
-        g_object_set_data(G_OBJECT(action_button), "action",
-                          strdup(n->actions[i]));
+        g_object_set_data_full(G_OBJECT(action_button), "action",
+                               g_strdup(n->actions[i]), g_free);
 
-        g_signal_connect(action_button, "destroy",
-                         G_CALLBACK(on_action_button_destroy), NULL);
-
-        g_signal_connect(action_button, "clicked",
-                         G_CALLBACK(on_action_button_clicked), self);
+        g_signal_connect_object(action_button, "clicked",
+                                G_CALLBACK(on_action_button_clicked), self, 0);
 
         gtk_box_append(self->action_container, GTK_WIDGET(action_button));
         self->actions_buttons_n++;
 
-        i += 2;
     }
 }
 
@@ -495,150 +488,116 @@ static void notification_widget_init(NotificationWidget *self) {
     self->expand_animation = NULL;
 }
 
-static void avatar_from_img_data(NotificationWidget *self,
-                                 NotificationImageData *img_data) {
-    GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(
-        (const guchar *)img_data->data,
-        img_data->has_alpha ? GDK_COLORSPACE_RGB : GDK_COLORSPACE_RGB,
-        img_data->has_alpha, img_data->bits_per_sample, img_data->width,
-        img_data->height, img_data->rowstride, NULL, NULL);
-    if (pixbuf) {
-        GdkPixbuf *scaled_pixbuf =
-            gdk_pixbuf_scale_simple(pixbuf, 48, 48, GDK_INTERP_BILINEAR);
-
-        GdkTexture *texture = gdk_texture_new_for_pixbuf(scaled_pixbuf);
-        adw_avatar_set_custom_image(self->avatar, GDK_PAINTABLE(texture));
-        g_object_unref(texture);
-    }
+static gboolean avatar_from_img_data(NotificationWidget *self,
+                                     NotificationImageData *image) {
+    guint channels = image->has_alpha ? 4 : 3;
+    if (!image->data || !image->width || !image->height ||
+        image->width > G_MAXINT || image->height > G_MAXINT ||
+        image->bits_per_sample != 8 || image->channels != channels)
+        return FALSE;
+    gsize row_bytes = (gsize)image->width * channels;
+    if (image->rowstride < row_bytes ||
+        (gsize)(image->height - 1) > (G_MAXSIZE - row_bytes) / image->rowstride)
+        return FALSE;
+    gsize length = (gsize)(image->height - 1) * image->rowstride + row_bytes;
+    // The service validates the pixel buffer's length. Copy its borrowed data
+    // before replacement/removal releases the notification snapshot.
+    g_autoptr(GBytes) pixels = g_bytes_new(image->data, length);
+    g_autoptr(GdkTexture) texture = gdk_memory_texture_new(
+        image->width, image->height,
+        image->has_alpha ? GDK_MEMORY_R8G8B8A8 : GDK_MEMORY_R8G8B8,
+        pixels, image->rowstride);
+    adw_avatar_set_custom_image(self->avatar, GDK_PAINTABLE(texture));
+    return TRUE;
 }
 
-static void icon_from_app_id(GtkImage *icon, gchar *app_id) {
-    GAppInfo *app_info = NULL;
+static GIcon *app_icon_for_id(const gchar *app_id) {
+    if (!app_id || !*app_id) return NULL;
+    g_autofree gchar *lower_app_id = g_utf8_strdown(app_id, -1);
     GList *apps = g_app_info_get_all();
-    GList *l;
-    g_debug("app_switcher_app_widget: search_apps_by_app_id: %s", app_id);
-    for (l = apps; l != NULL; l = l->next) {
-        GAppInfo *info = l->data;
+    GIcon *result = NULL;
+    for (GList *item = apps; item; item = item->next) {
+        GAppInfo *info = item->data;
         const gchar *id = g_app_info_get_id(info);
-        const gchar *lower_id = g_utf8_strdown(id, -1);
-        const gchar *lower_app_id = g_utf8_strdown(app_id, -1);
+        if (!id) continue;
+        g_autofree gchar *lower_id = g_utf8_strdown(id, -1);
         if (g_strrstr(lower_id, lower_app_id)) {
-            app_info = info;
+            GIcon *icon = g_app_info_get_icon(info);
+            if (icon) result = g_object_ref(icon);
             break;
         }
     }
-    g_list_free(apps);
-
-    if (!app_info) return;
-
-    GIcon *g_icon = g_app_info_get_icon(G_APP_INFO(app_info));
-    if (g_icon && G_IS_THEMED_ICON(g_icon)) {
-        GdkDisplay *display = gdk_display_get_default();
-        GtkIconTheme *theme = gtk_icon_theme_get_for_display(display);
-        GtkIconPaintable *paintable = gtk_icon_theme_lookup_by_gicon(
-            theme, g_icon, 48, 1, GTK_TEXT_DIR_RTL, 0);
-        gtk_image_set_from_paintable(icon, GDK_PAINTABLE(paintable));
-    }
+    g_list_free_full(apps, g_object_unref);
+    return result;
 }
+
+static void icon_from_app_id(GtkImage *image, gchar *app_id) {
+    g_autoptr(GIcon) icon = app_icon_for_id(app_id);
+    if (icon) gtk_image_set_from_gicon(image, icon);
+}
+
 static void avatar_from_app_id(NotificationWidget *self, gchar *app_id) {
-    GAppInfo *app_info = NULL;
-    GList *apps = g_app_info_get_all();
-    GList *l;
-    g_debug("app_switcher_app_widget: search_apps_by_app_id: %s", app_id);
-    for (l = apps; l != NULL; l = l->next) {
-        GAppInfo *info = l->data;
-        const gchar *id = g_app_info_get_id(info);
-        const gchar *lower_id = g_utf8_strdown(id, -1);
-        const gchar *lower_app_id = g_utf8_strdown(app_id, -1);
-        if (g_strrstr(lower_id, lower_app_id)) {
-            app_info = info;
-            break;
-        }
-    }
-    g_list_free(apps);
+    g_autoptr(GIcon) icon = app_icon_for_id(app_id);
+    if (!icon) return;
+    GtkIconTheme *theme = gtk_icon_theme_get_for_display(gdk_display_get_default());
+    g_autoptr(GtkIconPaintable) paintable = gtk_icon_theme_lookup_by_gicon(
+        theme, icon, 48, 1, GTK_TEXT_DIR_RTL, 0);
+    adw_avatar_set_custom_image(self->avatar, GDK_PAINTABLE(paintable));
+}
 
-    if (!app_info) return;
-
-    GIcon *g_icon = g_app_info_get_icon(G_APP_INFO(app_info));
-    if (g_icon && G_IS_THEMED_ICON(g_icon)) {
-        GdkDisplay *display = gdk_display_get_default();
-        GtkIconTheme *theme = gtk_icon_theme_get_for_display(display);
-        GtkIconPaintable *paintable = gtk_icon_theme_lookup_by_gicon(
-            theme, g_icon, 48, 1, GTK_TEXT_DIR_RTL, 0);
-        adw_avatar_set_custom_image(self->avatar, GDK_PAINTABLE(paintable));
-    }
+static gboolean icon_is_file(const gchar *name) {
+    return name && (g_path_is_absolute(name) || strstr(name, "://"));
 }
 
 static void set_notification_icon(NotificationWidget *self, Notification *n) {
-    if (n->img_data.data) {
-        avatar_from_img_data(self, &n->img_data);
-    } else if (n->app_name && (strlen(n->app_name) > 0)) {
+    cancel_media_artwork(self);
+    adw_avatar_set_custom_image(self->avatar, NULL);
+    adw_avatar_set_icon_name(self->avatar, "preferences-system-notifications-symbolic");
+    if (n->img_data.data && avatar_from_img_data(self, &n->img_data)) return;
+    if (n->image_path && *n->image_path) {
+        load_artwork(self, n->image_path);
+    } else if (n->app_icon && *n->app_icon) {
+        if (icon_is_file(n->app_icon))
+            load_artwork(self, n->app_icon);
+        else
+            adw_avatar_set_icon_name(self->avatar, n->app_icon);
+    } else if (n->app_name && *n->app_name) {
         avatar_from_app_id(self, n->app_name);
-    } else if (n->desktop_entry && (strlen(n->desktop_entry) > 0)) {
+    } else if (n->desktop_entry && *n->desktop_entry) {
         avatar_from_app_id(self, n->desktop_entry);
-    }
-
-    // if this is an internal notification, app_icon will have a string for
-    // the system theme icon to use, prefer this.
-    if (n->is_internal && (strlen(n->app_icon) > 0)) {
-        adw_avatar_set_icon_name(self->avatar, n->app_icon);
     }
 }
 
 static void set_text_with_markup(GtkLabel *label, const gchar *text) {
-    PangoAttrList *attrs = NULL;
-    gchar *buf = NULL;
-    GError *error = NULL;
-
-    // Escape the text to ensure it's safe for parsing as markup
-    gchar *escaped_text = g_markup_escape_text(text, -1);
-
-    // Try to parse the escaped text as Pango markup
-    if (!pango_parse_markup(escaped_text, -1, 0, &attrs, &buf, NULL, &error)) {
-        fprintf(stderr, "Could not parse Pango markup %s: %s\n", text,
-                error->message);
-        g_error_free(error);
-        gtk_label_set_text(label, escaped_text);  // Fallback to plain text
-    } else {
-        gtk_label_set_markup(label, buf);
-        if (attrs) {
-            gtk_label_set_attributes(label, attrs);
-            pango_attr_list_unref(attrs);
-        }
-    }
-
-    g_free(buf);
-    g_free(escaped_text);
+    g_autoptr(GError) error = NULL;
+    if (pango_parse_markup(text, -1, 0, NULL, NULL, NULL, &error))
+        gtk_label_set_markup(label, text);
+    else
+        gtk_label_set_text(label, text);
 }
 
 static void set_notification_text(NotificationWidget *self, Notification *n) {
-    // make summary
-    char *summary_text = g_strstrip(n->summary);
-    summary_text = g_strdelimit(summary_text, "\n", ' ');
-    gtk_label_set_text(self->summary, summary_text);
-
-    // make body
-    char *body_text = g_strstrip(n->body);
-    body_text = g_strdelimit(body_text, "\n", ' ');
-    set_text_with_markup(self->body, body_text);
+    g_autofree gchar *summary = g_strdup(n->summary ? n->summary : "");
+    g_autofree gchar *body = g_strdup(n->body ? n->body : "");
+    gtk_label_set_text(self->summary, g_strdelimit(g_strstrip(summary), "\n", ' '));
+    set_text_with_markup(self->body, g_strdelimit(g_strstrip(body), "\n", ' '));
 }
 
-static void set_notification_app_icon(NotificationWidget *self,
-                                      Notification *n) {
-    GtkImage *icon = GTK_IMAGE(gtk_image_new_from_icon_name(
-        "preferences-system-notifications-symbolic"));
-
-    gtk_image_set_from_icon_name(icon,
+static void set_notification_app_icon(NotificationWidget *self, Notification *n) {
+    gtk_image_set_from_icon_name(self->header_app_icon,
                                  "preferences-system-notifications-symbolic");
-
-    if (n->app_name && (strlen(n->app_name) > 0)) {
+    if (n->app_icon && *n->app_icon) {
+        if (icon_is_file(n->app_icon)) {
+            g_autoptr(GFile) file = g_file_new_for_commandline_arg(n->app_icon);
+            g_autoptr(GIcon) icon = g_file_icon_new(file);
+            gtk_image_set_from_gicon(self->header_app_icon, icon);
+        } else {
+            gtk_image_set_from_icon_name(self->header_app_icon, n->app_icon);
+        }
+    } else if (n->app_name && *n->app_name) {
         icon_from_app_id(self->header_app_icon, n->app_name);
-    } else if (n->desktop_entry && (strlen(n->desktop_entry) > 0)) {
+    } else if (n->desktop_entry && *n->desktop_entry) {
         icon_from_app_id(self->header_app_icon, n->desktop_entry);
-    } else if (n->is_internal && (strlen(n->app_icon) > 0)) {
-        // if this is an internal notification, app_icon will have a string for
-        // the system theme icon to use, prefer this.
-        gtk_image_set_from_icon_name(self->header_app_icon, n->app_icon);
     }
 }
 
@@ -668,39 +627,21 @@ static void on_expand_button_clicked(GtkButton *button,
 }
 
 static gboolean update_timer(NotificationWidget *self) {
-    GDateTime *now = g_date_time_new_now_local();
-
-    // determine how many minutes and hours and days have passed
+    if (self->disposed || !self->created_on) return G_SOURCE_REMOVE;
+    g_autoptr(GDateTime) now = g_date_time_new_now_local();
     GTimeSpan span = g_date_time_difference(now, self->created_on);
     gint days = span / G_TIME_SPAN_DAY;
     gint hours = (span % G_TIME_SPAN_DAY) / G_TIME_SPAN_HOUR;
     gint minutes = (span % G_TIME_SPAN_HOUR) / G_TIME_SPAN_MINUTE;
-
-    if (days == 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d day ago", days));
-    } else if (days > 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d days ago", days));
-    } else if (hours == 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d hour ago", hours));
-    } else if (hours > 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d hours ago", hours));
-    } else if (minutes == 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d minute ago", minutes));
-    } else if (minutes > 1) {
-        gtk_label_set_text(self->header_timer,
-                           g_strdup_printf("%d minutes ago", minutes));
-    } else {
-        gtk_label_set_text(self->header_timer, "Just now");
-    }
-
-    g_date_time_unref(now);
-
-    return true;
+    g_autofree gchar *age = NULL;
+    if (days > 0)
+        age = g_strdup_printf(days == 1 ? "%d day ago" : "%d days ago", days);
+    else if (hours > 0)
+        age = g_strdup_printf(hours == 1 ? "%d hour ago" : "%d hours ago", hours);
+    else if (minutes > 0)
+        age = g_strdup_printf(minutes == 1 ? "%d minute ago" : "%d minutes ago", minutes);
+    gtk_label_set_text(self->header_timer, age ? age : "Just now");
+    return G_SOURCE_CONTINUE;
 }
 
 static void action_button_css_reset(GtkWidget *child) {
@@ -739,56 +680,69 @@ static void set_action_button_css(NotificationWidget *self) {
     }
 }
 
+void notification_widget_set_notification(NotificationWidget *self, Notification *n) {
+    if (self->disposed || !n) return;
+    self->id = n->id;
+    g_object_set_data(G_OBJECT(self->container), "notification-id", GUINT_TO_POINTER(n->id));
+
+    if (self->action_container) {
+        GtkWidget *child = gtk_widget_get_first_child(GTK_WIDGET(self->action_container));
+        while (child) {
+            GtkWidget *next = gtk_widget_get_next_sibling(child);
+            if (child != GTK_WIDGET(self->osd_hide_button)) {
+                g_signal_handlers_disconnect_by_data(child, self);
+                gtk_box_remove(self->action_container, child);
+            }
+            child = next;
+        }
+    }
+    self->actions_buttons_n = self->osd_hide_button ? 1 : 0;
+    notification_widget_from_notification_action_buttons(n, self);
+    if (self->osd_hide_button) {
+        GtkWidget *last = gtk_widget_get_last_child(GTK_WIDGET(self->action_container));
+        if (last != GTK_WIDGET(self->osd_hide_button))
+            gtk_box_reorder_child_after(self->action_container, GTK_WIDGET(self->osd_hide_button), last);
+    }
+    set_action_button_css(self);
+    if (self->action_revealer) {
+        gtk_widget_set_visible(GTK_WIDGET(self->action_revealer), self->actions_buttons_n > 0);
+        gtk_revealer_set_reveal_child(self->action_revealer, self->expanded);
+    }
+
+    if (n->urgency == 2)
+        gtk_widget_add_css_class(GTK_WIDGET(self->button), "notification-widget-button-critical");
+    else
+        gtk_widget_remove_css_class(GTK_WIDGET(self->button), "notification-widget-button-critical");
+    gtk_label_set_text(self->header_app_name, n->app_name ? n->app_name : "");
+    set_notification_app_icon(self, n);
+    set_notification_icon(self, n);
+    set_notification_text(self, n);
+    GDateTime *created = n->created_on ? g_date_time_ref(n->created_on) : g_date_time_new_now_local();
+    g_clear_pointer(&self->created_on, g_date_time_unref);
+    self->created_on = created;
+    update_timer(self);
+}
+
 NotificationWidget *notification_widget_from_notification(
     Notification *n, gboolean expand_on_enter) {
     NotificationWidget *self = g_object_new(NOTIFICATION_WIDGET_TYPE, NULL);
-
-    self->id = n->id;
-
     notification_widget_init_layout(self);
-
-    // if we have actions, create actions revealer with buttons
-    if (n->actions) {
-        notification_widget_from_notification_action_buttons(n, self);
-    }
-
-    // all action buttons are created by now, set the CSS appropriately.
-    set_action_button_css(self);
-
-    g_object_set_data(G_OBJECT(self->container), "notification-id",
-                      GUINT_TO_POINTER(n->id));
-
-    if (n->urgency == 2) {
-        gtk_widget_add_css_class(GTK_WIDGET(self->button),
-                                 "notification-widget-button-critical");
-    }
-
-    set_notification_app_icon(self, n);
-
-    gtk_label_set_text(self->header_app_name, n->app_name ? n->app_name : "");
-
-    set_notification_icon(self, n);
-    set_notification_text(self, n);
-
-    // notification may provide a created_on field, we can seed our timer
-    // value with this.
-    self->created_on = g_date_time_ref(n->created_on);
-    update_timer(self);
+    notification_widget_set_notification(self, n);
 
     // wire up notification click
-    g_signal_connect(self->button, "clicked",
-                     G_CALLBACK(on_notification_clicked), self);
+    g_signal_connect_object(self->button, "clicked",
+                            G_CALLBACK(on_notification_clicked), self, 0);
 
     // wire up dissmiss click
-    g_signal_connect(self->header_dismiss, "clicked",
-                     G_CALLBACK(on_dismiss_clicked), self);
+    g_signal_connect_object(self->header_dismiss, "clicked",
+                            G_CALLBACK(on_dismiss_clicked), self, 0);
 
     // wire up motion controller
     if (expand_on_enter) {
-        g_signal_connect(self->ctrl, "enter", G_CALLBACK(on_pointer_enter),
-                         self);
-        g_signal_connect(self->ctrl, "leave", G_CALLBACK(on_pointer_leave),
-                         self);
+        g_signal_connect_object(self->ctrl, "enter", G_CALLBACK(on_pointer_enter),
+                                self, 0);
+        g_signal_connect_object(self->ctrl, "leave", G_CALLBACK(on_pointer_leave),
+                                self, 0);
     } else {
         // set expander button visible as visible if we aren't expanding on
         // cursor enter
@@ -797,8 +751,9 @@ NotificationWidget *notification_widget_from_notification(
 
     if (!expand_on_enter) {
         MessageTray *mt = message_tray_get_global();
-        g_signal_connect(mt, "message-tray-will-hide",
-                         G_CALLBACK(on_message_tray_will_hide), self);
+        if (mt)
+            g_signal_connect_object(mt, "message-tray-will-hide",
+                                    G_CALLBACK(on_message_tray_will_hide), self, 0);
     }
 
     // give the main container a pointer to ourselves.
@@ -891,7 +846,7 @@ static NotificationWidget *media_artwork_request_owner(MediaArtworkRequest *requ
 
 static void media_artwork_error(GError *error) {
     if (error && !g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-        g_message("Could not load media artwork: %s", error->message);
+        g_message("Could not load artwork: %s", error->message);
 }
 
 static void on_media_player_img_decoded(GObject *obj, GAsyncResult *res,
@@ -939,21 +894,24 @@ static void on_media_player_img_loaded(GObject *obj, GAsyncResult *res,
                                              on_media_player_img_decoded, request);
 }
 
+static void load_artwork(NotificationWidget *self, const gchar *location) {
+    MediaArtworkRequest *request = g_new0(MediaArtworkRequest, 1);
+    g_weak_ref_init(&request->owner, self);
+    self->artwork_cancellable = g_cancellable_new();
+    request->cancellable = g_object_ref(self->artwork_cancellable);
+    request->generation = self->artwork_generation;
+    g_autoptr(GFile) file = g_file_new_for_commandline_arg(location);
+    g_file_read_async(file, G_PRIORITY_DEFAULT, request->cancellable,
+                      on_media_player_img_loaded, request);
+}
+
 NotificationWidget *notification_widget_set_media_player(
     NotificationWidget *self, MediaPlayer *player) {
     if (self->disposed) return self;
     cancel_media_artwork(self);
     adw_avatar_set_custom_image(self->avatar, NULL);
-    if (player->art_url && *player->art_url) {
-        MediaArtworkRequest *request = g_new0(MediaArtworkRequest, 1);
-        g_weak_ref_init(&request->owner, self);
-        self->artwork_cancellable = g_cancellable_new();
-        request->cancellable = g_object_ref(self->artwork_cancellable);
-        request->generation = self->artwork_generation;
-        g_autoptr(GFile) file = g_file_new_for_uri(player->art_url);
-        g_file_read_async(file, G_PRIORITY_DEFAULT, request->cancellable,
-                          on_media_player_img_loaded, request);
-    }
+    if (player->art_url && *player->art_url)
+        load_artwork(self, player->art_url);
 
     // update play/pause icon depending on playback state
     if (g_strcmp0(player->playback_status, "Playing") == 0) {
@@ -1053,11 +1011,18 @@ gchar *notification_widget_get_media_player_name(NotificationWidget *self) {
 static void on_hide_button_clicked(GtkButton *button,
                                    NotificationWidget *self) {
     g_debug("notification_widget.c:on_hide_button_clicked() called");
-    notification_osd_hide(self->osd);
+    if (self->osd) notification_osd_hide(self->osd);
 }
 
 void notification_widget_set_osd(NotificationWidget *self,
                                  NotificationsOSD *osd) {
+    if (self->disposed) return;
+    if (self->osd)
+        g_object_remove_weak_pointer(G_OBJECT(self->osd), (gpointer *)&self->osd);
+    self->osd = osd;
+    if (self->osd)
+        g_object_add_weak_pointer(G_OBJECT(self->osd), (gpointer *)&self->osd);
+    if (self->osd_hide_button) return;
     // for the creation of a synethic 'hide' action button if this notification
     // has an OSD attached, which hides the notification for later viewing in
     // the NotificationList
@@ -1067,6 +1032,7 @@ void notification_widget_set_osd(NotificationWidget *self,
 
     // Add action button
     GtkButton *action_button = GTK_BUTTON(gtk_button_new_with_label("Hide"));
+    self->osd_hide_button = action_button;
 
     // hexpand button
     gtk_widget_set_hexpand(GTK_WIDGET(action_button), true);
@@ -1074,8 +1040,8 @@ void notification_widget_set_osd(NotificationWidget *self,
     gtk_widget_add_css_class(GTK_WIDGET(action_button),
                              "notification-widget-action-button");
 
-    g_signal_connect(action_button, "clicked",
-                     G_CALLBACK(on_hide_button_clicked), self);
+    g_signal_connect_object(action_button, "clicked",
+                            G_CALLBACK(on_hide_button_clicked), self, 0);
 
     gtk_box_append(self->action_container, GTK_WIDGET(action_button));
     self->actions_buttons_n++;
@@ -1083,5 +1049,10 @@ void notification_widget_set_osd(NotificationWidget *self,
     // we added a button, so reset css
     set_action_button_css(self);
 
-    self->osd = osd;
+    gtk_widget_set_visible(GTK_WIDGET(self->action_revealer), TRUE);
+    gtk_revealer_set_reveal_child(self->action_revealer, self->expanded);
+}
+
+NotificationsOSD *notification_widget_get_osd(NotificationWidget *self) {
+    return self->osd;
 }

@@ -418,13 +418,14 @@ The corrected clean native build at `6571864` passes, including schema and
 Sway/Niri checks. Its artifact is recorded in the checklist and its log is
 `audio-controls-native-fixed.log`.
 
-The first Fedora 43 audio run reached the tests and failed when a separately
-loaded fixture mixer wrote a value in a different scale from the expected
-linear amplitude. Selecting the cubic scale locally reproduced the same
-timeout. The fixture now explicitly selects linear scaling, matching its
-numeric inputs and the service's existing configuration. That fixture passes;
-the corrected Fedora matrix remains a separate acceptance gate. Evidence:
-`audio-controls-rpm-build.log` and `audio-mixer-scale-{before,after}.log`.
+The first Fedora 43 audio run reached the tests but timed out waiting for a
+fixture mixer change. Selecting cubic scale locally reproduced that symptom,
+so the fixture now explicitly selects linear scaling to match its inputs.
+The second Fedora run still failed: scale was not the cause of the guest
+failure. A smaller offline guest is investigating PipeWire 1.4.8 format
+negotiation and property notifications before rerunning the full matrix.
+Evidence: `audio-controls-rpm-build.log`,
+`audio-mixer-scale-{before,after}.log` and `audio-controls-rpm-scale-fixed.log`.
 
 ## MPRIS metadata baseline fixes
 
@@ -526,6 +527,8 @@ completion, owner destruction, replacement, errors and recovery. Evidence:
 and `media-presentation-integrated.log`. These tests are now in native checks.
 The clean MPRIS package also exposed an ambient-schema dependency in the tray
 fixture; that fixture now builds and selects its own adjacent schema directory.
+The corrected clean native application/schema check at `06ac6aa` passes,
+including both compositors (`media-native-schema-fixed.log`).
 
 ## Rust notification service
 
@@ -558,3 +561,27 @@ replacement handling was added. The action layout no longer attempts to put a
 container below its own child or append an already-parented revealer twice.
 The actual-widget hierarchy and action-dispatch regression passes under Sway
 and Niri (`notification-action-parentage-{before,after}.log`).
+
+The C presentation layer now handles a replacement without changing the
+notification widget's identity, sibling order or expansion state. It replaces
+content, actions, timestamp and icons, clears stale images and critical styling,
+and keeps the popup's Hide button. Text and pixels are copied before the
+service releases its snapshot; malformed markup falls back to plain text.
+Changing the application name moves the item between groups. A visible popup
+updates in place and renews its display timer; hidden and DND notifications
+remain hidden.
+
+The real controller fixtures also reproduced a use-after-free when removing a
+group head and an invalid child removal when showing the first popup. Group
+roots are now detached before freeing their controllers, reparent references
+are balanced, and bulk dismissal retains its callback targets. The popup owns
+and cancels timers, disconnects old subscriptions, and holds its list owner
+weakly through reconstruction and disposal.
+
+Five notification presentation tests and the five affected media presentation
+tests pass on Sway and Niri. Five group/popup tests additionally pass under
+AddressSanitizer on both compositors, including window destruction and repeated
+disposal. Evidence: `notification-presentation-after.log`,
+`notification-replacement-before.log`, `notification-head-removal-before.log`,
+`notification-osd-before.log`, `notification-replacement-after.log` and
+`notifications-ui-integrated.log`.

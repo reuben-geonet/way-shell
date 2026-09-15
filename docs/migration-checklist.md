@@ -83,9 +83,10 @@ a claim that the complete migration is ready to install.
 - [x] Fedora 43/44 dependency images validate the private PulseAudio routing fixtures; both locks add only `pipewire-pulseaudio`.
 - [ ] Native/Fedora package matrix for the completed Rust audio service.
 - [x] Clean native audio application/schema checks at `6571864`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/audio-controls-native-schemas` -> `/nix/store/nkdsb5q80kgkyc71i95pwbvqyqbszz69-way-shell-native-schemas-check`.
-- [ ] Corrected Fedora audio matrix: the first Fedora 43 run exposed a test-writer mixer-scale assumption; the explicit linear-scale fixture passes locally.
+- [ ] Corrected Fedora audio matrix: explicit linear mixer scale passes locally but did not resolve the Fedora 43 timeout. A smaller offline guest fixture is investigating volume notifications before audio format negotiation on PipeWire 1.4.8.
 - [x] Rust MPRIS discovery, metadata, commands, owner replacement, late property export, session-bus restart, C ownership, Sway/Niri tray reconstruction, workspace tests, formatting, Clippy and linked application checks.
 - [ ] Native/Fedora package matrix for Rust MPRIS.
+- [x] Clean native MPRIS application/schema checks at `06ac6aa`, including Sway/Niri components and media artwork ownership; artifact `.cache/rust-migration/artifacts/media-native-schemas` -> `/nix/store/9s70xg1iq4p2im8pp984q1f7394ibz9k-way-shell-native-schemas-check`.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

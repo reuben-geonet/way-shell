@@ -18,6 +18,10 @@ G_END_DECLS
 NotificationWidget *notification_widget_from_notification(
     Notification *n, gboolean expand_on_enter);
 
+// Copy replacement content while preserving the widget and its expanded state.
+// Notification fields are borrowed for this call and may be released afterward.
+void notification_widget_set_notification(NotificationWidget *self, Notification *n);
+
 NotificationWidget *notification_widget_from_media_player(MediaPlayer *player);
 
 NotificationWidget *notification_widget_set_media_player(
