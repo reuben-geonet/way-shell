@@ -42,5 +42,6 @@ gschemas.compiled
 
 /tests/audio-widgets-test
 /tests/media-widgets-test
+/tests/notifications-test
 
 /nix/fedora/locks/.update-*/

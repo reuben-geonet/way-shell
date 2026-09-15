@@ -494,3 +494,18 @@ Evidence: `media-widget-{seed,reinitialize}-before.log` and
 obsolete C service fixtures are removed; the XML remains tracked. Full workspace
 tests, formatting, Clippy and the linked application pass in
 `media-integrated-workspace.log`.
+
+## Notification validation baseline
+
+The C service now accepts an empty app name without requiring a desktop-entry
+hint, supplies a creation timestamp for internal notifications, and copies only
+complete action key/label pairs. Hint parsing checks each variant's type and
+releases its references. Images require positive dimensions, a valid RGB/RGBA
+8-bit layout, sufficient stride and sufficient bytes; pixel data is copied and
+owned by the notification. The last row may omit trailing padding.
+
+Nine default-build GLib tests cover these changes. Seven failure cases were
+reproduced before the fixes, including the empty-name crash, truncated image
+acceptance and retained variant storage. Evidence:
+`notifications-validation-before.log`, `notifications-validation-after.log`
+and `notifications-validation-integrated.log`.

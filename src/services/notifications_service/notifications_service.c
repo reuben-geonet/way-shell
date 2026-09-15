@@ -147,59 +147,85 @@ static gboolean on_handle_get_server_information(
     return TRUE;
 }
 
+static void parse_image_data(GVariant *value, NotificationImageData *image) {
+    if (!g_variant_is_of_type(value, G_VARIANT_TYPE("(iiibiiay)")))
+        return;
+
+    gint width, height, rowstride, bits, channels;
+    gboolean alpha;
+    g_autoptr(GVariant) bytes = NULL;
+    g_variant_get(value, "(iiibii@ay)", &width, &height, &rowstride,
+                  &alpha, &bits, &channels, &bytes);
+    if (width <= 0 || height <= 0 || rowstride <= 0 || bits != 8 ||
+        channels != (alpha ? 4 : 3))
+        return;
+    if ((gsize)width > G_MAXSIZE / (gsize)channels)
+        return;
+    gsize row_bytes = (gsize)width * (gsize)channels;
+    if ((gsize)rowstride < row_bytes ||
+        (gsize)(height - 1) > (G_MAXSIZE - row_bytes) / (gsize)rowstride)
+        return;
+    /* The final row need not include padding bytes. */
+    gsize required = (gsize)(height - 1) * (gsize)rowstride + row_bytes;
+    gsize length = 0;
+    const guchar *data = g_variant_get_fixed_array(bytes, &length, 1);
+    if (length < required)
+        return;
+
+    g_free(image->data);
+    *image = (NotificationImageData){
+        .width = width, .height = height, .rowstride = rowstride,
+        .has_alpha = alpha, .bits_per_sample = bits, .channels = channels,
+        .data = g_memdup2(data, required),
+    };
+}
+
 static void parse_notify_hints(GVariant *hints, Notification *n) {
-    if (!hints) return;
+    if (!hints || !g_variant_is_of_type(hints, G_VARIANT_TYPE_VARDICT))
+        return;
 
-    GVariantIter *iter = NULL;
+    GVariantIter iter;
     GVariant *value = NULL;
-    const char *key = NULL;
-
-    g_variant_get(hints, "a{sv}", &iter);
-    while (g_variant_iter_loop(iter, "{&sv}", &key, &value)) {
-        // parse category
-        if (g_strcmp0(key, "category") == 0) {
-            n->category = g_variant_dup_string(value, NULL);
+    const gchar *key = NULL;
+    g_variant_iter_init(&iter, hints);
+    while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
+        if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
+            gchar **field = NULL;
+            if (g_str_equal(key, "category")) field = &n->category;
+            else if (g_str_equal(key, "desktop-entry")) field = &n->desktop_entry;
+            else if (g_str_equal(key, "image-path") || g_str_equal(key, "image_path"))
+                field = &n->image_path;
+            if (field) {
+                g_free(*field);
+                *field = g_variant_dup_string(value, NULL);
+            }
         }
-        // parse action-icon
-        if (g_strcmp0(key, "action-icons") == 0) {
-            n->action_icons = g_variant_get_boolean(value);
+        if (g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)) {
+            gboolean *field = NULL;
+            if (g_str_equal(key, "action-icons")) field = &n->action_icons;
+            else if (g_str_equal(key, "resident")) field = &n->resident;
+            else if (g_str_equal(key, "transient")) field = &n->transient;
+            if (field) *field = g_variant_get_boolean(value);
         }
-        // parse desktop-entry
-        if (g_strcmp0(key, "desktop-entry") == 0) {
-            n->desktop_entry = g_variant_dup_string(value, NULL);
-        }
-        // parse image data
-        if (g_strcmp0(key, "image-data") == 0 ||
-            g_strcmp0(key, "image_data") == 0 ||
-            g_strcmp0(key, "icon_data") == 0) {
-            gsize n_elements;
-            g_variant_get(value, "(iiibii@ay)", &n->img_data.width,
-                          &n->img_data.height, &n->img_data.rowstride,
-                          &n->img_data.has_alpha, &n->img_data.bits_per_sample,
-                          &n->img_data.channels, &value);
-            n->img_data.data = (char *)g_variant_get_fixed_array(
-                value, &n_elements, sizeof(guchar));
-        }
-        // parse image path
-        if (g_strcmp0(key, "image-path") == 0 ||
-            g_strcmp0(key, "image_path") == 0) {
-            n->image_path = g_variant_dup_string(value, NULL);
-        }
-        // parse resident
-        if (g_strcmp0(key, "resident") == 0) {
-            n->resident = g_variant_get_boolean(value);
-        }
-        // parse transient
-        if (g_strcmp0(key, "transient") == 0) {
-            n->transient = g_variant_get_boolean(value);
-        }
-        // parse urgency
-        if (g_strcmp0(key, "urgency") == 0) {
+        if (g_str_equal(key, "urgency") &&
+            g_variant_is_of_type(value, G_VARIANT_TYPE_BYTE))
             n->urgency = g_variant_get_byte(value);
-        }
+        if (g_str_equal(key, "image-data") || g_str_equal(key, "image_data") ||
+            g_str_equal(key, "icon_data"))
+            parse_image_data(value, &n->img_data);
+        g_variant_unref(value);
     }
+}
 
-    return;
+static gchar **copy_notification_actions(const gchar **actions) {
+    if (!actions) return NULL;
+    guint count = g_strv_length((gchar **)actions);
+    /* Widgets consume action identifier/label pairs. Ignore an incomplete
+     * trailing pair before it can advance them beyond the string vector. */
+    count -= count % 2;
+    gchar **copy = g_new0(gchar *, count + 1);
+    for (guint i = 0; i < count; i++) copy[i] = g_strdup(actions[i]);
+    return copy;
 }
 
 void notifications_service_send_notification(NotificationsService *self,
@@ -212,6 +238,7 @@ void notifications_service_send_notification(NotificationsService *self,
     nn->app_icon = g_strdup(n->app_icon);
     nn->urgency = n->urgency;
     nn->is_internal = true;
+    nn->created_on = g_date_time_new_now_local();
 
     g_hash_table_add(self->internal_ids, GUINT_TO_POINTER(nn->id));
     g_ptr_array_add(self->notifications, nn);
@@ -236,7 +263,7 @@ static gboolean on_handle_notify(DbusNotifications *dbus,
     if (app_icon) n->app_icon = g_strdup(app_icon);
     if (summary) n->summary = g_strdup(summary);
     if (body) n->body = g_strdup(body);
-    if (actions) n->actions = g_strdupv((char **)actions);
+    n->actions = copy_notification_actions(actions);
 
     // parse hints
     parse_notify_hints(hints, n);
@@ -251,12 +278,12 @@ static gboolean on_handle_notify(DbusNotifications *dbus,
 
     // if we don't have an app name, we can try to resolve it from our desktop
     // entry.
-    if (strlen(n->app_name) == 0 && strlen(n->desktop_entry) > 0) {
+    if ((!n->app_name || !*n->app_name) &&
+        n->desktop_entry && *n->desktop_entry) {
         g_free(n->app_name);
         n->app_name = g_strdup(n->desktop_entry);
 
-        char *desktop_entry = g_strdup(n->desktop_entry);
-        desktop_entry = g_strconcat(desktop_entry, ".desktop", NULL);
+        char *desktop_entry = g_strconcat(n->desktop_entry, ".desktop", NULL);
 
         GDesktopAppInfo *info = g_desktop_app_info_new(desktop_entry);
         if (info) {
@@ -385,6 +412,7 @@ static void free_notification(Notification *n) {
     if (n->category) g_free(n->category);
     if (n->desktop_entry) g_free(n->desktop_entry);
     if (n->image_path) g_free(n->image_path);
+    g_free(n->img_data.data);
     if (n->created_on) g_date_time_unref(n->created_on);
     g_free(n);
 }
