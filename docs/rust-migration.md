@@ -414,6 +414,18 @@ strict dependency handling. WirePlumber is now an explicit native check input
 and RPM build requirement. The Fedora locked closures already contain it.
 The failure is retained in `audio-controls-native-build.log`.
 
+The corrected clean native build at `6571864` passes, including schema and
+Sway/Niri checks. Its artifact is recorded in the checklist and its log is
+`audio-controls-native-fixed.log`.
+
+The first Fedora 43 audio run reached the tests and failed when a separately
+loaded fixture mixer wrote a value in a different scale from the expected
+linear amplitude. Selecting the cubic scale locally reproduced the same
+timeout. The fixture now explicitly selects linear scaling, matching its
+numeric inputs and the service's existing configuration. That fixture passes;
+the corrected Fedora matrix remains a separate acceptance gate. Evidence:
+`audio-controls-rpm-build.log` and `audio-mixer-scale-{before,after}.log`.
+
 ## MPRIS metadata baseline fixes
 
 Metadata replacement now clears omitted fields, accepts empty artist arrays,

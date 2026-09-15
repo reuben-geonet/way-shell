@@ -82,6 +82,8 @@ a claim that the complete migration is ready to install.
 - [x] Rust volume/routing controls, confirmed playback/capture moves, concurrent requests, cancellation, restart, deadlines, C ABI, amplified-volume compatibility, full workspace tests, formatting, Clippy and linked build.
 - [x] Fedora 43/44 dependency images validate the private PulseAudio routing fixtures; both locks add only `pipewire-pulseaudio`.
 - [ ] Native/Fedora package matrix for the completed Rust audio service.
+- [x] Clean native audio application/schema checks at `6571864`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/audio-controls-native-schemas` -> `/nix/store/nkdsb5q80kgkyc71i95pwbvqyqbszz69-way-shell-native-schemas-check`.
+- [ ] Corrected Fedora audio matrix: the first Fedora 43 run exposed a test-writer mixer-scale assumption; the explicit linear-scale fixture passes locally.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.

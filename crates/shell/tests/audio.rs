@@ -246,6 +246,13 @@ fn inventory_defaults_removal_restart_and_ownership() {
                 ))
                 .unwrap();
             let mixer = Plugin::find(&core, "mixer-api").unwrap();
+            // Fixture inputs below are linear amplitudes. A system WirePlumber
+            // configuration may default its separately loaded mixer to cubic.
+            let scale = glib::EnumClass::with_type(mixer.find_property("scale").unwrap().value_type())
+                .unwrap()
+                .to_value(0)
+                .unwrap();
+            mixer.set_property_from_value("scale", &scale);
             context
                 .block_on(mixer.activate_future(PluginFeatures::ENABLED))
                 .unwrap();
