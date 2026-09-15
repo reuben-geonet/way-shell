@@ -63,15 +63,13 @@ a claim that the complete migration is ready to install.
 - [x] Clock timing, cancellation, and C integration checks (`95149f5`).
 - [x] Sway framing, reconnection, literal names, focus, output hotplug,
       workspace movement, ownership, C integration and Clippy checks.
-- [ ] Native and Fedora package matrix for the theme port (`1955558`): native
-      smoke test exposed a missing private D-Bus configuration; fixed in
-      `a034a65`. Rerun with the Sway port to cover subsequent changes.
-- [ ] Full matrix covering clock/Sway (`709d126`): resumed after the requested reboot. Native application and Sway/theme smoke checks passed; the separate schema check and complete Fedora matrix remain pending.
+- [x] Theme package matrix covered by `709d126`, including the private D-Bus configuration fix from `a034a65`.
+- [x] Full matrix covering clock/Sway (`709d126`): native application/schema checks and both Fedora RPM build/install/uninstall checks passed after resuming from the reboot. Artifacts: `../artifacts/sway-resumed-rpms` and `sway-resumed-rpms-1` in the durable migration cache.
 - [x] Niri development environment, private socket fixtures, real workspace/window actions and layer-window smoke checks.
 - [x] Wayland protocol fixtures, descriptor transfer, backpressure, repeated ownership and real Sway/Niri component checks (`fa909b9`).
 - [x] UPower, logind, power-profile and brightness service fixtures, adapter ownership, GTK controls, full workspace tests, Clippy and combined C/Rust build through `767efca`.
 - [x] Fedora 43/44 dependency images validate the private D-Bus test dependency (`c64a75f`).
-- [ ] Native and Fedora package matrix for the services through `767efca`.
+- [ ] Native and Fedora package matrix for the services through `767efca`, running from documentation checkpoint `2f40bf7`.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
