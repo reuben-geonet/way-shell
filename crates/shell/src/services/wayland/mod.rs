@@ -28,6 +28,7 @@ mod imp {
         pub(super) driver: RefCell<Option<Rc<Driver>>>,
         pub settings: RefCell<Option<(gio::Settings, glib::SignalHandlerId)>>,
         pub ready: Cell<bool>,
+        pub stopped: Cell<bool>,
         pub error: RefCell<Option<String>>,
         pub inhibitor: RefCell<Option<gtk::gdk::Toplevel>>,
     }
@@ -64,13 +65,7 @@ mod imp {
             })
         }
         fn dispose(&self) {
-            if let Some((settings, handler)) = self.settings.borrow_mut().take() {
-                settings.disconnect(handler);
-            }
-            if let Some(inhibitor) = self.inhibitor.borrow_mut().take() {
-                inhibitor.restore_system_shortcuts();
-            }
-            self.driver.borrow_mut().take();
+            self.obj().stop_inner(false);
         }
     }
 }
@@ -95,7 +90,10 @@ impl WaylandService {
                 }
             },
             move |error| {
-                if let Some(service) = failed.upgrade() {
+                if let Some(service) = failed
+                    .upgrade()
+                    .filter(|service| !service.imp().stopped.get())
+                {
                     service.imp().error.replace(Some(error.clone()));
                     service.imp().ready.set(false);
                     service.emit_by_name::<()>("failed", &[&error]);
@@ -125,6 +123,9 @@ impl WaylandService {
     }
     fn changes(&self, changes: Vec<protocol::Change>) {
         for change in changes {
+            if self.imp().stopped.get() {
+                break;
+            }
             match change {
                 protocol::Change::Ready => {
                     self.imp().ready.set(true);
@@ -153,6 +154,32 @@ impl WaylandService {
                 }
                 protocol::Change::Diagnostic(error) => glib::g_warning!("way-shell", "{error}"),
             }
+        }
+    }
+    /// Release the connection even when a closed UI still holds this service.
+    pub fn stop(&self) {
+        self.stop_inner(true);
+    }
+    fn stop_inner(&self, notify: bool) {
+        if self.imp().stopped.replace(true) {
+            return;
+        }
+        self.imp().ready.set(false);
+        let settings = self.imp().settings.borrow_mut().take();
+        if let Some((settings, handler)) = settings {
+            settings.disconnect(handler);
+        }
+        let driver = self.imp().driver.borrow_mut().take();
+        let gamma = driver.as_ref().is_some_and(|driver| driver.gamma_enabled());
+        if let Some(driver) = driver {
+            driver.stop();
+        }
+        self.restore_shortcuts();
+        if notify {
+            if gamma {
+                self.emit_by_name::<()>("gamma-control-disabled", &[]);
+            }
+            self.emit_by_name::<()>("capabilities-changed", &[]);
         }
     }
     pub fn is_ready(&self) -> bool {
@@ -258,11 +285,44 @@ impl WaylandService {
         Ok(())
     }
     pub fn restore_shortcuts(&self) -> bool {
-        if let Some(toplevel) = self.imp().inhibitor.borrow_mut().take() {
+        let toplevel = self.imp().inhibitor.borrow_mut().take();
+        if let Some(toplevel) = toplevel {
             toplevel.restore_system_shortcuts();
             true
         } else {
             false
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stopping_from_ready_discards_remaining_protocol_notifications() {
+        let service: WaylandService = glib::Object::new();
+        let outputs = Rc::new(Cell::new(0));
+        let observed = outputs.clone();
+        let output_handler = service.connect_local("output-changed", false, move |_| {
+            observed.set(observed.get() + 1);
+            None
+        });
+        let ready_handler = service.connect_local("ready", false, |values| {
+            values[0].get::<WaylandService>().unwrap().stop();
+            None
+        });
+        service.changes(vec![
+            protocol::Change::Ready,
+            protocol::Change::Output(Output::default()),
+        ]);
+        service.changes(vec![protocol::Change::Ready]);
+        assert!(!service.is_ready());
+        assert_eq!(outputs.get(), 0);
+        assert!(service.outputs().is_empty());
+        assert!(service.set_temperature(4500).is_err());
+        service.stop();
+        service.disconnect(ready_handler);
+        service.disconnect(output_handler);
     }
 }

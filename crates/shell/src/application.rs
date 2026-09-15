@@ -280,8 +280,8 @@ impl Drop for Services {
         if let Some(tray) = &self.tray {
             tray.stop();
         }
-        self.wayland.restore_shortcuts();
-        self.wayland.disable_gamma();
+        self.manager.stop();
+        self.wayland.stop();
         // Remaining native clients/watchers dispose when their last owned
         // handles drop. GIO launches and GLib spawn helpers reap their own
         // children; a process-wide waitpid handler would steal those results.
@@ -1227,6 +1227,13 @@ mod tests {
                     );
                 }
                 let desktop = runtime.ui.borrow().clone().unwrap();
+                let (manager, wayland) = {
+                    let services = runtime.services.borrow();
+                    let services = services.as_ref().unwrap();
+                    (services.manager.clone(), services.wayland.clone())
+                };
+                assert!(manager.is_connected());
+                assert!(wayland.is_ready());
                 let retained = desktop.activities.window().clone();
                 let weak = Rc::downgrade(&runtime);
                 let handler = retained.connect_visible_notify(move |window| {
@@ -1243,6 +1250,40 @@ mod tests {
                 assert!(runtime.ui.borrow().is_none());
                 assert!(runtime.services.borrow().is_none());
                 assert!(!retained.is_visible());
+                assert!(
+                    !manager.is_connected(),
+                    "Retained UI handles must not keep compositor IPC active after shutdown"
+                );
+                assert!(manager.workspaces().is_empty());
+                assert!(manager.outputs().is_empty());
+                assert!(
+                    manager
+                        .perform(&way_shell_core::wm::Action::RenameWorkspace(
+                            "stopped runtime must reject actions".into()
+                        ))
+                        .is_err()
+                );
+                assert!(!wayland.is_ready());
+                assert!(wayland.outputs().is_empty());
+                assert!(wayland.seats().is_empty());
+                assert!(wayland.toplevels().is_empty());
+                assert!(!wayland.has_foreign_toplevel());
+                assert!(wayland.set_temperature(4500).is_err());
+                // Stop another live connection from inside its own dispatch:
+                // the source's temporary Driver reference must not keep it active.
+                let ready_seen = Rc::new(Cell::new(false));
+                let observed = ready_seen.clone();
+                let stopping = WaylandService::connect().unwrap();
+                let ready_handler = stopping.connect_local("ready", false, move |values| {
+                    values[0].get::<WaylandService>().unwrap().stop();
+                    observed.set(true);
+                    None
+                });
+                wait(&|| ready_seen.get());
+                assert!(!stopping.is_ready());
+                assert!(stopping.outputs().is_empty());
+                assert!(stopping.set_temperature(4500).is_err());
+                stopping.disconnect(ready_handler);
                 retained.disconnect(handler);
                 assert!(
                     context

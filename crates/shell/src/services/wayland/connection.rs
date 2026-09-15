@@ -43,6 +43,15 @@ impl Driver {
     ) -> Result<Rc<Self>, String> {
         let connection = Connection::connect_to_env()
             .map_err(|e| format!("Could not connect to Wayland display: {e}"))?;
+        Self::from_connection(connection, apps, titles, notify, failed)
+    }
+    fn from_connection(
+        connection: Connection,
+        apps: &str,
+        titles: &str,
+        notify: impl Fn(Vec<Change>) + 'static,
+        failed: impl Fn(String) + 'static,
+    ) -> Result<Rc<Self>, String> {
         let queue = connection.new_event_queue();
         let qh = queue.handle();
         connection.display().get_registry(&qh, ());
@@ -75,6 +84,9 @@ impl Driver {
         });
         driver.dispatch()?;
         driver.flush();
+        if driver.stopped.get() {
+            return Err("Wayland connection closed during initialization".into());
+        }
         let weak = Rc::downgrade(&driver);
         let source = gio::prelude::SocketExtManual::create_source(
             &driver.poll_socket,
@@ -120,6 +132,9 @@ impl Driver {
     // Prepare before polling. Callbacks run only after the RefCell borrow ends,
     // so signal handlers can safely send actions or drop their service owner.
     fn dispatch(&self) -> Result<(), String> {
+        if self.stopped.get() {
+            return Ok(());
+        }
         let changes = {
             let mut protocol = self.protocol.borrow_mut();
             let Protocol {
@@ -142,15 +157,33 @@ impl Driver {
         Ok(())
     }
     fn changes(&self) {
+        if self.stopped.get() {
+            return;
+        }
         let changes = std::mem::take(&mut self.protocol.borrow_mut().state.changes);
         (self.notify)(changes);
     }
     fn fail(&self, error: String) {
+        if self.stopped.get() {
+            return;
+        }
+        self.stop();
+        (self.failed)(error);
+    }
+    pub fn stop(&self) {
         if self.stopped.replace(true) {
             return;
         }
         self.stop_sources();
-        (self.failed)(error);
+        {
+            let mut protocol = self.protocol.borrow_mut();
+            protocol.state.close();
+            let _ = protocol.connection.flush();
+        }
+        // A currently executing source may briefly retain Driver after the
+        // service releases it. Shut down the shared socket now, not at Rc drop.
+        let _ = self.poll_socket.shutdown(true, true);
+        let _ = self.poll_socket.close();
     }
     fn stop_sources(&self) {
         self.guard.borrow_mut().take();
@@ -229,6 +262,9 @@ impl Driver {
         !self.stopped.get() && self.protocol.borrow().state.gamma_enabled()
     }
     pub fn ignored(&self, apps: &str, titles: &str) {
+        if self.stopped.get() {
+            return;
+        }
         self.protocol.borrow_mut().state.ignored(apps, titles);
         self.changes();
     }
@@ -254,6 +290,9 @@ impl Driver {
         Ok(())
     }
     pub fn disable_gamma(self: &Rc<Self>) {
+        if self.stopped.get() {
+            return;
+        }
         self.protocol.borrow_mut().state.disable_gamma();
         self.changes();
         self.flush();
@@ -261,11 +300,27 @@ impl Driver {
 }
 impl Drop for Driver {
     fn drop(&mut self) {
-        self.stopped.set(true);
-        self.stop_sources();
-        let protocol = self.protocol.get_mut();
-        protocol.state.close();
-        let _ = protocol.connection.flush();
-        let _ = self.poll_socket.close();
+        self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn closed_wayland_peer_fails_before_installing_a_socket_source() {
+        let context = glib::MainContext::new();
+        context
+            .with_thread_default(|| {
+                let (socket, peer) = std::os::unix::net::UnixStream::pair().unwrap();
+                drop(peer);
+                let connection = Connection::from_socket(socket).unwrap();
+                assert!(
+                    Driver::from_connection(connection, "", "", |_| {}, |_| {}).is_err(),
+                    "A connection closed during startup must not install a socket source"
+                );
+            })
+            .unwrap();
     }
 }

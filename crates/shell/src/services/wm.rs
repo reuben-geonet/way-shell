@@ -37,6 +37,7 @@ mod imp {
         pub workspaces: RefCell<Vec<Workspace>>,
         pub outputs: RefCell<Vec<Output>>,
         pub ready: Cell<bool>,
+        pub stopped: Cell<bool>,
     }
     #[glib::object_subclass]
     impl ObjectSubclass for WindowManager {
@@ -57,18 +58,7 @@ mod imp {
             })
         }
         fn dispose(&self) {
-            if let Some((settings, handler)) = self.settings.borrow_mut().take() {
-                settings.disconnect(handler);
-            }
-            if let Some(retry) = self.retry.borrow_mut().take() {
-                retry.abort();
-            }
-            if let Some(connection) = self.event_connection.borrow_mut().take() {
-                connection.close();
-            }
-            if let Some(connection) = self.connection.borrow_mut().take() {
-                connection.close();
-            }
+            self.obj().stop_inner(false);
         }
     }
 }
@@ -145,7 +135,56 @@ impl WindowManager {
         self.imp().ready.get()
     }
 
+    /// Permanently disconnect this owner. Unlike a transport failure, an
+    /// explicit stop must not retry while a closed widget retains its handle.
+    pub fn stop(&self) {
+        self.stop_inner(true);
+    }
+
+    fn stop_inner(&self, notify: bool) {
+        let imp = self.imp();
+        if imp.stopped.replace(true) {
+            return;
+        }
+        let settings = imp.settings.borrow_mut().take();
+        if let Some((settings, handler)) = settings {
+            settings.disconnect(handler);
+        }
+        let retry = imp.retry.borrow_mut().take();
+        if let Some(retry) = retry {
+            retry.abort();
+        }
+        for connection in [&imp.event_connection, &imp.connection] {
+            let connection = connection.borrow_mut().take();
+            if let Some(connection) = connection {
+                connection.close();
+            }
+        }
+        let connected = imp.ready.replace(false);
+        let workspaces = !imp.workspaces.borrow().is_empty();
+        let outputs = !imp.outputs.borrow().is_empty();
+        imp.workspaces.borrow_mut().clear();
+        imp.outputs.borrow_mut().clear();
+        imp.decoder.replace(sway::Decoder::default());
+        imp.command_decoder.replace(niri::Decoder::default());
+        imp.event_decoder.replace(niri::Decoder::default());
+        if notify {
+            if connected {
+                self.emit_by_name::<()>("connection-changed", &[&false]);
+            }
+            if workspaces {
+                self.emit_by_name::<()>("workspaces-changed", &[]);
+            }
+            if outputs {
+                self.emit_by_name::<()>("outputs-changed", &[]);
+            }
+        }
+    }
+
     pub fn perform(&self, action: &Action) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Err("Compositor service has stopped".into());
+        }
         match self.imp().backend.get() {
             Backend::Sway => self.request(sway::COMMAND, sway::command(action)?.as_bytes()),
             Backend::Niri => self.niri_request(&niri::command(action)?),
@@ -153,6 +192,9 @@ impl WindowManager {
     }
 
     fn request(&self, kind: u32, payload: &[u8]) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Err("Compositor service has stopped".into());
+        }
         let connection = self
             .imp()
             .connection
@@ -163,6 +205,9 @@ impl WindowManager {
     }
 
     fn connect(&self) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Err("Compositor service has stopped".into());
+        }
         if self.imp().backend.get() == Backend::Niri {
             return self.connect_niri();
         }
@@ -193,6 +238,9 @@ impl WindowManager {
     }
 
     fn disconnected(&self, error: String) {
+        if self.imp().stopped.get() {
+            return;
+        }
         glib::g_warning!(
             "way-shell",
             "{:?} IPC at {}: {error}; reconnecting",
@@ -208,11 +256,17 @@ impl WindowManager {
         if self.imp().ready.replace(false) {
             self.emit_by_name::<()>("connection-changed", &[&false]);
         }
+        if self.imp().stopped.get() {
+            return;
+        }
         self.imp().workspaces.borrow_mut().clear();
         self.imp().outputs.borrow_mut().clear();
         self.emit_by_name::<()>("workspaces-changed", &[]);
+        if self.imp().stopped.get() {
+            return;
+        }
         self.emit_by_name::<()>("outputs-changed", &[]);
-        if self.imp().retry.borrow().is_none() {
+        if !self.imp().stopped.get() && self.imp().retry.borrow().is_none() {
             let weak = self.downgrade();
             let retry = glib::MainContext::ref_thread_default().spawn_local(async move {
                 glib::timeout_future(Duration::from_secs(1)).await;
@@ -228,6 +282,9 @@ impl WindowManager {
     }
 
     fn niri_request(&self, request: &serde_json::Value) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Err("Compositor service has stopped".into());
+        }
         let connection = self
             .imp()
             .connection
@@ -283,6 +340,9 @@ impl WindowManager {
         Ok(())
     }
     fn niri_response(&self, value: serde_json::Value) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Ok(());
+        }
         // A rejected action leaves the connection usable. A malformed reply
         // loses the protocol contract and requires a fresh subscription.
         let reply = serde_json::from_value::<Result<niri::Response, String>>(value)
@@ -306,6 +366,9 @@ impl WindowManager {
         Ok(())
     }
     fn niri_event(&self, value: serde_json::Value) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Ok(());
+        }
         if !self.imp().ready.get() {
             if !matches!(niri::response(value)?, niri::Response::Handled) {
                 return Err("Niri rejected the event subscription".into());
@@ -327,12 +390,15 @@ impl WindowManager {
         }
         // Niri has no dedicated output event. Workspace topology changes cover
         // output addition/removal; request the authoritative output inventory.
-        if outputs_changed {
+        if outputs_changed && !self.imp().stopped.get() {
             self.niri_request(&serde_json::json!("Outputs"))?;
         }
         Ok(())
     }
     fn niri_workspaces_changed(&self) {
+        if self.imp().stopped.get() {
+            return;
+        }
         self.imp()
             .workspaces
             .borrow_mut()
@@ -341,6 +407,9 @@ impl WindowManager {
         self.niri_outputs_changed();
     }
     fn niri_outputs_changed(&self) {
+        if self.imp().stopped.get() {
+            return;
+        }
         {
             let workspaces = self.imp().workspaces.borrow();
             for output in self.imp().outputs.borrow_mut().iter_mut() {
@@ -364,6 +433,9 @@ impl WindowManager {
     }
 
     fn handle(&self, frame: sway::Frame) -> Result<(), String> {
+        if self.imp().stopped.get() {
+            return Ok(());
+        }
         match frame.kind {
             sway::SUBSCRIBE => {
                 sway::acknowledged(&frame.payload, false)?;
@@ -414,6 +486,9 @@ impl WindowManager {
     }
 
     fn workspace_hook(&self, name: &str) {
+        if self.imp().stopped.get() {
+            return;
+        }
         let script = self.imp().config.get().unwrap().join("on_workspace_new.sh");
         if !script.is_file() {
             return;
@@ -454,4 +529,70 @@ fn find_sway_socket() -> Result<PathBuf, String> {
         .into_iter()
         .next()
         .ok_or_else(|| "No Sway IPC socket was found in XDG_RUNTIME_DIR".into())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stopping_from_subscription_ignores_queued_events_and_retries() {
+        for backend in [Backend::Sway, Backend::Niri] {
+            let service: WindowManager = glib::Object::new();
+            service.imp().backend.set(backend);
+            let handler = service.connect_local("connection-changed", false, |values| {
+                if values[1].get::<bool>().unwrap() {
+                    values[0].get::<WindowManager>().unwrap().stop();
+                }
+                None
+            });
+            match backend {
+                Backend::Sway => service
+                    .handle(sway::Frame {
+                        kind: sway::SUBSCRIBE,
+                        payload: br#"{"success":true}"#.to_vec(),
+                    })
+                    .unwrap(),
+                Backend::Niri => service
+                    .niri_event(serde_json::json!({"Ok":"Handled"}))
+                    .unwrap(),
+            }
+            assert!(!service.is_connected());
+            service
+                .handle(sway::Frame {
+                    kind: sway::WORKSPACES,
+                    payload: include_bytes!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/../../tests/fixtures/sway-workspaces.json"
+                    ))
+                    .to_vec(),
+                })
+                .unwrap();
+            let workspaces: serde_json::Value = serde_json::from_slice(include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../tests/fixtures/niri-workspaces.json"
+            )))
+            .unwrap();
+            service.niri_response(workspaces.clone()).unwrap();
+            service
+                .niri_event(serde_json::json!({
+                    "WorkspacesChanged": {"workspaces": workspaces["Ok"]["Workspaces"]}
+                }))
+                .unwrap();
+            // No path/config was initialized: these must return before either
+            // accessing a hook or scheduling a new compositor connection.
+            service.workspace_hook("stopped");
+            service.disconnected("a queued transport callback".into());
+            assert!(service.workspaces().is_empty());
+            assert!(service.outputs().is_empty());
+            assert!(service.imp().retry.borrow().is_none());
+            assert!(
+                service
+                    .perform(&Action::RenameWorkspace("stopped".into()))
+                    .is_err()
+            );
+            service.stop();
+            service.disconnect(handler);
+        }
+    }
 }
