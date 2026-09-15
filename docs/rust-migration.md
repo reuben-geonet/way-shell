@@ -552,3 +552,9 @@ tests. All affected tests and Clippy pass. Evidence:
 `notifications-ids-before.log`, `notifications-core-cargo-check.log`,
 `notifications-rust-service-check.log` and `notifications-bridge-check.log`.
 The C service remains active until widget replacement handling is ready.
+
+An ordinary notification action reproduced a GTK parentage failure before
+replacement handling was added. The action layout no longer attempts to put a
+container below its own child or append an already-parented revealer twice.
+The actual-widget hierarchy and action-dispatch regression passes under Sway
+and Niri (`notification-action-parentage-{before,after}.log`).

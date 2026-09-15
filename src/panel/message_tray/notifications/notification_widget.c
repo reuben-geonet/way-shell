@@ -263,8 +263,6 @@ static void configure_action_revealer(NotificationWidget *self) {
     gtk_center_box_set_center_widget(center,
                                      GTK_WIDGET(self->action_container));
 
-    gtk_box_append(self->action_container, GTK_WIDGET(center));
-
     // append revealer to notification container
     gtk_box_append(self->notification_container,
                    GTK_WIDGET(self->action_revealer));
@@ -752,9 +750,6 @@ NotificationWidget *notification_widget_from_notification(
     // if we have actions, create actions revealer with buttons
     if (n->actions) {
         notification_widget_from_notification_action_buttons(n, self);
-        if (self->action_revealer)
-            gtk_box_append(self->notification_container,
-                           GTK_WIDGET(self->action_revealer));
     }
 
     // all action buttons are created by now, set the CSS appropriately.

@@ -65,6 +65,7 @@ clean:
 	rm -f media-widgets-test
 	rm -f notifications-test
 	rm -f media-presentation-test
+	rm -f notification-presentation-test
 
 audio-widgets-test: audio-widgets.c ../src/panel/quick_settings/quick_settings_scales/quick_settings_scales.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) audio-widgets.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
@@ -75,3 +76,6 @@ media-widgets-test: media-widgets.c gschemas.compiled ../src/panel/message_tray/
 
 media-presentation-test: media-presentation.c ../src/panel/message_tray/notifications/notification_widget.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) media-presentation.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
+
+notification-presentation-test: notification-presentation.c ../src/panel/message_tray/notifications/notification_widget.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) notification-presentation.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
