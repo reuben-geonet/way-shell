@@ -9,5 +9,6 @@ pub mod power;
 pub mod power_profiles;
 pub mod settings;
 pub mod theme;
+pub mod tray;
 pub mod wayland;
 pub mod wm;

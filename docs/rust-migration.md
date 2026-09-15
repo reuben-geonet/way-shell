@@ -649,3 +649,24 @@ popup after the parent window's first frame. Programmatic fixture clicks use
 a non-grabbing popup because they have no Wayland input serial. Evidence:
 `tray-widgets-before.log`, `tray-widget-*-before.log`, `tray-widgets-after.log`
 and `tray-widgets-integrated.log`.
+
+## Rust tray watcher and item service
+
+The GIO service exports the existing watcher and host interfaces. It identifies
+each item by unique bus owner and object path, retaining requested aliases for
+owner replacement. Duplicate registrations share an item; separate paths from
+one process remain distinct. The watcher publishes its canonical item list and
+registration signals, including while a late-exported item is being retried.
+
+Owned snapshots contain metadata, independent primary/overlay/attention images
+and menu endpoints. Image parsing validates dimensions and storage before ARGB
+conversion. Property updates are asynchronous and reject stale replies. All
+four item commands target the selected unique owner, validate replies, and
+cancel on removal or shutdown with a two-second deadline. Missing session buses,
+bus restart and another watcher owning the name are recoverable states.
+
+Seven private-bus tests and two parser tests pass, including simultaneous
+registration, owner replacement, late exports, cancellation, reentrant stop and
+production-constructor bus recovery. Strict Clippy passes. Evidence:
+`tray-rust-contract.log`, `tray-rust-clippy.log` and `tray-bridge-final-check.log`.
+The C tray service stays active until its item and menu adapters are connected.
