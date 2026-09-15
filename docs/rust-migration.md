@@ -670,3 +670,13 @@ registration, owner replacement, late exports, cancellation, reentrant stop and
 production-constructor bus recovery. Strict Clippy passes. Evidence:
 `tray-rust-contract.log`, `tray-rust-clippy.log` and `tray-bridge-final-check.log`.
 The C tray service stays active until its item and menu adapters are connected.
+
+The full native and Fedora 43/44 matrix for `ff6a042` passed. Both offline RPM
+builds and installation/uninstall checks preserve the selected power provider:
+PPD on Fedora 43 and TuneD on Fedora 44. The verified artifacts are recorded in
+the checklist; `notifications-rpm-build.log` retains the build and guest logs.
+
+From this point, new migration tests are written directly in Rust, following
+the user's updated direction. Existing C checks remain until Rust coverage
+replaces them. The prepared Rust menu service allows the watcher and menu
+integration to switch together, avoiding a disposable C menu adapter.

@@ -78,18 +78,18 @@ a claim that the complete migration is ready to install.
 - [x] Clean native application/schema package checks for network connections (`0cb7076`); artifact `../artifacts/network-connections-native-schemas` -> `/nix/store/ccmr6s3h5w0q65h2kjs0a70xiijbfq8l-way-shell-native-schemas-check`.
 - [x] Fedora 43/44 package matrix for network connections (`0cb7076`): build/install/uninstall and selected power providers pass; artifact `.cache/rust-migration/artifacts/network-connections-rpms` -> `/nix/store/h0b9569m0w2kmfxynh6pvmxnsdl5g29h-way-shell-rpms`.
 - [x] Rust audio tracking: private PipeWire devices, streams, ports, links, defaults, mixer notifications, microphone activity, hotplug/restart, owned snapshots, descriptor cleanup, C ABI and adapter recovery; workspace tests, Clippy and linked application pass.
-- [ ] Native/Fedora package matrix for Rust audio tracking.
+- [x] Native/Fedora package matrix for Rust audio tracking, covered by `ff6a042`.
 - [x] Rust volume/routing controls, confirmed playback/capture moves, concurrent requests, cancellation, restart, deadlines, C ABI, amplified-volume compatibility, full workspace tests, formatting, Clippy and linked build.
 - [x] Fedora 43/44 dependency images validate the private PulseAudio routing fixtures; both locks add only `pipewire-pulseaudio`.
-- [ ] Native/Fedora package matrix for the completed Rust audio service.
+- [x] Native/Fedora package matrix for the completed Rust audio service, covered by `ff6a042`.
 - [x] Clean native audio application/schema checks at `6571864`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/audio-controls-native-schemas` -> `/nix/store/nkdsb5q80kgkyc71i95pwbvqyqbszz69-way-shell-native-schemas-check`.
 - [x] Reproduce and fix Fedora 43 audio fixture negotiation (`55b95d8`): the offline diagnostic reproduces the old bridge timeout and passes both corrected fixtures; native checks also pass.
-- [ ] Full Fedora audio matrix after the verified fixture correction.
+- [x] Full Fedora audio matrix after the verified fixture correction, covered by `ff6a042`.
 - [x] Rust MPRIS discovery, metadata, commands, owner replacement, late property export, session-bus restart, C ownership, Sway/Niri tray reconstruction, workspace tests, formatting, Clippy and linked application checks.
-- [ ] Native/Fedora package matrix for Rust MPRIS.
+- [x] Native/Fedora package matrix for Rust MPRIS, covered by `ff6a042`.
 - [x] Clean native MPRIS application/schema checks at `06ac6aa`, including Sway/Niri components and media artwork ownership; artifact `.cache/rust-migration/artifacts/media-native-schemas` -> `/nix/store/9s70xg1iq4p2im8pp984q1f7394ibz9k-way-shell-native-schemas-check`.
 - [x] Rust notification IDs, validation, D-Bus ownership/recovery, expiration, actions, C interoperability and replacement presentation; real Sway/Niri widgets, controller AddressSanitizer tests, workspace tests, formatting, Clippy and linked application checks.
-- [ ] Native/Fedora package matrix for Rust notifications.
+- [x] Native/Fedora package matrix for Rust notifications (`ff6a042`): both offline builds, installation, schemas, loading, libraries and uninstall checks pass. Artifact `.cache/rust-migration/artifacts/notifications-rpms` -> `/nix/store/cblvnd4jj2wjxq03kv48h9k8qlgmybs2-way-shell-rpms`; Fedora 43 retains PPD and Fedora 44 retains TuneD throughout installation and removal.
 - [x] Clean native notification application/schema checks at `ff6a042`, including Sway/Niri components; artifact `.cache/rust-migration/artifacts/notifications-native-schemas` -> `/nix/store/spb53v4cfmn57wzqy8gbpmwgg59lhq35-way-shell-native-schemas-check`.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
@@ -113,3 +113,8 @@ volume and PulseAudio stream routing. The audio adapter preserves stable C
 records for the remaining widgets. MPRIS and notifications now run in Rust;
 tray watcher and item migration is underway. Package and laptop acceptance
 remain separate gates.
+
+Following the user's updated direction, new migration tests are written in
+Rust. Existing C checks remain useful until their consumers migrate; no new
+C test harnesses are added. The tray and menu services will switch together
+after their Rust integration checks, avoiding a temporary C menu adapter.
