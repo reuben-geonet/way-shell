@@ -1,4 +1,5 @@
 //! Temporary C adapters. Permanent crates never depend on this crate.
+mod brightness;
 mod clock;
 mod logind;
 mod power;

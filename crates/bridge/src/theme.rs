@@ -118,9 +118,10 @@ pub extern "C" fn way_shell_get_resource() -> *mut gio::ffi::GResource {
 pub extern "C" fn way_shell_rust_shutdown() {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         crate::clock::shutdown();
-        crate::power_profiles::shutdown();
+        crate::brightness::shutdown();
         crate::logind::shutdown();
         crate::power::shutdown();
+        crate::power_profiles::shutdown();
         crate::wayland::shutdown();
         GLOBAL.with(|global| {
             global.borrow_mut().take();

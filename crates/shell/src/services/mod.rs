@@ -1,3 +1,4 @@
+pub mod brightness;
 pub mod clock;
 pub mod logind;
 pub mod power;

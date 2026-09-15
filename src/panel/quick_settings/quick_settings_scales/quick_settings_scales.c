@@ -58,6 +58,9 @@ static void quick_settings_scales_dispose(GObject *gobject) {
     g_signal_handlers_disconnect_by_func(wp, G_CALLBACK(on_default_sink_change),
                                          self);
 
+    BrightnessService *bs = brightness_service_get_global();
+    if (bs) g_signal_handlers_disconnect_by_data(bs, self);
+
     // Chain-up
     G_OBJECT_CLASS(quick_settings_scales_parent_class)->dispose(gobject);
 };
@@ -303,10 +306,25 @@ static void on_brightness_change(BrightnessService *bs, float percent,
     // fired from this.
     block_brightness_scale_changed_signals(self, true);
 
-    // set scale with new brightness
+    // set scale with confirmed observed brightness
     gtk_range_set_value(GTK_RANGE(self->brightness_scale), percent);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(self->brightness_scale), NULL);
 
     block_brightness_scale_changed_signals(self, false);
+}
+
+static void on_brightness_availability(BrightnessService *bs,
+                                       QuickSettingsScales *self) {
+    gboolean available = brightness_service_has_backlight_brightness(bs);
+    gtk_widget_set_visible(GTK_WIDGET(self->brightness_container), available);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->brightness_container), available);
+    on_brightness_change(bs, brightness_service_get_backlight(bs), self);
+}
+
+static void on_brightness_failed(BrightnessService *bs, const gchar *error,
+                                 QuickSettingsScales *self) {
+    on_brightness_change(bs, brightness_service_get_backlight(bs), self);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(self->brightness_scale), error);
 }
 
 static void on_brightness_enter(GtkEventControllerMotion *ctlr, double x,
@@ -456,7 +474,7 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
     // brightness setup, dependent on whether brightness service is available.
     BrightnessService *bs = brightness_service_get_global();
 
-    if (brightness_service_has_backlight_brightness(bs)) {
+    {
         self->brightness_container =
             GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
         gtk_widget_set_name(GTK_WIDGET(self->brightness_container),
@@ -496,6 +514,9 @@ static void quick_settings_scales_init_layout(QuickSettingsScales *self) {
                          G_CALLBACK(on_brightness_scale_changed), self);
 
         gtk_box_append(self->container, GTK_WIDGET(self->brightness_container));
+        g_signal_connect(bs, "availability-changed", G_CALLBACK(on_brightness_availability), self);
+        g_signal_connect(bs, "operation-failed", G_CALLBACK(on_brightness_failed), self);
+        on_brightness_availability(bs, self);
     }
 }
 

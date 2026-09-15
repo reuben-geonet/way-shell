@@ -49,6 +49,15 @@ static void on_keyboard_brightness_changed(
         quick_settings_grid_button_set_toggled(&self->button, FALSE);
 }
 
+static void on_brightness_availability(
+    BrightnessService *bs, QuickSettingsGridKeyboardBrightnessButton *self) {
+    gboolean available = brightness_service_has_keyboard_brightness(bs);
+    gtk_widget_set_sensitive(GTK_WIDGET(self->button.container), available);
+    gtk_widget_set_tooltip_text(GTK_WIDGET(self->button.container),
+                                available ? NULL : "Keyboard brightness is unavailable");
+    on_keyboard_brightness_changed(bs, brightness_service_get_keyboard(bs), self);
+}
+
 QuickSettingsGridKeyboardBrightnessButton *
 quick_settings_grid_keyboard_brightness_button_init() {
     QuickSettingsGridKeyboardBrightnessButton *self =
@@ -65,6 +74,8 @@ quick_settings_grid_keyboard_brightness_button_init() {
                      G_CALLBACK(on_toggle_button_clicked), self);
     g_signal_connect(bs, "keyboard-brightness-changed",
                      G_CALLBACK(on_keyboard_brightness_changed), self);
+    g_signal_connect(bs, "availability-changed", G_CALLBACK(on_brightness_availability), self);
+    on_brightness_availability(bs, self);
 
     return self;
 }
@@ -84,8 +95,8 @@ void quick_settings_grid_keyboard_brightness_button_free(
 
     // kill signals
     BrightnessService *bs = brightness_service_get_global();
-    g_signal_handlers_disconnect_by_func(bs, on_keyboard_brightness_changed,
-                                         self);
+    g_signal_handlers_disconnect_by_data(bs, self);
+    g_signal_handlers_disconnect_by_data(self->button.toggle, self);
 
     // unref menu
     g_object_unref(self->menu);

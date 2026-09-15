@@ -310,7 +310,7 @@ static void quick_settings_grid_init_layout(QuickSettingsGrid *self) {
         self, (QuickSettingsGridButton *)airplane_mode_button);
 
     BrightnessService *bs = brightness_service_get_global();
-    if (bs && brightness_service_has_keyboard_brightness(bs)) {
+    if (bs) {
         QuickSettingsGridKeyboardBrightnessButton *keyboard_brightness_button =
             quick_settings_grid_keyboard_brightness_button_init();
         quick_settings_grid_add_button(

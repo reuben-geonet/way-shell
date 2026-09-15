@@ -41,6 +41,14 @@ G_DEFINE_TYPE(OSD, osd, G_TYPE_OBJECT);
 static void osd_dispose(GObject *gobject) {
     OSD *self = OSD_OSD(gobject);
 
+    BrightnessService *bs = brightness_service_get_global();
+    WirePlumberService *wp = wire_plumber_service_get_global();
+    if (bs) g_signal_handlers_disconnect_by_data(bs, self);
+    if (wp) g_signal_handlers_disconnect_by_data(wp, self);
+    if (self->timeout_id) {
+        g_source_remove(self->timeout_id);
+        self->timeout_id = 0;
+    }
     // Chain-up
     G_OBJECT_CLASS(osd_parent_class)->dispose(gobject);
 };
@@ -89,9 +97,19 @@ static void show_osd(OSD *self, GtkBox *osd) {
     gtk_widget_set_visible(GTK_WIDGET(osd), true);
 }
 
+static void on_brightness_availability(BrightnessService *bs, OSD *self) {
+    if (!brightness_service_has_backlight_brightness(bs))
+        gtk_widget_set_visible(GTK_WIDGET(self->brightness_osd), FALSE);
+    if (!brightness_service_has_keyboard_brightness(bs))
+        gtk_widget_set_visible(GTK_WIDGET(self->keyboard_brightness_osd), FALSE);
+    gtk_range_set_range(GTK_RANGE(self->keyboard_brightness_scale), 0,
+                        MAX(brightness_service_get_keyboard_max(bs), 1));
+}
+
 static void on_brightness_changed(BrightnessService *bs, float percent,
                                   OSD *self) {
     g_debug("osd.c:on_brightness_changed(): called");
+    if (!brightness_service_has_backlight_brightness(bs)) return;
 
     // if quick settings is currently displayed, don't show brightness OSD, its
     // redunant
@@ -136,6 +154,7 @@ static void on_brightness_changed(BrightnessService *bs, float percent,
 static void on_keyboard_brightness_changed(BrightnessService *bs, guint percent,
                                            OSD *self) {
     g_debug("osd.c:on_brightness_changed(): called");
+    if (!brightness_service_has_keyboard_brightness(bs)) return;
 
     // if quick settings is currently displayed, don't show brightness OSD, its
     // redunant
@@ -297,7 +316,8 @@ void osd_init_layout(OSD *self) {
 
     BrightnessService *bs = brightness_service_get_global();
 
-    if (brightness_service_has_backlight_brightness(bs)) {
+    {
+        // Create once so a returning device can use the same overlay.
         // create brightness OSD
         self->brightness_osd =
             GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
@@ -326,7 +346,7 @@ void osd_init_layout(OSD *self) {
     }
 
     // create keyboard brightness OSD
-    if (brightness_service_has_keyboard_brightness(bs)) {
+    {
         self->keyboard_brightness_osd =
             GTK_BOX(gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0));
         gtk_widget_set_name(GTK_WIDGET(self->keyboard_brightness_osd),
@@ -340,7 +360,7 @@ void osd_init_layout(OSD *self) {
         guint keyboard_max_brightness = brightness_service_get_keyboard_max(bs);
 
         self->keyboard_brightness_scale = GTK_SCALE(gtk_scale_new_with_range(
-            GTK_ORIENTATION_HORIZONTAL, 0, keyboard_max_brightness, 1));
+            GTK_ORIENTATION_HORIZONTAL, 0, MAX(keyboard_max_brightness, 1), 1));
         gtk_widget_set_hexpand(GTK_WIDGET(self->keyboard_brightness_scale),
                                true);
         gtk_widget_set_sensitive(GTK_WIDGET(self->keyboard_brightness_scale),
@@ -358,6 +378,8 @@ void osd_init_layout(OSD *self) {
                                 GTK_WIDGET(self->keyboard_brightness_osd));
     }
 
+    g_signal_connect(bs, "availability-changed", G_CALLBACK(on_brightness_availability), self);
+    on_brightness_availability(bs, self);
     adw_window_set_content(self->win, GTK_WIDGET(self->overlay));
 }
 
@@ -366,7 +388,7 @@ void osd_reinitialize(OSD *self) {
     WirePlumberService *wp = wire_plumber_service_get_global();
     g_signal_handlers_disconnect_by_func(wp, on_default_sink_changed, self);
     BrightnessService *bs = brightness_service_get_global();
-    g_signal_handlers_disconnect_by_func(bs, on_brightness_changed, self);
+    g_signal_handlers_disconnect_by_data(bs, self);
 
     g_object_unref(self->animation);
 

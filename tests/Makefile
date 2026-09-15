@@ -6,10 +6,9 @@ LDLIBS += ../target/release/libway_shell_bridge.a $(shell pkg-config --libs $(DE
 CORE_SOURCES := core.c
 
 .PHONY: check clean
-check: core-test ipc-test brightness-test
+check: core-test ipc-test
 	cd .. && tests/core-test
 	cd .. && tests/ipc-test
-	cd .. && GSETTINGS_SCHEMA_DIR=tests GSETTINGS_BACKEND=memory tests/brightness-test
 
 core-test: $(CORE_SOURCES) ../target/release/libway_shell_bridge.a ../src/services/wireplumber_service.h \
   ../src/services/wayland/gamma_control_service/colorramp.h
@@ -36,13 +35,15 @@ power-widgets-test: power-widgets.c \
   ../src/panel/quick_settings/quick_settings_menu_widget.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) power-widgets.c ../src/panel/quick_settings/quick_settings_menu_widget.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
-brightness-test: brightness.c ../src/services/brightness_service/brightness_service.c gschemas.compiled
-	$(CC) $(CPPFLAGS) $(CFLAGS) brightness.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1 gio-unix-2.0) -o $@
+brightness-widgets-test: brightness-widgets.c \
+  ../src/panel/quick_settings/quick_settings_grid/quick_settings_keyboard_brightness/quick_settings_grid_keyboard_brightness_menu.c \
+  ../src/panel/quick_settings/quick_settings_menu_widget.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) brightness-widgets.c ../src/panel/quick_settings/quick_settings_menu_widget.c $(LDFLAGS) $(shell pkg-config --libs libadwaita-1) -o $@
 
 clean:
 	rm -f core-test ipc-test theme-test clock-test sway-transport-test niri-test
 	rm -f power-profiles-widgets-test
 	rm -f gschemas.compiled
-	rm -f brightness-test
 	rm -f battery-widgets-test
 	rm -f power-widgets-test
+	rm -f brightness-widgets-test

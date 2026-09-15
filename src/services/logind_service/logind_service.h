@@ -43,10 +43,6 @@ void logind_service_suspendthenhibernate(LogindService *self);
 
 void logind_service_kill_session(LogindService *self);
 
-/* Temporary synchronous compatibility for the remaining C brightness service. */
-int logind_service_session_set_brightness(LogindService *self,
-    const gchar *subsystem, const gchar *name, guint brightness);
-
 // Strings are copied before return; error is borrowed during completion.
 // destroy(data) runs exactly once after completion, including cancellation.
 typedef void (*LogindBrightnessDone)(gboolean success, const gchar *error, gpointer data);
