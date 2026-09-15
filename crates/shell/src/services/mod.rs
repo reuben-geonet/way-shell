@@ -2,6 +2,7 @@ pub mod apps;
 pub mod audio;
 pub mod brightness;
 pub mod clock;
+pub mod ipc;
 pub mod logind;
 pub mod media;
 pub mod network;

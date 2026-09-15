@@ -997,3 +997,20 @@ those fixes, keyboard brightness, repeated disposal and nested callbacks. The
 C implementation is removed; only startup and hide handles remain until the
 application entry point moves. Affected tests, strict Clippy, the linked shell
 and real Sway/Niri probes pass in `osd-cutover-integrated.log`.
+
+## Rust command server
+
+The permanent Rust server decodes the existing datagrams into 33 typed actions
+and dispatches them asynchronously on the owning GLib context. It preserves
+the four-byte boolean response and rejects incomplete, oversized, unknown and
+non-finite requests before dispatch. At most 64 actions run concurrently; each
+response has a two-second deadline. Stopping cancels dispatch futures and
+releases both socket descriptors without needing another loop iteration.
+
+A persistent advisory lock serializes binders. A live server or unrelated file
+is preserved, while a refused stale socket can be recovered after checking its
+device and inode. Cleanup removes only the owned socket. Five real-socket Rust
+tests cover all actions, pathname/abstract clients, error responses, deadlines,
+ownership replacement and nested shutdown. They and strict workspace Clippy
+pass in `ipc-integrated.log`. Activation joins Rust startup in step 44, avoiding
+another temporary C command dispatcher.

@@ -115,6 +115,7 @@ a claim that the complete migration is ready to install.
 - [x] Rust message tray: notification history/actions/DND, popup replacement/expiry, calendar and media cards, fade/underlay mediation and retained-widget cleanup pass on Sway/Niri. Full workspace, strict Clippy and clean linked build pass; eleven replaced C sources/headers and four obsolete C tests are removed.
 - [ ] Native/Fedora package matrix for the Rust message-tray cutover.
 - [x] Rust level OSD is active with the existing confirmation dialog. Audio/brightness updates, default-device suppression, animation/timer cancellation, removed devices, reentrancy and cleanup pass on Sway/Niri; affected Rust tests, strict Clippy and linked build pass.
+- [x] Permanent Rust IPC server: five real-socket tests cover all 33 actions, malformed datagrams, replies, deadlines, concurrency, socket ownership and immediate cancellation. Normal workspace integration and strict Clippy pass; application activation joins step 44.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
