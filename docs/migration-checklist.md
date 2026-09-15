@@ -70,12 +70,12 @@ a claim that the complete migration is ready to install.
 - [x] UPower, logind, power-profile and brightness service fixtures, adapter ownership, GTK controls, full workspace tests, Clippy and combined C/Rust build through `767efca`.
 - [x] Fedora 43/44 dependency images validate the private D-Bus test dependency (`c64a75f`).
 - [x] Native package/schema check for the services through `767efca`, built from `2f40bf7`; artifact `../artifacts/power-services-native-schemas`.
-- [ ] Fedora package matrix for those services, running from checkpoint `2f40bf7`.
+- [x] Fedora 43/44 build/install/uninstall matrix for those services (`2f40bf7`); artifact `../artifacts/power-services-rpms` -> `/nix/store/chygaa5mn4sm3lk83wq9c4snz61dgzwb-way-shell-rpms`.
 - [x] Network inventory/radio private D-Bus fixtures using real libnm, C facade recovery, ownership, full local build/workspace checks and Clippy.
 - [x] Clean native application/schema package checks for network inventory (`3c5ac97`), including existing Sway/Niri component coverage; artifact `../artifacts/network-inventory-native-schemas`.
 - [ ] Fedora package matrix for the network inventory port.
 - [x] Rust Wi-Fi, saved profiles, VPN/WireGuard actions, concurrent requests, cancellation, raw SSIDs, removal/restart, C argument ownership, workspace tests, Clippy and linked application checks.
-- [ ] Native/Fedora package matrix for the network connection port.
+- [ ] Native/Fedora package matrix for the network connection port, running from `0cb7076`.
 - [ ] Final clean Cargo build, tests, formatting, and Clippy.
 - [ ] Final native Nix and offline Fedora 43/44 build/install/uninstall checks.
 - [ ] Sway and Niri runtime checks, including real hardware and hotplug.
