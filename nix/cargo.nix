@@ -1,5 +1,37 @@
 {
   perSystem = { config, pkgs, ... }: {
+    # Shared by the native package and the standalone Rust checks.
+    wayShell.rustBuildArgs = {
+      inherit (config.wayShell) version;
+      src = config.wayShell.source;
+      strictDeps = true;
+      enableParallelBuilding = false;
+      cargoDeps = config.wayShell.cargoVendor;
+      # Keep the native Cargo layout used by the installer and test harnesses.
+      auditable = false;
+      CARGO_TARGET_DIR = "target";
+      # Match the RPM check profile without changing local or release debug info.
+      CARGO_INCREMENTAL = "0";
+      CARGO_PROFILE_DEV_DEBUG = "0";
+      CARGO_PROFILE_TEST_DEBUG = "0";
+      nativeBuildInputs = with pkgs; [
+        pkg-config
+        glib
+        rustPlatform.bindgenHook
+      ];
+      buildInputs = with pkgs; [
+        glib
+        gtk4
+        gtk4-layer-shell
+        libadwaita
+        libpulseaudio
+        networkmanager
+        pipewire
+        wayland
+        wireplumber
+        dconf
+      ];
+    };
     wayShell.cargoVendor = pkgs.rustPlatform.importCargoLock {
       lockFile = ../Cargo.lock;
       outputHashes = {
