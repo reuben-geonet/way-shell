@@ -151,9 +151,9 @@ To run these checks locally:
 ```sh
 nix develop
 cargo build -p way-shell --examples --locked
-sh tests/wayland-component.sh target/debug/examples/sway-compat sway
-sh tests/wayland-component.sh target/debug/examples/niri-compat niri
-sh tests/wayland-component.sh target/debug/examples/theme-compat niri
+sh tests/wayland-component.sh target/debug/examples/sway-smoke sway
+sh tests/wayland-component.sh target/debug/examples/niri-smoke niri
+sh tests/wayland-component.sh target/debug/examples/theme-smoke niri
 ```
 
 The application smoke test starts the supplied packaged executables in a private

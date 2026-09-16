@@ -1,4 +1,4 @@
-//! Exercises the accepted binding before replacing the C audio service.
+//! Exercises WirePlumber connection, plugin activation, inventory and cleanup.
 use glib::prelude::*;
 use std::{error::Error, time::Duration};
 use wireplumber::{
