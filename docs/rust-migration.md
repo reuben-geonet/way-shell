@@ -1,8 +1,10 @@
 # Rust migration contracts and acceptance
 
 The migration starts at `nix` commit `a9c7a1e1978bf1ce8453fce6e51349b5f2257c2b`.
-Only the RPM power-provider change from
-`05ab8e1b889ffda2e68cce6891d2ecb64c704b82` is carried over from Bluetooth work.
+The initial migration carried only the RPM power-provider change from
+`05ab8e1b889ffda2e68cce6891d2ecb64c704b82` from Bluetooth work.
+The subsequent [Bluetooth port](bluetooth-port.md) adds the complete feature and
+regression fixes in Rust.
 The C shell remained operational during the incremental ports. Application
 code, the CLI and test helpers are now Rust; Cargo owns their builds and tests.
 The records below describe the intermediate stages and the fixes found there.
