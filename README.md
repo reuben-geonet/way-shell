@@ -6,7 +6,6 @@ A GNOME-inspired desktop shell for Sway and Niri, written in Rust.
 
 Use the panel’s **Keyboard shortcuts** button or `way-sh shortcuts toggle` to
 view saved Sway/Niri shortcuts and Way-Shell navigation.
-[Configuration and supported syntax](docs/shortcuts.md).
 
 Way-Shell requires a Wayland session and its selected Sway or Niri compositor.
 A session D-Bus enables notification, tray and media integrations. These desktop
@@ -33,7 +32,7 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
 For Nix development, an installable native Nix package, and locally verified
-Fedora RPMs, see [the Nix guide](nix/README.md). Run `nix run .#rpm -- --list`
+Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix run .#rpm -- --list`
 for the supported Fedora releases.
 
 An [AUR package](https://aur.archlinux.org/packages/way-shell) also exists for Arch-based distros, which can be installed with any AUR helper, or with `makepkg` if you're feeling lucky.
@@ -49,12 +48,13 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 target/debug/way-shell --help
 ```
 
-The workspace uses Rust 2024 and requires Rust 1.90 or newer. Its three crates are
+The workspace uses Rust 2024 and requires Rust 1.90 or newer. Its four crates are
 `way-shell-core` (protocols and shared logic), `way-shell` (services and GTK UI),
-and `way-sh` (the command-line client, without GTK). `Cargo.lock` pins Rust
+`way-shell-shortcuts` (compositor shortcut parsing), and `way-sh` (the command-line
+client, without GTK). `Cargo.lock` pins Rust
 dependencies; the Nix environment supplies the compiler and native libraries.
-See [the Nix guide](nix/README.md) for native dependencies, debugging, installation
-and the Sway/Niri checks.
+See [the Nix commands below](#nix-commands) for packaging and optional developer
+checks.
 
 The old Fedora 40 toolbox build and Makefiles have been retired. Cargo is the
 application build tool; `scripts/install.sh` stages already-built files for Nix
