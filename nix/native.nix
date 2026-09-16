@@ -61,74 +61,74 @@
           FONTCONFIG_FILE = "${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}";
           preCheck = ''
             cargo test --workspace --frozen --jobs 1
-            cargo build -p way-shell --example audio-compat --frozen --jobs 1
-            sh tests/audio-compat.sh target/debug/examples/audio-compat
-            cargo build -p way-shell --example theme-compat --frozen --jobs 1
+            cargo build -p way-shell --example audio-smoke --frozen --jobs 1
+            sh tests/audio-smoke.sh target/debug/examples/audio-smoke
+            cargo build -p way-shell --example theme-smoke --frozen --jobs 1
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
-              sh tests/wayland-component.sh target/debug/examples/theme-compat
-            cargo build -p way-shell --example sway-compat --frozen --jobs 1
-            sh tests/wayland-component.sh target/debug/examples/sway-compat
-            cargo build -p way-shell --example notification-ui-compat --example message-tray-media-compat --example message-tray-window-compat --example message-tray-compat --frozen --jobs 1
-            for probe in notification-ui-compat message-tray-media-compat message-tray-window-compat message-tray-compat; do
+              sh tests/wayland-component.sh target/debug/examples/theme-smoke
+            cargo build -p way-shell --example sway-smoke --frozen --jobs 1
+            sh tests/wayland-component.sh target/debug/examples/sway-smoke
+            cargo build -p way-shell --example notification-ui-smoke --example message-tray-media-smoke --example message-tray-window-smoke --example message-tray-smoke --frozen --jobs 1
+            for probe in notification-ui-smoke message-tray-media-smoke message-tray-window-smoke message-tray-smoke; do
               G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh "target/debug/examples/$probe"
               G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh "target/debug/examples/$probe" niri
             done
-            cargo build -p way-shell --example tray-ui-compat --example panel-status-compat --example panel-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-compat niri
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-compat niri
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-compat niri
-            cargo build -p way-shell --example niri-compat --frozen --jobs 1
+            cargo build -p way-shell --example tray-ui-smoke --example panel-status-smoke --example panel-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/tray-ui-smoke niri
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-status-smoke niri
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/panel-smoke niri
+            cargo build -p way-shell --example niri-smoke --frozen --jobs 1
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
-              sh tests/wayland-component.sh target/debug/examples/niri-compat niri
+              sh tests/wayland-component.sh target/debug/examples/niri-smoke niri
             FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }} \
-              sh tests/wayland-component.sh target/debug/examples/theme-compat niri
-            cargo build -p way-shell --example wayland-compat --frozen --jobs 1
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-compat niri
-            cargo build -p way-shell --example window-compat --frozen --jobs 1
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat niri
-            cargo build -p way-shell --example popup-click-away-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/popup-click-away-compat sway
-            cargo build -p way-shell --example switcher-compat --frozen --jobs 1
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat niri
-            cargo build -p way-shell --example workspace-switchers-compat --frozen --jobs 1
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/workspace-switchers-compat
-            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/workspace-switchers-compat niri
-            cargo build -p way-shell --example activities-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/activities-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/activities-compat niri
-            cargo build -p way-shell --example quick-settings-window-compat --example quick-settings-system-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-window-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-window-compat niri
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-compat niri
-            cargo build -p way-shell --example quick-settings-bluetooth-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-bluetooth-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-bluetooth-compat niri
-            cargo build -p way-shell --example quick-settings-network-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-compat niri
-            cargo build -p way-shell --example dialog-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-compat niri
-            cargo build -p way-shell --example osd-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-compat niri
-            cargo build -p way-shell --example quick-settings-audio-compat --example quick-settings-compat --frozen --jobs 1
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-compat niri
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-compat
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-compat niri
+              sh tests/wayland-component.sh target/debug/examples/theme-smoke niri
+            cargo build -p way-shell --example wayland-smoke --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/wayland-smoke niri
+            cargo build -p way-shell --example window-smoke --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-smoke niri
+            cargo build -p way-shell --example popup-click-away-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/popup-click-away-smoke sway
+            cargo build -p way-shell --example switcher-smoke --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-smoke niri
+            cargo build -p way-shell --example workspace-switchers-smoke --frozen --jobs 1
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/workspace-switchers-smoke
+            GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/workspace-switchers-smoke niri
+            cargo build -p way-shell --example activities-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/activities-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/activities-smoke niri
+            cargo build -p way-shell --example quick-settings-window-smoke --example quick-settings-system-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-window-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-window-smoke niri
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-system-smoke niri
+            cargo build -p way-shell --example quick-settings-bluetooth-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-bluetooth-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-bluetooth-smoke niri
+            cargo build -p way-shell --example quick-settings-network-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-network-smoke niri
+            cargo build -p way-shell --example dialog-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/dialog-smoke niri
+            cargo build -p way-shell --example osd-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/osd-smoke niri
+            cargo build -p way-shell --example quick-settings-audio-smoke --example quick-settings-smoke --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-audio-smoke niri
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-smoke
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/quick-settings-smoke niri
             cargo test -p way-shell --lib --no-run --message-format=json --frozen --jobs 1 > "$TMPDIR/runtime-test-artifact.json"
             export WAY_SHELL_RUNTIME_TEST_BINARY=$(sed -n 's/.*"executable":"\([^"]*\)".*/\1/p' "$TMPDIR/runtime-test-artifact.json")
             test -x "$WAY_SHELL_RUNTIME_TEST_BINARY"
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh tests/runtime-compat.sh
-            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh tests/runtime-compat.sh niri
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh tests/runtime-smoke.sh
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh tests/runtime-smoke.sh niri
             cargo fmt --all --check
             cargo clippy --workspace --all-targets --frozen --jobs 1 -- -D warnings
           '';

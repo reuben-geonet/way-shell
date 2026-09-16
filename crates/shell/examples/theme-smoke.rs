@@ -47,9 +47,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         theme.attach_display(&display);
         let window = LayerWindow::new(WindowRole::Panel, None)?;
         window.window().set_default_size(320, 40);
-        window.window().set_content(Some(&gtk::Label::new(Some(
-            "Way Shell theme compatibility",
-        ))));
+        window
+            .window()
+            .set_content(Some(&gtk::Label::new(Some("Way Shell theme smoke test"))));
         window.present();
         for selected in [Theme::Light, Theme::Dark] {
             theme.set_theme(selected)?;

@@ -55,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             })?;
         }
         let window = gtk::Window::builder()
-            .title("Way Shell Niri compatibility probe")
+            .title("Way Shell Niri smoke test")
             .default_width(240)
             .default_height(160)
             .build();

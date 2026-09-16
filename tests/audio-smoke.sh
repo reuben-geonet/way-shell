@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run the binding probe against a private daemon; no desktop audio is changed.
 set -eu
-probe=$(realpath "${1:?pass the compiled audio-compat example}")
+probe=$(realpath "${1:?pass the compiled audio-smoke example}")
 fixture=$(realpath tests/fixtures/pipewire.conf)
 runtime=$(mktemp -d /tmp/way-shell-audio.XXXXXX)
 daemon_pid=
