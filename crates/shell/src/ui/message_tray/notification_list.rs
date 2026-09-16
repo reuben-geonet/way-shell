@@ -71,7 +71,10 @@ impl NotificationsList {
         dnd.set_title("Do Not Disturb");
         dnd.set_size_request(200, -1);
         dnd.add_css_class("notifications-list-dnd");
-        controls.set_start_widget(Some(&dnd));
+        let dnd_list = gtk::ListBox::new();
+        dnd_list.set_selection_mode(gtk::SelectionMode::None);
+        dnd_list.append(&dnd);
+        controls.set_start_widget(Some(&dnd_list));
         let clear = gtk::Button::with_label("Clear");
         clear.add_css_class("notifications-list-clear");
         controls.set_end_widget(Some(&clear));
