@@ -10,7 +10,9 @@ pub mod menu;
 pub mod network;
 pub mod power_menu;
 
-use super::window::{LayerWindow, Transition, Visibility, VisibilityController, WindowRole};
+use super::window::{
+    LayerWindow, Transition, UnderlaySet, Visibility, VisibilityController, WindowRole,
+};
 use adw::prelude::*;
 use std::{
     cell::{Cell, RefCell},
@@ -29,7 +31,6 @@ type Observer = Rc<dyn Fn(QuickSettingsEvent)>;
 pub struct QuickSettingsWindow {
     visibility: VisibilityController,
     content: gtk::Box,
-    underlay_button: gtk::Button,
     animation: RefCell<Option<adw::TimedAnimation>>,
     observers: RefCell<Vec<Observer>>,
     events: RefCell<VecDeque<QuickSettingsEvent>>,
@@ -49,15 +50,10 @@ impl QuickSettingsWindow {
         main.window().set_opacity(0.0);
         let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
         main.window().set_content(Some(&content));
-        let underlay = LayerWindow::new(WindowRole::QuickSettingsUnderlay, None)?;
-        let underlay_button = gtk::Button::new();
-        underlay_button.set_hexpand(true);
-        underlay_button.set_vexpand(true);
-        underlay.window().set_content(Some(&underlay_button));
+        let underlays = UnderlaySet::new(WindowRole::QuickSettingsUnderlay)?;
         let this = Rc::new(Self {
-            visibility: VisibilityController::new(main, Some(underlay)),
+            visibility: VisibilityController::new(main, Some(underlays)),
             content,
-            underlay_button,
             animation: RefCell::new(None),
             observers: RefCell::new(Vec::new()),
             events: RefCell::new(VecDeque::new()),
@@ -70,7 +66,7 @@ impl QuickSettingsWindow {
             closed: Cell::new(false),
         });
         let weak = Rc::downgrade(&this);
-        this.underlay_button.connect_clicked(move |_| {
+        this.visibility.underlays().unwrap().on_dismiss(move || {
             if let Some(this) = weak.upgrade() {
                 this.hide();
             }
@@ -89,8 +85,8 @@ impl QuickSettingsWindow {
     pub fn content(&self) -> &gtk::Box {
         &self.content
     }
-    pub fn underlay_button(&self) -> &gtk::Button {
-        &self.underlay_button
+    pub fn underlay_buttons(&self) -> Vec<gtk::Button> {
+        self.visibility.underlays().unwrap().buttons()
     }
     pub fn visibility_controller(&self) -> &VisibilityController {
         &self.visibility

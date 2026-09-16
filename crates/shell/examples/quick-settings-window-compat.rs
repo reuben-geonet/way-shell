@@ -44,7 +44,7 @@ fn main() {
         assert!(view.show());
         until(|| view.visibility_controller().visibility() == Visibility::Visible);
         assert!(view.window().is_visible());
-        assert!(view.underlay_button().is_mapped());
+        assert!(view.underlay_buttons()[0].is_mapped());
         assert_eq!(view.window().opacity(), 1.0);
         assert_eq!(
             *events.borrow(),
@@ -52,13 +52,13 @@ fn main() {
         );
         view.set_focused(true);
         assert!(view.window().has_css_class("focused"));
-        view.underlay_button().emit_clicked();
+        view.underlay_buttons()[0].emit_clicked();
         until(|| view.visibility_controller().visibility() == Visibility::Hidden);
         assert!(!view.window().is_visible());
-        assert!(!view.underlay_button().is_mapped());
+        assert!(!view.underlay_buttons()[0].is_mapped());
         assert!(!view.window().has_css_class("focused"));
         assert_eq!(events.borrow().last(), Some(&QuickSettingsEvent::Hidden));
-        let retained_button = view.underlay_button().clone();
+        let retained_button = view.underlay_buttons()[0].clone();
         let retained_window = view.window().clone();
         drop(view);
         retained_button.emit_clicked();
@@ -72,7 +72,7 @@ fn main() {
     until(|| view.visibility_controller().visibility() == Visibility::Visible);
     settle();
     assert!(view.window().is_visible());
-    assert!(view.underlay_button().is_mapped());
+    assert!(view.underlay_buttons()[0].is_mapped());
 
     // GTK visibility callbacks can reopen while a completed hide unmaps.
     let flag = Rc::new(Cell::new(false));
@@ -87,7 +87,7 @@ fn main() {
     until(|| flag.get() && view.visibility_controller().visibility() == Visibility::Visible);
     view.window().disconnect(handler);
     settle();
-    assert!(view.window().is_visible() && view.underlay_button().is_mapped());
+    assert!(view.window().is_visible() && view.underlay_buttons()[0].is_mapped());
     view.close();
     assert!(!view.show());
     assert!(!view.window().is_visible());
@@ -102,7 +102,7 @@ fn main() {
     dropped.show();
     until(|| dropped.visibility_controller().visibility() == Visibility::Visible);
     let retained = dropped.window().clone();
-    let underlay = dropped.underlay_button().clone();
+    let underlay = dropped.underlay_buttons()[0].clone();
     drop(dropped);
     underlay.emit_clicked();
     settle();

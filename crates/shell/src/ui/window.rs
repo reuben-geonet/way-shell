@@ -3,6 +3,9 @@
 //! Components keep their animations and compatibility signals. In particular,
 //! message-tray `will-hide` still belongs at the end of its fade, while activities
 //! emits it when its revealer starts closing. This module does not change that.
+mod underlay;
+pub use underlay::UnderlaySet;
+
 use adw::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use std::cell::{Cell, RefCell};
@@ -358,7 +361,7 @@ impl TransitionState {
 
 struct VisibilityInner {
     main: LayerWindow,
-    underlay: Option<LayerWindow>,
+    underlays: Option<UnderlaySet>,
     state: RefCell<TransitionState>,
 }
 
@@ -366,8 +369,8 @@ impl VisibilityInner {
     fn close(&self) {
         self.state.borrow_mut().close();
         self.main.close();
-        if let Some(underlay) = &self.underlay {
-            underlay.close();
+        if let Some(underlays) = &self.underlays {
+            underlays.close();
         }
     }
 
@@ -379,8 +382,8 @@ impl VisibilityInner {
             let state = self.state.borrow();
             state.visibility == Visibility::Hidden && state.generation == generation
         };
-        if still_hidden && let Some(underlay) = &self.underlay {
-            underlay.hide();
+        if still_hidden && let Some(underlays) = &self.underlays {
+            underlays.hide();
         }
     }
 }
@@ -390,8 +393,8 @@ impl Drop for VisibilityInner {
         // A retained borrowed GTK widget or LayerWindow cannot keep a popup open
         // after the component owning its visibility has gone away.
         self.main.close();
-        if let Some(underlay) = &self.underlay {
-            underlay.close();
+        if let Some(underlays) = &self.underlays {
+            underlays.close();
         }
     }
 }
@@ -408,19 +411,25 @@ pub struct Transition {
 pub struct VisibilityController(Rc<VisibilityInner>);
 
 impl VisibilityController {
-    pub fn new(main: LayerWindow, underlay: Option<LayerWindow>) -> Self {
+    pub fn new(main: LayerWindow, underlays: Option<UnderlaySet>) -> Self {
         main.hide();
-        if let Some(underlay) = &underlay {
-            underlay.hide();
+        if let Some(underlays) = &underlays {
+            underlays.hide();
         }
         let inner = Rc::new(VisibilityInner {
             main,
-            underlay,
+            underlays,
             state: RefCell::new(TransitionState::default()),
         });
-        for surface in std::iter::once(&inner.main).chain(inner.underlay.iter()) {
+        let weak = Rc::downgrade(&inner);
+        inner.main.on_closed(move |_| {
+            if let Some(inner) = weak.upgrade() {
+                inner.close();
+            }
+        });
+        if let Some(underlays) = &inner.underlays {
             let weak = Rc::downgrade(&inner);
-            surface.on_closed(move |_| {
+            underlays.on_closed(move || {
                 if let Some(inner) = weak.upgrade() {
                     inner.close();
                 }
@@ -432,8 +441,8 @@ impl VisibilityController {
     pub fn main(&self) -> &LayerWindow {
         &self.0.main
     }
-    pub fn underlay(&self) -> Option<&LayerWindow> {
-        self.0.underlay.as_ref()
+    pub fn underlays(&self) -> Option<&UnderlaySet> {
+        self.0.underlays.as_ref()
     }
     pub fn visibility(&self) -> Visibility {
         self.0.state.borrow().visibility
@@ -441,8 +450,8 @@ impl VisibilityController {
 
     pub fn begin_show(&self) -> Option<Transition> {
         let ticket = self.0.state.borrow_mut().begin(true)?;
-        if let Some(underlay) = &self.0.underlay {
-            underlay.present();
+        if let Some(underlays) = &self.0.underlays {
+            underlays.present();
         }
         let still_showing = {
             let state = self.0.state.borrow();
