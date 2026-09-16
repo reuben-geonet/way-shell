@@ -19,7 +19,7 @@ impl Error for InvalidRequest {}
 
 impl Request {
     pub fn new(opcode: u32, volume: Option<f32>) -> Result<Self, InvalidRequest> {
-        if opcode > 33 || (opcode == 4) != volume.is_some() {
+        if opcode > 36 || (opcode == 4) != volume.is_some() {
             return Err(InvalidRequest);
         }
         if volume.is_some_and(|value| !value.is_finite() || !(0.0..=1.0).contains(&value)) {
@@ -94,14 +94,14 @@ mod tests {
     #[test]
     fn malformed_requests() {
         for length in 0..12 {
-            for opcode in 0..=34u32 {
+            for opcode in 0..=37u32 {
                 let mut bytes = vec![0; length];
                 if length >= 4 {
                     bytes[..4].copy_from_slice(&opcode.to_le_bytes());
                 }
                 assert_eq!(
                     Request::decode(&bytes).is_ok(),
-                    opcode <= 33 && length == if opcode == 4 { 8 } else { 4 }
+                    opcode <= 36 && length == if opcode == 4 { 8 } else { 4 }
                 );
             }
         }

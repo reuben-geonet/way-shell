@@ -65,6 +65,9 @@ pub enum Command {
     RenameSwitcherShow,
     RenameSwitcherHide,
     RenameSwitcherToggle,
+    ShortcutsShow,
+    ShortcutsHide,
+    ShortcutsToggle,
 }
 impl Command {
     fn decode(bytes: &[u8]) -> Option<Self> {
@@ -103,6 +106,9 @@ impl Command {
             31 => Self::RenameSwitcherShow,
             32 => Self::RenameSwitcherHide,
             33 => Self::RenameSwitcherToggle,
+            34 => Self::ShortcutsShow,
+            35 => Self::ShortcutsHide,
+            36 => Self::ShortcutsToggle,
             // Opcode zero historically decoded but had no successful operation.
             _ => return None,
         })

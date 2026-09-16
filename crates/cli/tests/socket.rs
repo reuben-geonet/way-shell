@@ -215,3 +215,13 @@ fn response_deadline_is_two_seconds() {
     assert!(start.elapsed() >= Duration::from_millis(1800));
     assert!(start.elapsed() < Duration::from_secs(4));
 }
+
+#[test]
+fn shortcut_commands_append_wire_opcodes() {
+    let server = Server::new();
+    for (action, opcode) in [("show", 34u32), ("hide", 35), ("toggle", 36)] {
+        let (bytes, output) = server.exchange(&["shortcuts", action], &[1, 0, 0, 0]);
+        assert_eq!(bytes, opcode.to_le_bytes());
+        status(output, 0);
+    }
+}

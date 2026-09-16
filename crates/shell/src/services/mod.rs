@@ -11,6 +11,7 @@ pub mod notifications;
 pub mod power;
 pub mod power_profiles;
 pub mod settings;
+pub mod shortcuts;
 pub mod theme;
 pub mod tray;
 pub mod wayland;

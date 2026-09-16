@@ -19,61 +19,7 @@ use way_shell_core::{
 };
 
 pub const RESPONSE_TIMEOUT: Duration = Duration::from_secs(2);
-type CommandGroup = (&'static str, &'static [(&'static str, u32)]);
-const GROUPS: &[CommandGroup] = &[
-    ("message-tray", &[("open", 1)]),
-    ("volume", &[("up", 2), ("down", 3), ("set", 4), ("mute", 5)]),
-    (
-        "brightness",
-        &[
-            ("up", 6),
-            ("down", 7),
-            ("keyboard-up", 29),
-            ("keyboard-down", 30),
-        ],
-    ),
-    (
-        "theme",
-        &[
-            ("dark", 8),
-            ("light", 9),
-            ("dump-dark", 10),
-            ("dump-light", 11),
-        ],
-    ),
-    ("activities", &[("show", 12), ("hide", 13), ("toggle", 14)]),
-    (
-        "app-switcher",
-        &[("show", 15), ("hide", 16), ("toggle", 17)],
-    ),
-    (
-        "workspace-switcher",
-        &[("show", 18), ("hide", 19), ("toggle", 20)],
-    ),
-    (
-        "output-switcher",
-        &[("show", 21), ("hide", 22), ("toggle", 23)],
-    ),
-    (
-        "workspace-app-switcher",
-        &[("show", 24), ("hide", 25), ("toggle", 26)],
-    ),
-    ("bluelight-filter", &[("enable", 27), ("disable", 28)]),
-    (
-        "rename-switcher",
-        &[("show", 31), ("hide", 32), ("toggle", 33)],
-    ),
-];
-
-fn volume(text: &str) -> Result<f32, String> {
-    let value: f32 = text.parse().map_err(|_| "expected a decimal volume")?;
-    let mantissa = text.split(['e', 'E']).next().unwrap_or("");
-    let underflow = value == 0.0 && mantissa.bytes().any(|b| (b'1'..=b'9').contains(&b));
-    if !value.is_finite() || !(0.0..=1.0).contains(&value) || value.is_subnormal() || underflow {
-        return Err("volume must be finite and between 0.0 and 1.0".into());
-    }
-    Ok(value)
-}
+use way_shell_core::commands::{GROUPS, parse_volume as volume};
 
 pub fn command() -> Command {
     let mut root = Command::new("way-sh")

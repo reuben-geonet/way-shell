@@ -70,6 +70,14 @@
 
     <!--window manager related settings-->
     <schema path="/org/ldelossa/way-shell/window-manager/" id="org.ldelossa.way-shell.window-manager">
+        <key type="s" name="sway-config-path">
+            <default>''</default>
+            <summary>Optional absolute or ~/ Sway configuration path for shortcuts</summary>
+        </key>
+        <key type="s" name="niri-config-path">
+            <default>''</default>
+            <summary>Optional absolute or ~/ Niri configuration path for shortcuts</summary>
+        </key>
         <key name="backend" type="s">
             <default>"sway"</default>
             <summary>The window manager backend to use (default: sway)</summary>

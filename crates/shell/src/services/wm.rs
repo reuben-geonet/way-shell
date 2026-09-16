@@ -30,6 +30,8 @@ mod imp {
         pub command_decoder: RefCell<niri::Decoder>,
         pub path: OnceCell<PathBuf>,
         pub config: OnceCell<PathBuf>,
+        pub loaded_config: RefCell<Option<PathBuf>>,
+        pub reload_failed: Cell<bool>,
         pub settings: RefCell<Option<(gio::Settings, glib::SignalHandlerId)>>,
         pub connection: RefCell<Option<Connection>>,
         pub retry: RefCell<Option<glib::JoinHandle<()>>>,
@@ -51,6 +53,7 @@ mod imp {
                 vec![
                     glib::subclass::Signal::builder("workspaces-changed").build(),
                     glib::subclass::Signal::builder("outputs-changed").build(),
+                    glib::subclass::Signal::builder("config-changed").build(),
                     glib::subclass::Signal::builder("connection-changed")
                         .param_types([bool::static_type()])
                         .build(),
@@ -123,6 +126,19 @@ impl WindowManager {
         service.imp().settings.replace(Some((settings, handler)));
         service.connect()?;
         Ok(service)
+    }
+
+    pub fn backend(&self) -> Backend {
+        self.imp().backend.get()
+    }
+    pub fn socket_path(&self) -> PathBuf {
+        self.imp().path.get().unwrap().clone()
+    }
+    pub fn loaded_config_path(&self) -> Option<PathBuf> {
+        self.imp().loaded_config.borrow().clone()
+    }
+    pub fn config_reload_failed(&self) -> bool {
+        self.imp().reload_failed.get()
     }
 
     pub fn workspaces(&self) -> Vec<Workspace> {
@@ -233,6 +249,7 @@ impl WindowManager {
         )?;
         self.imp().connection.replace(Some(connection));
         self.request(sway::SUBSCRIBE, br#"["workspace","output"]"#)?;
+        self.request(7, b"")?;
         self.request(sway::WORKSPACES, b"")?;
         self.request(sway::OUTPUTS, b"")
     }
@@ -377,6 +394,16 @@ impl WindowManager {
             self.emit_by_name::<()>("connection-changed", &[&true]);
             return Ok(());
         }
+        if let Some(config) = value.get("ConfigLoaded") {
+            self.imp().reload_failed.set(
+                config
+                    .get("failed")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
+            );
+            self.emit_by_name::<()>("config-changed", &[]);
+            return Ok(());
+        }
         let event = niri::event(value)?;
         if matches!(event, niri::Event::Other) {
             return Ok(());
@@ -437,6 +464,17 @@ impl WindowManager {
             return Ok(());
         }
         match frame.kind {
+            7 => {
+                let value: serde_json::Value =
+                    serde_json::from_slice(&frame.payload).map_err(|e| e.to_string())?;
+                if let Some(path) = value
+                    .get("loaded_config_file_name")
+                    .and_then(|v| v.as_str())
+                {
+                    self.imp().loaded_config.replace(Some(path.into()));
+                    self.emit_by_name::<()>("config-changed", &[]);
+                }
+            }
             sway::SUBSCRIBE => {
                 sway::acknowledged(&frame.payload, false)?;
                 if !self.imp().ready.replace(true) {
@@ -466,6 +504,10 @@ impl WindowManager {
             sway::WORKSPACE_EVENT => {
                 let event: sway::WorkspaceEvent = serde_json::from_slice(&frame.payload)
                     .map_err(|e| format!("Invalid Sway workspace event: {e}"))?;
+                if event.change == "reload" {
+                    self.request(7, b"")?;
+                    self.emit_by_name::<()>("config-changed", &[]);
+                }
                 if let Some(workspace) = event.current {
                     if event.change == "init" {
                         self.workspace_hook(&workspace.name);
@@ -534,6 +576,39 @@ fn find_sway_socket() -> Result<PathBuf, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn saved_config_path_and_rejected_reload_notifications() {
+        let service: WindowManager = glib::Object::new();
+        let changed = std::rc::Rc::new(Cell::new(0));
+        let observed = changed.clone();
+        service.connect_local("config-changed", false, move |_| {
+            observed.set(observed.get() + 1);
+            None
+        });
+        service
+            .handle(sway::Frame {
+                kind: 7,
+                payload: br#"{"loaded_config_file_name":"/saved/sway"}"#.to_vec(),
+            })
+            .unwrap();
+        assert_eq!(service.loaded_config_path(), Some("/saved/sway".into()));
+        service.imp().ready.set(true);
+        service
+            .niri_event(serde_json::json!({"ConfigLoaded":{"failed":true}}))
+            .unwrap();
+        assert!(service.config_reload_failed());
+        service
+            .niri_event(serde_json::json!({"ConfigLoaded":{"failed":false}}))
+            .unwrap();
+        assert!(!service.config_reload_failed());
+        assert_eq!(changed.get(), 3);
+        service.stop();
+        service
+            .niri_event(serde_json::json!({"ConfigLoaded":{"failed":true}}))
+            .unwrap();
+        assert_eq!(changed.get(), 3);
+    }
 
     #[test]
     fn stopping_from_subscription_ignores_queued_events_and_retries() {
