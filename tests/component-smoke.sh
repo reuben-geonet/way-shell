@@ -30,6 +30,7 @@ while read -r probe backends renderer warnings; do
     done
 done <<'PROBES'
 theme-smoke both default default
+shortcuts-smoke both cairo fatal
 sway-smoke sway default default
 notification-ui-smoke both cairo fatal
 message-tray-media-smoke both cairo fatal

@@ -6,6 +6,12 @@
 A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,
 libadwaita and gtk4-layer-shell.
 
+## Keyboard shortcuts
+
+Use the panel’s **Keyboard shortcuts** button or `way-sh shortcuts toggle` to
+view saved Sway/Niri shortcuts and Way-Shell navigation.
+[Configuration and supported syntax](docs/shortcuts.md).
+
 Way-Shell requires a Wayland session and its selected Sway or Niri compositor.
 A session D-Bus enables notification, tray and media integrations. These desktop
 services provide the corresponding controls:
