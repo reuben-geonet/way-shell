@@ -150,6 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     window.window().set_content(Some(list.widget()));
     window.present();
     until(|| window.window().is_mapped());
+    assert!(list.dnd_switch().grab_focus());
     assert_eq!(list.groups().len(), 1);
     let group = list.group("Mail").unwrap();
     let first = group.card(one).unwrap();
@@ -259,6 +260,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     assert!(!list.is_empty());
     list.set_media_widgets(Vec::new());
     assert!(list.is_empty());
+    assert!(list.dnd_switch().grab_focus());
     list.dnd_switch().set_active(true);
     assert!(config.boolean("do-not-disturb"));
     config.set_boolean("do-not-disturb", false)?;
