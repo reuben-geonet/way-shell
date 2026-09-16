@@ -8,6 +8,11 @@
 
     <!--system related settings-->
     <schema path="/org/ldelossa/way-shell/system/" id="org.ldelossa.way-shell.system">
+        <key name="bluetooth-settings-command" type="s">
+            <default>'blueman-manager'</default>
+            <summary>Command used to open Bluetooth settings</summary>
+            <description>Executable and optional quoted arguments for the Bluetooth manager. Shell expansion is not performed. Changes take effect on the next click.</description>
+        </key>
         <key name="suspend-method" type="s">
             <default>"suspend"</default>
             <summary>The suspend method used when suspend is invoked from Quick Settings</summary>

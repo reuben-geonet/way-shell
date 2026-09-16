@@ -1,5 +1,6 @@
 pub mod apps;
 pub mod audio;
+pub mod bluetooth;
 pub mod brightness;
 pub mod clock;
 pub mod ipc;
