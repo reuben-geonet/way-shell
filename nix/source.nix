@@ -37,11 +37,6 @@
             "nix"
             "flake.nix"
             "flake.lock"
-            "way-shell"
-            "way-sh/way-sh"
-            "gresources.c"
-            "gresources.h"
-            "compile_commands.json"
             ".gdb_history"
           ])
           && !(lib.hasSuffix ".o" name)
@@ -49,8 +44,7 @@
           && !(lib.hasSuffix ".a" name)
           && !(lib.hasSuffix ".rlib" name)
           && !(lib.hasSuffix ".rmeta" name)
-          && !(lib.hasSuffix ".pending" name)
-          && !(lib.hasPrefix "tests/" relative && lib.hasSuffix "-test" name);
+          && !(lib.hasSuffix ".pending" name);
       };
       version = let
         cargoVersion = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;
