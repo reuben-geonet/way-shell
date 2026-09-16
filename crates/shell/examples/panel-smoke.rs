@@ -227,6 +227,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             &[PanelAction::ToggleMessageTray]
         );
 
+        let help = content(&window)
+            .end_widget()
+            .unwrap()
+            .last_child()
+            .unwrap()
+            .prev_sibling()
+            .unwrap()
+            .downcast::<gtk::Button>()
+            .unwrap();
+        assert_eq!(help.tooltip_text().as_deref(), Some("Keyboard shortcuts"));
+        help.emit_clicked();
+        assert!(
+            matches!(actions.borrow().last(), Some(PanelAction::ToggleShortcuts(monitor)) if monitor.is_valid())
+        );
+
         notification_settings.set_boolean("do-not-disturb", false)?;
         assert!(!indicator.is_visible());
         let id = notifications.send_internal(NotificationRequest {
