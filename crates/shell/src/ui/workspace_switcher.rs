@@ -167,6 +167,9 @@ fn workspace_action(
     })
 }
 
+/// Internal controls documented by the shortcut sheet.
+pub const NAVIGATION: &[(&str, &str)] = &[("Ctrl+Enter", "Use the typed workspace name")];
+
 #[cfg(test)]
 mod tests {
     use super::*;

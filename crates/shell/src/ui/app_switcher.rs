@@ -647,6 +647,18 @@ fn app_button(text: &str, icon: Option<&gio::Icon>, instance: bool) -> (gtk::Box
     (container, button)
 }
 
+/// Internal controls documented by the shortcut sheet.
+pub const NAVIGATION: &[(&str, &str)] = &[
+    ("Super+Tab / Super+Shift+Tab", "Next / previous application"),
+    (
+        "Super+` / Super+G",
+        "Next instance (grave or lowercase G key)",
+    ),
+    ("Super+Shift+` / Super+Shift+G", "Previous instance"),
+    ("Super+Escape", "Cancel"),
+    ("Release Super", "Activate selected window"),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;

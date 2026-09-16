@@ -34,10 +34,11 @@ pub struct PanelServices {
     pub tray: Option<TrayService>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PanelAction {
     ToggleMessageTray,
     ToggleQuickSettings,
+    ToggleShortcuts(gtk::gdk::Monitor),
 }
 
 struct Panel {
@@ -45,6 +46,8 @@ struct Panel {
     container: gtk::CenterBox,
     clock: PanelClock,
     status: StatusBar,
+    help: gtk::Button,
+    help_handler: Option<glib::SignalHandlerId>,
     _workspaces: WorkspacesBar,
     _tray: Option<TrayBar>,
 }
@@ -79,6 +82,19 @@ impl Panel {
                 StatusAction::ToggleQuickSettings => action(PanelAction::ToggleQuickSettings),
             },
         );
+        let help = gtk::Button::from_icon_name("help-about-symbolic");
+        help.add_css_class("panel-shortcuts");
+        help.set_tooltip_text(Some("Keyboard shortcuts"));
+        help.update_property(&[gtk::accessible::Property::Label("Keyboard shortcuts")]);
+        let action = owner.action.clone();
+        let output = monitor.clone();
+        let stopped = owner.stopped.clone();
+        let help_handler = help.connect_clicked(move |_| {
+            if !stopped.get() && output.is_valid() {
+                action(PanelAction::ToggleShortcuts(output.clone()));
+            }
+        });
+        right.append(&help);
         right.append(status.widget());
         let tray = owner.services.tray.clone().map(TrayBar::new);
         if let Some(tray) = &tray {
@@ -90,6 +106,8 @@ impl Panel {
             container,
             clock,
             status,
+            help,
+            help_handler: Some(help_handler),
             _workspaces: workspaces,
             _tray: tray,
         };
@@ -110,6 +128,9 @@ impl Drop for Panel {
     fn drop(&mut self) {
         // Destroy the surface while its content controllers and subscriptions
         // still exist. Their final drops then make any retained widgets inert.
+        if let Some(handler) = self.help_handler.take() {
+            self.help.disconnect(handler);
+        }
         self.window.close();
     }
 }
@@ -124,7 +145,7 @@ struct Inner {
     action: Rc<dyn Fn(PanelAction)>,
     reconciling: Cell<bool>,
     pending: Cell<bool>,
-    stopped: Cell<bool>,
+    stopped: Rc<Cell<bool>>,
     message_tray_visible: Cell<bool>,
     quick_settings_visible: Cell<bool>,
     activities_visible: Cell<bool>,
@@ -219,7 +240,7 @@ impl Panels {
             action: Rc::new(action),
             reconciling: Cell::new(false),
             pending: Cell::new(false),
-            stopped: Cell::new(false),
+            stopped: Rc::new(Cell::new(false)),
             message_tray_visible: Cell::new(false),
             quick_settings_visible: Cell::new(false),
             activities_visible: Cell::new(false),
