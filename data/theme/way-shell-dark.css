@@ -1131,3 +1131,13 @@ label.day-number.today:focus {
    border-bottom-left-radius: 20px;
    border-bottom-right-radius: 20px;
 }
+
+/* Reusable panel popups and the shortcut help sheet. */
+.panel-popup { background: @base-panel-background; color: @panel-button-color; border: 1px solid @base-panel-border; border-radius: 14px; }
+.panel-popup-content { padding: 16px; }
+.shortcuts-heading { font-weight: bold; font-size: 1.1em; }
+.shortcut-key { font-weight: bold; }
+.shortcuts-details { font-size: 0.9em; opacity: 0.8; }
+.shortcuts-status { padding: 8px; }
+.panel-shortcuts { color: @panel-button-color; background: transparent; border: none; }
+.panel-shortcuts:hover { background: @panel-button-hover; }

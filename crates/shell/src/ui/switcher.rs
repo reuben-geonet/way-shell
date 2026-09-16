@@ -426,6 +426,14 @@ pub(super) fn next_index(len: usize, current: Option<usize>, previous: bool) -> 
     })
 }
 
+/// Internal controls documented by the shortcut sheet.
+pub const NAVIGATION: &[(&str, &str)] = &[
+    ("↓ / Tab / Ctrl+N", "Next result"),
+    ("↑ / Shift+Tab / Ctrl+P", "Previous result"),
+    ("Enter", "Select result"),
+    ("Escape", "Cancel"),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;

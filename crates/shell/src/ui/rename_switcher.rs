@@ -75,6 +75,9 @@ fn rename_action(text: &str) -> Option<Action> {
     (!text.is_empty()).then(|| Action::RenameWorkspace(text.to_owned()))
 }
 
+/// Internal controls documented by the shortcut sheet.
+pub const NAVIGATION: &[(&str, &str)] = &[("Enter", "Rename workspace"), ("Escape", "Cancel")];
+
 #[cfg(test)]
 mod tests {
     use super::*;
