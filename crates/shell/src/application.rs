@@ -4,6 +4,7 @@ use crate::{
     services::{
         apps::AppCatalog,
         audio::AudioService,
+        bluetooth::BluetoothService,
         brightness::{BrightnessService, ControlKind},
         clock::ClockService,
         ipc::{Command, DispatchFuture, IpcService},
@@ -205,6 +206,8 @@ struct Services {
     clock: ClockService,
     audio: AudioService,
     network: NetworkService,
+    bluetooth: BluetoothService,
+    bluetooth_network_handler: Option<glib::SignalHandlerId>,
     power: PowerService,
     profiles: PowerProfilesService,
     logind: LogindService,
@@ -242,13 +245,31 @@ impl Services {
             }
             None
         });
+        let network = NetworkService::new();
+        let bluetooth = BluetoothService::new();
+        let weak = bluetooth.downgrade();
+        let bluetooth_network_handler = network.connect_local("changed", false, move |values| {
+            let state = values[0].get::<NetworkService>().unwrap().state();
+            if state.available
+                && let Some(bluetooth) = weak.upgrade()
+            {
+                bluetooth.set_airplane_mode(!state.networking_enabled);
+            }
+            None
+        });
+        let state = network.state();
+        if state.available {
+            bluetooth.set_airplane_mode(!state.networking_enabled);
+        }
         Ok(Self {
             wayland,
             manager,
             theme,
             clock: ClockService::new(),
             audio: AudioService::new(),
-            network: NetworkService::new(),
+            network,
+            bluetooth,
+            bluetooth_network_handler: Some(bluetooth_network_handler),
             power: PowerService::new(),
             profiles: PowerProfilesService::new(),
             logind,
@@ -274,6 +295,10 @@ impl Drop for Services {
         self.brightness.set_backend_available(false);
         self.logind.stop();
         self.audio.stop();
+        if let Some(handler) = self.bluetooth_network_handler.take() {
+            self.network.disconnect(handler);
+        }
+        self.bluetooth.stop();
         self.network.stop();
         self.media.stop();
         self.notifications.stop();
@@ -612,6 +637,7 @@ impl Desktop {
                 },
                 audio: services.audio.clone(),
                 network: services.network.clone(),
+                bluetooth: services.bluetooth.clone(),
                 power: services.power.clone(),
                 notifications: services.notifications.clone(),
             },

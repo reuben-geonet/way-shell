@@ -122,6 +122,19 @@ impl GridButton {
     pub fn set_subtitle(&self, subtitle: &str) {
         self.subtitle.set_label(subtitle);
     }
+    pub fn set_optional_subtitle(&self, subtitle: Option<&str>) {
+        self.subtitle.set_label(subtitle.unwrap_or(""));
+        self.subtitle.set_visible(subtitle.is_some());
+        self.title.set_vexpand(false);
+        if let Some(text) = self.title.parent() {
+            text.set_valign(gtk::Align::Center);
+        }
+        if subtitle.is_some() {
+            self.toggle.add_css_class("with-subtitle");
+        } else {
+            self.toggle.remove_css_class("with-subtitle");
+        }
+    }
     pub fn set_icon(&self, icon: &str) {
         self.icon.set_icon_name(Some(icon));
     }
