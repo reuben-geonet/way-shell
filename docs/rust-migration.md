@@ -1126,3 +1126,22 @@ installing a source for the closed socket. Both regressions, normal compositor
 reconnection, strict Clippy, actual runtime checks and whole-application smoke on
 Sway and Niri pass. Evidence is recorded in `runtime-stop-before.log`,
 `wayland-startup-stop-before.log` and `runtime-stop-final.log`.
+
+## Cross-monitor popup dismissal
+
+Quick settings and the message tray inherited a single click-away underlay from
+the C implementation. Clicks on another output missed it, leaving quick settings
+mapped with exclusive keyboard focus and preventing application shortcuts.
+
+Both popups now share an owned underlay set with one surface per GDK monitor.
+Output additions follow the popup's visibility; removals dismiss it. Interrupted
+fades, reentrant visibility callbacks and final-owner teardown apply to the whole
+set. The first outside click remains consumed, and existing layers, panel margins,
+keyboard modes and animation event timing are preserved.
+
+The `popup-click-away-compat` probe reproduced the failure before the fix using
+real virtual-pointer events in private two-output Sway. It now checks both popup
+types in both directions, clicks over applications and empty desktops, subsequent
+application input, hotplug and teardown. It runs in the native package check;
+window and composed-popup probes also cover Sway and Niri. Physical-monitor
+keyboard and copy/paste acceptance remains a separate live-session check.

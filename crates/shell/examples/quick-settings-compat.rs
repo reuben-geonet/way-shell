@@ -161,7 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert!(view.window().window().has_css_class("focused"));
         power_button.emit_clicked();
         assert!(scales.reveals_child());
-        view.window().underlay_button().emit_clicked();
+        view.window().underlay_buttons()[0].emit_clicked();
         bus::wait(&context, || {
             view.window().visibility_controller().visibility() == Visibility::Hidden
         });

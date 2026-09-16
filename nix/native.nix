@@ -91,6 +91,8 @@
             cargo build -p way-shell --example window-compat --frozen --jobs 1
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/window-compat niri
+            cargo build -p way-shell --example popup-click-away-compat --frozen --jobs 1
+            G_DEBUG=fatal-warnings GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/popup-click-away-compat sway
             cargo build -p way-shell --example switcher-compat --frozen --jobs 1
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat
             GSK_RENDERER=cairo sh tests/wayland-component.sh target/debug/examples/switcher-compat niri

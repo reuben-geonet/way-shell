@@ -36,7 +36,7 @@ fn main() {
     });
     view.show();
     until(|| view.visibility_controller().visibility() == Visibility::Visible);
-    view.underlay_button().emit_clicked();
+    view.underlay_buttons()[0].emit_clicked();
     until(|| view.visibility_controller().visibility() == Visibility::Hidden);
     assert_eq!(
         *events.borrow(),
@@ -62,9 +62,9 @@ fn main() {
     until(|| view.visibility_controller().visibility() == Visibility::Visible);
     view.hide();
     until(|| reopened.get() && view.visibility_controller().visibility() == Visibility::Visible);
-    assert!(view.underlay_button().is_mapped());
+    assert!(view.underlay_buttons()[0].is_mapped());
     let retained = view.window().clone();
-    let underlay = view.underlay_button().clone();
+    let underlay = view.underlay_buttons()[0].clone();
     drop(view);
     underlay.emit_clicked();
     assert!(!retained.is_visible() && !underlay.is_mapped());

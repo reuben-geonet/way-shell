@@ -5,7 +5,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 use std::time::{Duration, Instant};
 use way_shell::ui::window::{
-    CloseReason, LayerWindow, PopupCoordinator, PopupEvent, PopupRole, Visibility,
+    CloseReason, LayerWindow, PopupCoordinator, PopupEvent, PopupRole, UnderlaySet, Visibility,
     VisibilityController, WindowRole,
 };
 
@@ -21,14 +21,7 @@ fn popup(role: WindowRole, underlay: Option<WindowRole>) -> VisibilityController
     let main = LayerWindow::new(role, None).unwrap();
     main.window()
         .set_content(Some(&gtk::Label::new(Some("Window ownership smoke"))));
-    VisibilityController::new(
-        main,
-        underlay.map(|role| {
-            let window = LayerWindow::new(role, None).unwrap();
-            window.window().set_content(Some(&gtk::Button::new()));
-            window
-        }),
-    )
+    VisibilityController::new(main, underlay.map(|role| UnderlaySet::new(role).unwrap()))
 }
 
 fn show(controller: &VisibilityController) {
@@ -55,7 +48,8 @@ fn transition_and_focus() {
     let entry = gtk::Entry::new();
     window.set_content(Some(&entry));
     show(&controller);
-    let underlay = controller.underlay().unwrap().window();
+    let surfaces = controller.underlays().unwrap().windows();
+    let underlay = surfaces[0].window();
     // The headless seat has no physical keyboard. Check the requested keyboard
     // mode and GTK's focus chain without requiring native keyboard-enter.
     until(|| underlay.is_mapped());
@@ -126,11 +120,11 @@ fn coordinator_and_cleanup() {
         assert!(request.controller.finish_transition(&request.transition));
     }
     let main = message.main().clone();
-    let underlay = message.underlay().unwrap().clone();
+    let underlays = message.underlays().unwrap().windows();
     let pending = message.begin_show().unwrap();
     drop(message);
     // Neither a coordinator registration nor an animation token owns a popup.
-    assert!(main.is_closed() && underlay.is_closed());
+    assert!(main.is_closed() && underlays.iter().all(LayerWindow::is_closed));
     assert!(
         coordinator
             .request_peer_hides(PopupEvent::QuickSettingsVisible)
@@ -170,6 +164,19 @@ fn native_close_and_output_loss() -> Result<(), Box<dyn std::error::Error>> {
         Some(CloseReason::Compositor)
     );
 
+    // Unexpected blocker loss must release the popup's exclusive keyboard
+    // focus, even if callers retain other surfaces from the set.
+    let controller = popup(
+        WindowRole::QuickSettings,
+        Some(WindowRole::QuickSettingsUnderlay),
+    );
+    show(&controller);
+    let surfaces = controller.underlays().unwrap().windows();
+    surfaces[0].window().close();
+    assert_eq!(controller.visibility(), Visibility::Closed);
+    assert!(controller.main().is_closed());
+    assert!(surfaces.iter().all(LayerWindow::is_closed));
+
     let display = gtk::gdk::Display::default().unwrap();
     let monitors = display.monitors();
     if std::env::var_os("NIRI_SOCKET").is_none() {
@@ -206,8 +213,9 @@ fn native_close_and_output_loss() -> Result<(), Box<dyn std::error::Error>> {
         .and_downcast::<gtk::gdk::Monitor>()
         .unwrap();
     let main = LayerWindow::new(WindowRole::QuickSettings, Some(&monitor))?;
-    let underlay = LayerWindow::new(WindowRole::QuickSettingsUnderlay, Some(&monitor))?;
-    let controller = VisibilityController::new(main, Some(underlay));
+    let underlays = UnderlaySet::new(WindowRole::QuickSettingsUnderlay)?;
+    let retained = underlays.windows();
+    let controller = VisibilityController::new(main, Some(underlays));
     show(&controller);
     monitor.emit_by_name::<()>("invalidate", &[]);
     assert_eq!(controller.visibility(), Visibility::Closed);
@@ -215,7 +223,7 @@ fn native_close_and_output_loss() -> Result<(), Box<dyn std::error::Error>> {
         controller.main().close_reason(),
         Some(CloseReason::OutputRemoved)
     );
-    assert!(controller.underlay().unwrap().is_closed());
+    assert!(retained.iter().all(LayerWindow::is_closed));
     Ok(())
 }
 
