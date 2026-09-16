@@ -24,6 +24,9 @@ jobs:
       - name: Check flake
         run: nix flake check --print-build-logs
 
+      - name: Check integration tests
+        run: nix build .#check-integration --print-build-logs
+
   build-packages:
     name: build-packages
     runs-on: ubuntu-24.04
