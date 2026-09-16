@@ -128,6 +128,17 @@ impl<'a> Loader<'a> {
         message: impl Into<String>,
     ) {
         if self.snapshot.diagnostics.len() >= 256 {
+            // Bounded reporting must never turn a failed parse into a complete snapshot.
+            if severity == Severity::Error && self.snapshot.complete() {
+                self.snapshot.diagnostics[255] = Diagnostic {
+                    source: Source {
+                        path: path.into(),
+                        line,
+                    },
+                    severity,
+                    message: "Further diagnostics omitted, including configuration errors".into(),
+                };
+            }
             return;
         }
         self.snapshot.diagnostics.push(Diagnostic {
@@ -297,11 +308,15 @@ impl<'a> Loader<'a> {
         } else {
             prefix
         });
+        let glob_options = glob::MatchOptions {
+            require_literal_leading_dot: true,
+            ..glob::MatchOptions::new()
+        };
         for pattern in path.ancestors().skip(1).take(MAX_DEPTH) {
             if !pattern.to_string_lossy().contains(['*', '?', '[']) {
                 break;
             }
-            if let Ok(matches) = glob::glob(&pattern.to_string_lossy()) {
+            if let Ok(matches) = glob::glob_with(&pattern.to_string_lossy(), glob_options) {
                 for directory in matches.take(1024).flatten().filter(|p| p.is_dir()) {
                     if self.snapshot.directories.len() >= 1024 {
                         self.diagnostic(
@@ -316,7 +331,7 @@ impl<'a> Loader<'a> {
                 }
             }
         }
-        match glob::glob(&path.to_string_lossy()) {
+        match glob::glob_with(&path.to_string_lossy(), glob_options) {
             Ok(paths) => {
                 let paths: Vec<_> = paths.take(1025).collect();
                 if paths.len() > 1024 {
@@ -459,6 +474,7 @@ pub fn normalize_keys(trigger: &str, physical: bool) -> String {
             "mod1" | "alt" => "Alt".into(),
             "shift" => "Shift".into(),
             "mod" => "Mod".into(),
+            "mode_switch" => "Group2".into(),
             "return" | "enter" => "Enter".into(),
             "space" => "Space".into(),
             "escape" | "esc" => "Escape".into(),
@@ -481,11 +497,25 @@ pub fn normalize_keys(trigger: &str, physical: bool) -> String {
             _ => key.into(),
         })
         .collect();
-    if keys.len() > 1 {
-        let last = keys.pop().unwrap();
-        keys.sort();
-        keys.dedup();
-        keys.push(last);
-    }
+    // Sway's key set is order independent, including multiple non-modifier keys.
+    let modifier = |key: &str| {
+        matches!(
+            key,
+            "Ctrl"
+                | "Super"
+                | "Alt"
+                | "Shift"
+                | "Mod"
+                | "Mod2"
+                | "Mod3"
+                | "Mod5"
+                | "Group1"
+                | "Group2"
+                | "Group3"
+                | "Group4"
+        )
+    };
+    keys.sort_by(|a, b| (!modifier(a), a).cmp(&(!modifier(b), b)));
+    keys.dedup();
     keys.join("+")
 }

@@ -149,10 +149,10 @@ pub(super) fn process_context(socket: &Path) -> Option<ProcessContext> {
         let mut data = Vec::new();
         std::fs::File::open(base.join(name))
             .ok()?
-            .take(256 * 1024)
+            .take(256 * 1024 + 1)
             .read_to_end(&mut data)
             .ok()?;
-        Some(data)
+        (data.len() <= 256 * 1024).then_some(data)
     };
     let command_line = read("cmdline");
     let process_environment = read("environ");
