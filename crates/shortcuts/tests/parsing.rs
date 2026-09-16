@@ -115,6 +115,7 @@ fn includes_overrides_cycles_and_missing_dependencies() {
     );
     dir.put("a.conf", "bindsym $mod+1 workspace 1\ninclude sway\n");
     dir.put("b.conf", "bindsym $mod+2 workspace 2\n");
+    dir.put(".hidden.conf", "bindsym $mod+3 workspace 99\n");
     let ctx = Context {
         environment: BTreeMap::from([("PARTS".into(), dir.0.to_string_lossy().into())]),
         ..Default::default()
@@ -211,4 +212,40 @@ fn niri_recovers_independent_sections_and_handles_raw_strings() {
     assert!(!data.complete());
     assert_eq!(data.bindings.len(), 1);
     assert_eq!(data.bindings[0].trigger, "Mod+B");
+}
+
+#[test]
+fn sway_equivalent_options_and_chords_override_and_unbind() {
+    let data = parse(
+        Compositor::Sway,
+        r#"
+bindsym Mod4+a+b focus left
+bindsym --input-device=* b+a+Mod4 focus right
+bindsym --release --release Mod4+x focus left
+unbindsym --release Mod4+x
+bindsym --whole-window Mod4+button1 floating toggle
+bindsym --border --whole-window Mod4+button1 fullscreen toggle
+bindsym --input-device=keyboard Mod4+a+b focus up
+bindsym --input-device=keyboard --input-device=* Mod4+a+b focus down
+"#,
+    );
+    assert!(data.complete(), "{:?}", data.diagnostics);
+    assert_eq!(data.bindings.len(), 3);
+    assert_eq!(data.bindings.last().unwrap().original, "focus down");
+    assert!(data.bindings.iter().any(|b| b.original == "focus up"));
+    assert!(
+        data.bindings
+            .iter()
+            .any(|b| b.original == "fullscreen toggle")
+    );
+    assert!(!parse(Compositor::Sway, "bindsym --unknown Mod4+A focus left").complete());
+}
+
+#[test]
+fn bounded_diagnostics_cannot_hide_parse_errors() {
+    let mut text = "bindsym $unknown+A focus left\n".repeat(300);
+    text.push_str("mode broken {\n");
+    let data = parse(Compositor::Sway, &text);
+    assert!(!data.complete());
+    assert_eq!(data.diagnostics.len(), 256);
 }
