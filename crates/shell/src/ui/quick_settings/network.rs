@@ -171,17 +171,21 @@ impl NetworkControls {
         this
     }
     pub fn buttons(&self) -> Vec<Rc<GridButton>> {
+        self.device_buttons()
+            .into_iter()
+            .chain(self.vpn_button())
+            .collect()
+    }
+    pub fn device_buttons(&self) -> Vec<Rc<GridButton>> {
         let devices = self.devices.borrow();
-        let mut buttons: Vec<_> = self
-            .order
+        self.order
             .borrow()
             .iter()
             .filter_map(|id| devices.get(id).map(|device| device.tile.clone()))
-            .collect();
-        if self.has_vpn.get() {
-            buttons.push(self.vpn_tile.clone());
-        }
-        buttons
+            .collect()
+    }
+    pub fn vpn_button(&self) -> Option<Rc<GridButton>> {
+        self.has_vpn.get().then(|| self.vpn_tile.clone())
     }
     pub fn airplane(&self) -> Rc<GridButton> {
         self.airplane.clone()

@@ -2,6 +2,7 @@
 use super::{
     QuickSettingsEvent, QuickSettingsWindow,
     audio::AudioControls,
+    bluetooth::BluetoothControls,
     controls::{SystemControls, SystemServices},
     grid::Grid,
     header::{MixerSlot, SystemHeader},
@@ -9,8 +10,8 @@ use super::{
     power_menu::Confirmation,
 };
 use crate::services::{
-    audio::AudioService, network::NetworkService, notifications::NotificationsService,
-    power::PowerService,
+    audio::AudioService, bluetooth::BluetoothService, network::NetworkService,
+    notifications::NotificationsService, power::PowerService,
 };
 use gtk::prelude::*;
 use std::{cell::Cell, rc::Rc};
@@ -19,6 +20,7 @@ pub struct QuickSettingsServices {
     pub system: SystemServices,
     pub audio: AudioService,
     pub network: NetworkService,
+    pub bluetooth: BluetoothService,
     pub power: PowerService,
     pub notifications: NotificationsService,
 }
@@ -27,6 +29,7 @@ pub struct QuickSettings {
     window: Rc<QuickSettingsWindow>,
     system: Rc<SystemControls>,
     network: Rc<NetworkControls>,
+    bluetooth: Rc<BluetoothControls>,
     audio: Rc<AudioControls>,
     header: Rc<SystemHeader>,
     grid: Rc<Grid>,
@@ -39,6 +42,8 @@ impl QuickSettings {
         confirmation: impl Fn(Confirmation) + 'static,
     ) -> Result<Rc<Self>, String> {
         let window = QuickSettingsWindow::new()?;
+        let bluetooth =
+            BluetoothControls::new(services.bluetooth, system_settings.clone(), &window);
         let system = SystemControls::new(services.system.clone());
         let network = NetworkControls::new(services.network);
         let audio = AudioControls::new(services.audio);
@@ -93,10 +98,17 @@ impl QuickSettings {
             window,
             system,
             network,
+            bluetooth,
             audio,
             header,
             grid,
             stopped: Cell::new(false),
+        });
+        let weak = Rc::downgrade(&this);
+        this.bluetooth.on_changed(move || {
+            if let Some(this) = weak.upgrade() {
+                this.update_tiles();
+            }
         });
         let weak = Rc::downgrade(&this);
         this.network.on_changed(move || {
@@ -139,14 +151,21 @@ impl QuickSettings {
         self.grid.stop();
         self.system.stop();
         self.network.stop();
+        self.bluetooth.stop();
         self.audio.close();
         self.window.close();
     }
     fn update_tiles(&self) {
         if !self.stopped.get() {
             self.grid.set_buttons(
-                self.system
-                    .ordered_buttons(self.network.buttons(), Some(self.network.airplane())),
+                self.system.ordered_buttons(
+                    self.network
+                        .device_buttons()
+                        .into_iter()
+                        .chain(self.bluetooth.button())
+                        .chain(self.network.vpn_button()),
+                    Some(self.network.airplane()),
+                ),
             );
         }
     }
