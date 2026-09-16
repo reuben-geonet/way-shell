@@ -133,10 +133,6 @@ row:hover {
   margin-right: 6px;
 }
 
-#panel #workspaces-bar {
-  border-radius: 5px;
-}
-
 #panel scrollbar {
   opacity: 100;
   min-height: 12px;
@@ -384,7 +380,7 @@ statuspage {
 }
 
 
-#notification-list .notifications-list-controls {
+#notifications-list .notifications-list-controls {
   font-weight: bold;
   font-size: 8px;
 }
@@ -394,8 +390,8 @@ statuspage {
   color: @panel-button-color;
 }
 
-#notification-osd .notification-widget-header,
-#notification-list .notification-widget-header {
+#notifications-osd .notification-widget-header,
+#notifications-list .notification-widget-header {
 	margin-left: 2px;
     margin-right: 4px;
     margin-top: 2px;
@@ -580,50 +576,6 @@ statuspage {
 
 #notifications-list .notification-group-notification-list {
     margin-bottom: 16px;
-}
-
-/*
- * Message Tray Media Players
- */
-
-#message-tray #media-players .media-player {
-       background: @notification-background;
-       border-radius: 10px;
-       margin: 4px;
-}
-
-#message-tray #media-players button {
-       background: transparent;
-}
-
-#message-tray #media-players button:hover {
-       background: @success;
-}
-
-#message-tray #media-players .media-player-title {
-       font-size: 15px;
-       font-weight: bold;
-}
-
-#message-tray #media-players .media-player-artist {
-       font-size: 14px;
-}
-
-#message-tray #media-players image {
-       margin: 2px;
-}
-
-#message-tray #media-players image {
-       margin: 4px;
-}
-
-#message-tray #media-players .media-player-labels {
-       padding-left: 6px;
-}
-
-#message-tray #media-players scrollbar {
-  opacity: 1;
-  margin-right: -18px;
 }
 
 /*
@@ -1038,21 +990,6 @@ statuspage {
     border-radius: 40px;
 }
 
-#activities .activities-workspace-overlay label {
-    font-weight: bold;
-    color: #ffffff;
-}
-
-#activities .activities-workspace-button {
-    background: @top-panel-background;
-    padding: 12px;
-	margin: 4px;
-}
-
-#activities .activities-workspace-button:hover {
-    background: @panel-button-hover;
-}
-
 /*
  * Dialog Overlay
  */
@@ -1112,7 +1049,7 @@ statuspage {
     margin: 10px;
 }
 
-#app-switcher, .app-switcher-app-widget-instances-win {
+#app-switcher {
     border-radius: 20px;
 }
 
