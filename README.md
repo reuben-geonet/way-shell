@@ -12,6 +12,7 @@ services provide the corresponding controls:
 
 - Logind for session actions and inhibitors
 - NetworkManager for networking
+- BlueZ for Bluetooth
 - WirePlumber/PipeWire for audio
 - UPower for battery state
 - power-profiles-daemon or tuned-ppd for power profiles
@@ -161,6 +162,29 @@ reloads the CSS. Missing custom CSS falls back to the embedded theme.
 If `on_theme_changed.sh` exists in that directory, Way-Shell runs it with Bash
 and one argument, `dark` or `light`. The script need not be executable.
 
+### Bluetooth
+
+Quick settings provides Bluetooth power control and connect/disconnect actions for
+paired or trusted audio, input, and MIDI devices. BlueZ must be running. Your
+session needs access to `/dev/rfkill` to clear software radio blocks; hardware
+switches remain authoritative.
+
+**Bluetooth Settings** opens Blueman for discovery, pairing, and device removal.
+Install Blueman separately or choose another manager:
+
+```sh
+gsettings set org.ldelossa.way-shell.system bluetooth-settings-command 'your-manager --option'
+gsettings reset org.ldelossa.way-shell.system bluetooth-settings-command
+```
+
+The command accepts quoted arguments without shell expansion. Changes apply on
+the next click, and launch failures appear in the menu. Power and device actions
+work independently of the external manager.
+
+Airplane Mode saves Bluetooth power and radio blocks and restores them when
+leaving. Explicit Bluetooth changes during Airplane Mode take precedence.
+Restoration is remembered for the lifetime of the shell process.
+
 ### Integrating with SwayFX
 
 The [SwayFX](https://github.com/WillPower3309/swayfx) project provides some extra eye candy for Sway.
@@ -204,7 +228,7 @@ Feel free to adjust these to your liking.
 - [x] CLI interface (way-sh)
 - [x] Media Player integration (control DBus announced media players)
 - [x] Keyboard backlight detection, OSD, and quick settings button
-- [ ] Bluetooth integration (pair with discoverable bluetooth devices)
+- [x] Bluetooth quick settings (power, connect/disconnect, pairing through an external manager)
 - [x] Themeing (provide CSS override directory, light/dark theme switch button, and allow a script to be ran after the theme is switched)
 - [x] Verified Fedora RPM packaging through Nix
 - [ ] Debian packaging

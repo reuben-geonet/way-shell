@@ -2,7 +2,7 @@
 
 Name: way-shell
 Version: 0.0.10
-Release: 9%{?dist}
+Release: 10%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 
@@ -89,6 +89,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Wed Sep 16 2026 Way Shell contributors - 0.0.10-10
+- Port Bluetooth quick settings, radio transitions and recovery to Rust.
+
 * Wed Sep 16 2026 Way Shell contributors - 0.0.10-9
 - Complete the Rust migration with Cargo builds and Rust test helpers.
 - Preserve Sway/Niri integration and both power-profile providers.
