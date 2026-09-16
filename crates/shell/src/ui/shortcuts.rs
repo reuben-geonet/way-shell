@@ -186,7 +186,8 @@ impl ShortcutsSheet {
             }
             let key = label(&row.keys.join(" / "));
             key.add_css_class("shortcut-key");
-            key.set_width_chars(20);
+            key.set_hexpand(false);
+            key.set_width_chars(24);
             key.set_max_width_chars(24);
             grid.attach(&key, 0, index, 1, 1);
             let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
@@ -222,7 +223,8 @@ impl ShortcutsSheet {
             for (key, description) in entries {
                 let key = label(key);
                 key.add_css_class("shortcut-key");
-                key.set_width_chars(20);
+                key.set_hexpand(false);
+                key.set_width_chars(24);
                 key.set_max_width_chars(24);
                 navigation.attach(&key, 0, row, 1, 1);
                 navigation.attach(&label(description), 1, row, 1, 1);
@@ -266,6 +268,7 @@ impl ShortcutsSheet {
         self.rows
             .append(&gtk::Separator::new(gtk::Orientation::Horizontal));
         let heading = label(name);
+        heading.add_css_class("heading");
         heading.add_css_class("shortcuts-heading");
         self.rows.append(&heading);
         let grid = gtk::Grid::new();

@@ -380,7 +380,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert!(panels.windows().is_empty());
         assert!(windows.iter().all(|window| !window.is_visible()));
         button.emit_clicked();
-        assert_eq!(actions.borrow().len(), 1);
+        help.emit_clicked();
+        assert_eq!(actions.borrow().len(), 2);
         label.set_label("released");
         clock.emit_by_name::<()>("tick", &[&now]);
         assert_eq!(label.label(), "released");
