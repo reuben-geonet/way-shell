@@ -198,6 +198,11 @@ impl<'a> Loader<'a> {
             return;
         }
         let read = || -> std::io::Result<String> {
+            if !std::fs::metadata(path)?.is_file() {
+                return Err(std::io::Error::other(
+                    "Configuration must be a regular file",
+                ));
+            }
             let mut bytes = Vec::new();
             std::fs::File::open(path)?
                 .take((MAX_FILE_BYTES + 1) as u64)
