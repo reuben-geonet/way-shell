@@ -254,24 +254,34 @@ pub(super) fn parse(
                 let mut index = 1;
                 let mut conditions = Vec::new();
                 let mut identity = Vec::new();
+                let mut device = "*".to_owned();
+                let mut border = false;
+                let mut contents = false;
+                let mut exclude_titlebar = false;
                 while let Some(token) = tokens.get(index).filter(|t| t.value.starts_with("--")) {
                     let option = token.value.clone();
                     if option != "--no-warn" {
                         conditions.push(option.clone());
                     }
-                    if matches!(
-                        option.as_str(),
-                        "--release"
-                            | "--locked"
-                            | "--inhibited"
-                            | "--whole-window"
-                            | "--border"
-                            | "--exclude-titlebar"
-                            | "--to-code"
-                    ) || option.starts_with("--input-device=")
-                        || option.starts_with("--group=")
-                    {
-                        identity.push(option);
+                    match option.as_str() {
+                        "--release" | "--locked" | "--inhibited" => identity.push(option),
+                        "--whole-window" => {
+                            border = true;
+                            contents = true;
+                        }
+                        "--border" => border = true,
+                        "--exclude-titlebar" => exclude_titlebar = true,
+                        "--to-code" if !physical => identity.push(option),
+                        "--to-code" | "--no-warn" | "--no-repeat" => (),
+                        _ if option.starts_with("--input-device=") => {
+                            device = option["--input-device=".len()..].into();
+                        }
+                        _ => loader.diagnostic(
+                            path,
+                            line,
+                            Severity::Error,
+                            format!("Unsupported binding option: {option}"),
+                        ),
                     }
                     index += 1;
                 }
@@ -280,6 +290,17 @@ pub(super) fn parse(
                     continue;
                 };
                 let trigger = normalize_keys(&key.value, physical);
+                identity.push(format!("device={device}"));
+                let mouse = border
+                    || contents
+                    || exclude_titlebar
+                    || key
+                        .value
+                        .split('+')
+                        .any(|key| key.starts_with("button") || key.starts_with("BTN_"));
+                if mouse {
+                    identity.push(format!("mouse={border},{contents},{}", !exclude_titlebar));
+                }
                 if trigger.contains('$') {
                     loader.diagnostic(
                         path,
@@ -289,7 +310,9 @@ pub(super) fn parse(
                     );
                 }
                 identity.sort();
+                identity.dedup();
                 conditions.sort();
+                conditions.dedup();
                 if unbind {
                     loader.snapshot.bindings.retain(|b| {
                         !(b.trigger == trigger
