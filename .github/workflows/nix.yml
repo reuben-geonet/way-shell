@@ -1,95 +1,42 @@
 name: Nix
 
 on:
-  push:
-    branches: [main, nix]
   pull_request:
-    branches: [main, nix]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: nix-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  push:
+    branches: 
+      - main
 
 jobs:
-  nix-checks:
+  nix-check:
     name: nix-checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
 
-      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
           extra_nix_config: |
-            experimental-features = nix-command flakes
-            system-features = nixos-test benchmark big-parallel kvm
-            max-jobs = 1
-            cores = 2
+            abort-on-warn = true
 
-      - name: Verify KVM and record the environment
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/way-shell-logs"
-          exec > >(tee "$RUNNER_TEMP/way-shell-logs/environment.log") 2>&1
-          test "$(uname -m)" = x86_64
-          test -c /dev/kvm
-          sudo chmod 666 /dev/kvm
-          python3 - <<'PY'
-          import fcntl
-          with open('/dev/kvm', 'rb') as device:
-              assert fcntl.ioctl(device, 0xae00) == 12
-          PY
-          nix --version
-          nix config show | grep '^system-features = ' | grep -w kvm
-          nproc
-          free -h
-          df -h
-          git rev-parse HEAD
-          nix run --no-update-lock-file .#rpm -- --list
+      - name: Check flake
+        run: nix flake check --print-build-logs
 
-      - name: Check native packaging and every configured Fedora release
-        shell: bash
-        run: |
-          set -euo pipefail
-          nix flake check \
-            --no-update-lock-file \
-            --option allow-import-from-derivation false \
-            --max-jobs 1 \
-            --cores 2 \
-            --keep-going \
-            --print-build-logs \
-            2>&1 | tee "$RUNNER_TEMP/way-shell-logs/flake-check.log"
+  build-packages:
+    name: build-packages
+    runs-on: ubuntu-24.04
 
-      - name: Collect verified RPMs and guest logs
-        shell: bash
-        run: |
-          set -euo pipefail
-          nix run --no-update-lock-file .#rpm \
-            2>&1 | tee "$RUNNER_TEMP/way-shell-logs/rpm-command.log"
-          mkdir -p "$RUNNER_TEMP/way-shell-artifacts"
-          cp -rL result/rpms "$RUNNER_TEMP/way-shell-artifacts/"
-          cp -rL result/logs "$RUNNER_TEMP/way-shell-logs/guests"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Upload RPMs
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
         with:
-          name: way-shell-rpms
-          path: ${{ runner.temp }}/way-shell-artifacts/rpms/
-          if-no-files-found: error
-          retention-days: 14
+          extra_nix_config: |
+            abort-on-warn = true
 
-      - name: Upload check logs
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: way-shell-check-logs
-          path: ${{ runner.temp }}/way-shell-logs/
-          if-no-files-found: warn
-          retention-days: 14
+      - name: Build RPMs
+        run: nix run .#rpm
