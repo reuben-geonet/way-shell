@@ -24,6 +24,8 @@ use way_shell::{
 #[allow(dead_code)]
 #[path = "../tests/common/audio.rs"]
 mod audio;
+#[path = "../tests/common/bluetooth.rs"]
+mod bluetooth_fixture;
 #[allow(dead_code)]
 #[path = "../tests/common/network.rs"]
 mod bus;
@@ -86,6 +88,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     let profiles = PowerProfilesService::on_connection(&client);
     let network = NetworkService::on_connection(&client);
+    let bluetooth_daemon = bluetooth_fixture::Fake::new(&address);
+    let bluetooth = way_shell::services::bluetooth::BluetoothService::on_connection(&client, None);
+    bus::wait(&context, || bluetooth.state().ready);
     let power = PowerService::on_connection(&client);
     let notifications = NotificationsService::on_connection(&client);
     let wayland = WaylandService::with_settings(settings("org.ldelossa.way-shell.window-manager"))?;
@@ -101,6 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 },
                 audio: audio.clone(),
                 network: network.clone(),
+                bluetooth: bluetooth.clone(),
                 power: power.clone(),
                 notifications: notifications.clone(),
             },
@@ -110,6 +116,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         view.window().show();
         bus::wait(&context, || {
             view.window().visibility_controller().visibility() == Visibility::Visible
+        });
+        let bluetooth_label = descendants(view.window().content())
+            .into_iter()
+            .find_map(|w| {
+                w.downcast::<gtk::Label>().ok().filter(|l| {
+                    l.label() == "Bluetooth" && l.has_css_class("quick-settings-grid-button-title")
+                })
+            })
+            .unwrap();
+        let mut ancestor = bluetooth_label.upcast::<gtk::Widget>();
+        let bluetooth_button = loop {
+            if let Ok(button) = ancestor.clone().downcast::<gtk::Button>() {
+                break button;
+            }
+            ancestor = ancestor.parent().unwrap();
+        };
+        bluetooth_button.emit_clicked();
+        bus::wait(&context, || {
+            !bluetooth.state().powered && !bluetooth.state().busy
+        });
+        assert!(!bluetooth_daemon.value(bluetooth_fixture::HCI, "Powered"));
+        bluetooth_button.emit_clicked();
+        bus::wait(&context, || {
+            bluetooth.state().powered && !bluetooth.state().busy
         });
         let mixer = icon_button(view.window().content(), "audio-speakers-symbolic");
         let power_button = icon_button(view.window().content(), "system-shutdown-symbolic");
@@ -151,6 +181,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert!(weak.upgrade().is_none());
         mixer.emit_clicked();
         power_button.emit_clicked();
+        bluetooth_button.emit_clicked();
+        assert!(bluetooth.state().powered);
         context.block_on(glib::timeout_future(Duration::from_millis(300)));
         assert!(!retained_window.is_visible());
         assert!(!mixer.is_sensitive());
@@ -162,6 +194,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     audio.stop();
     network.stop();
+    bluetooth.stop();
     logind.stop();
     notifications.stop();
     println!("composed quick-settings menu, shared-service and lifetime checks passed");

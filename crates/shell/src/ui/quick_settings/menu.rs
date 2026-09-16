@@ -63,6 +63,14 @@ impl Menu {
     pub fn widget(&self) -> &gtk::Box {
         &self.root
     }
+    /// Let a menu with its own bounded device viewport determine its height.
+    pub fn size_to_content(&self) {
+        self.root.set_vexpand(false);
+        if let Some(container) = self.root.first_child() {
+            container.set_vexpand(false);
+        }
+        self.options.set_vexpand(false);
+    }
     pub fn options(&self) -> &gtk::Box {
         &self.options
     }
