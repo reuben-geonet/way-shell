@@ -60,6 +60,14 @@ export CARGO_BUILD_JOBS=1
 cargo build --workspace --bins --release --frozen --jobs 1
 
 %check
+# Each test/example links GTK; debug info and incremental caches can exhaust
+# the Fedora build VM's disk. Keep release debug info and debug assertions.
+export CARGO_INCREMENTAL=0
+export CARGO_PROFILE_DEV_DEBUG=0
+export CARGO_PROFILE_TEST_DEBUG=0
+# Fedora's RPM environment sets -Cdebuginfo=2 in RUSTFLAGS, overriding Cargo
+# profiles. The final compiler option wins; retain all other Fedora flags.
+export RUSTFLAGS="${RUSTFLAGS:-} -Cdebuginfo=0"
 cargo test --workspace --frozen --jobs 1
 cargo build -p way-shell --example schema-probe --example application-smoke --frozen --jobs 1
 if [ -n "${WAY_SHELL_TEST_ARTIFACTS:-}" ]; then
