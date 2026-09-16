@@ -2,6 +2,7 @@
 
 pub mod audio;
 pub mod clock;
+pub mod commands;
 pub mod gamma;
 pub mod ipc;
 pub mod notifications;

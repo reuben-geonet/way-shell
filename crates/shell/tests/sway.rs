@@ -88,6 +88,12 @@ fn snapshots_settings_actions_reconnection_and_cleanup() {
                 serde_json::json!(["workspace", "output"])
             );
             send(&mut peer, sway::SUBSCRIBE, br#"{"success":true}"#);
+            assert_eq!(receive(&mut peer).0, 7);
+            send(
+                &mut peer,
+                7,
+                br#"{"loaded_config_file_name":"/private/sway.conf"}"#,
+            );
             assert_eq!(receive(&mut peer).0, sway::WORKSPACES);
             send(
                 &mut peer,
