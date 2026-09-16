@@ -1,37 +1,13 @@
-**.*o
-compile_commands.json
-way-shell
-.gdb_history
-way-sh/way-sh
-gresources.c
-gresources.h
+# Cargo build outputs
+/target/
+
+# Local development files
 /.cache/
-/result
-/result-*
 /.vscode/
-/tests/core-test
-/tests/ipc-test
-/tests/theme-test
-/tests/clock-test
-/tests/sway-transport-test
-/tests/niri-test
-/tests/power-profiles-widgets-test
-/tests/battery-widgets-test
-/tests/power-widgets-test
-/tests/brightness-widgets-test
-/tests/network-test
-/tests/network-operations-test
+.gdb_history
 __pycache__/
 
-# Build outputs
-/target/
-*.d
-gschemas.compiled
-
-/tests/audio-widgets-test
-/tests/media-widgets-test
-/tests/media-presentation-test
-/tests/notification-presentation-test
-/tests/notification-replacement-test
-
+# Nix build outputs and Fedora lock update scratch directories
+/result
+/result-*
 /nix/fedora/locks/.update-*/
