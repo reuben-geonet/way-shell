@@ -67,5 +67,6 @@ formatting and Clippy with warnings denied. Both Bluetooth and composed-popup
 probes passed on Sway and Niri. Layout captures are in
 `.cache/bluetooth/captures/`; logs use `.cache/bluetooth-*.log`.
 
-Package build and installation-check results are recorded in the migration
-checklist after the package matrix completes.
+The complete native and Fedora 43/44 package matrix passed. Artifact paths,
+digests and installation-check results are recorded in the
+[migration checklist](migration-checklist.md#bluetooth-follow-on).

@@ -224,3 +224,55 @@ Following the user's updated direction, new migration tests are written in
 Rust. The final obsolete C checks were removed with the unused adapters after
 their Rust replacements passed. The tray and menu services switched together
 after their Rust integration checks, avoiding a temporary C menu adapter.
+
+## Bluetooth follow-on
+
+On 2026-09-16, the Bluetooth implementation and fixes from reference branch
+`bluetooth` at `017b61973888d5902f6a0b6d60b6f13d81c4b1b3` were ported to
+`rust-migration`. The reference branch is unchanged. The service, radio handling,
+quick-settings controls and regression fixtures are Rust. The port preserves
+both themes, device row ordering and sizing, loading indicators, power reversal,
+device actions, Airplane Mode restoration and error recovery. See the
+[reference scenario mapping](bluetooth-port.md#reference-scenario-mapping).
+
+The verified source is `f811ca8f41b94217ee86d02dcddf6e020acb17b3`; this later
+acceptance-documentation update does not change the identity of those artifacts.
+
+- [x] All 22 original C reference scenarios pass before the port.
+- [x] All 32 Rust Bluetooth scenarios pass, including additional cancellation,
+  shutdown, hotplug, retry and radio-error cases.
+- [x] Local, native Nix, Fedora 43 and Fedora 44 workspace suites each pass
+  159 tests. The display-dependent application test is skipped in these suites
+  and passes separately under both native Sway and Niri.
+- [x] Bluetooth UI checks pass in both themes under Sway and Niri, including
+  layout bounds, stable rows, loading, power reversal and recovery. The composed
+  quick-settings checks pass on both compositors.
+- [x] Formatting and strict Clippy pass locally and in the native package build.
+- [x] `nix flake check` and `nix build .#rpms` exit successfully with lock updates
+  and import-from-derivation disabled.
+- [x] Native packaged-application smoke checks pass under Sway and Niri.
+- [x] Fresh Fedora 43/44 VMs pass installation, schemas, libraries,
+  installed-application Sway/Niri smoke and uninstall checks. Fedora 43 retains
+  `power-profiles-daemon`; Fedora 44 retains `tuned-ppd`.
+
+The native package is retained by `result-bluetooth-native` and resolves to
+`/nix/store/356d4acqw8hpdqm26rfkcm3a22jyqd13-way-shell-0.0.10`.
+The verified RPM aggregate is retained by `result-bluetooth-rpms` and resolves to
+`/nix/store/s2pnkbig11vsph1m0c04mw4bzgjcbbmn-way-shell-rpms`.
+Its binary RPMs and SHA-256 digests are:
+
+| Artifact relative to the aggregate | SHA-256 |
+| --- | --- |
+| `rpms/fedora-43-x86_64/way-shell-0.0.10-10.fc43.x86_64.rpm` | `d98982fe3cfcafffdc017b0948ee082541eaa7379e7f87512a3c7547d34f7acc` |
+| `rpms/fedora-44-x86_64/way-shell-0.0.10-10.fc44.x86_64.rpm` | `c398714b501fdb73293f91240466cf7cd40ac4ecc650c8edccfc19d4a770ff7d` |
+
+The aggregate retains build and installation logs under
+`logs/fedora-{43,44}-x86_64/`. Native matrix output is in
+`.cache/bluetooth-flake-check.log`; the RPM build command output is in
+`.cache/bluetooth-rpms.log`. Local UI captures and checks are described in
+[Bluetooth acceptance](bluetooth-port.md#ui-and-packaging-acceptance).
+
+This follow-on delivers source and artifacts only, as requested. The laptop's
+installed shell was not upgraded or restarted. Physical Bluetooth hardware was
+not exercised; the Bluetooth behavior checks use isolated BlueZ and rfkill
+fixtures.
