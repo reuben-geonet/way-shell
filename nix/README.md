@@ -151,6 +151,7 @@ To run these checks locally:
 ```sh
 nix develop
 cargo build -p way-shell --examples --locked
+sh tests/component-smoke.sh target/debug/examples  # Complete component matrix
 sh tests/wayland-component.sh target/debug/examples/sway-smoke sway
 sh tests/wayland-component.sh target/debug/examples/niri-smoke niri
 sh tests/wayland-component.sh target/debug/examples/theme-smoke niri
