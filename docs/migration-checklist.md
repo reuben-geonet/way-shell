@@ -4,9 +4,10 @@ Checked implementation items have passed their local checks. The package and
 deployment gates below are tracked separately; an implementation check is not
 a claim that the complete migration is ready to install.
 
-All implementation steps and the final package matrix have passed. Release 9
-is installed on the laptop. Hands-on acceptance is in progress; the checked
-items below distinguish automated results from the user's observations.
+Implementation, the final package matrix, installation and the agreed laptop
+acceptance are complete. Release 9 is installed. The checked items below
+distinguish automated results from the user's observations; the user declined
+the interactive Niri laptop check.
 
 - [x] 1. Accept tuned-ppd as a power profile provider.
 - [x] 2. Verify both RPM power profile providers.
@@ -139,9 +140,15 @@ items below distinguish automated results from the user's observations.
 - [x] Live laptop panel, overlay commands, quick settings, notifications and CLI checks.
 - [x] User confirms both panel clocks are visible and the later Do Not Disturb change was intentional.
 - [x] User reports basic audio works, and Sway/displays recover after disconnecting and reconnecting the dock.
-- [ ] Confirm detailed keyboard switcher navigation, selection, cancellation and focus return on the laptop.
-- [ ] Confirm suspend/resume recovery of the shell, audio and displays on the laptop.
-- [ ] Complete interactive Niri laptop acceptance; automated Niri coverage has passed.
+- [x] User confirms audio recovered automatically after the dock interruption, without changing devices, volume or application settings.
+- [x] User confirms keyboard switcher navigation and focus behave correctly.
+- [x] User confirms suspend/resume worked.
+- [x] Final read-only package, process, library, socket and D-Bus ownership verification after suspend/resume.
+
+The user explicitly declined the interactive Niri laptop check because it was
+too difficult to perform. It was not run; native Nix and both Fedora releases
+passed automated Niri coverage. Physical laptop observations above are from
+the user's Sway session.
 
 ## Verified package and installation
 
@@ -179,16 +186,25 @@ ownership, and absence of duplicate instances passed. All 16 captured state
 files matched immediately before and after installation. The user's later
 Do Not Disturb change to off is preserved.
 
-During the user's dock test, audio temporarily stopped and later returned.
+During the user's dock test, audio temporarily stopped and recovered by itself;
+the user confirms no device, volume or application setting change was needed.
 At 11:58:13 NZST, PipeWire received SIGKILL and systemd restarted it;
 WirePlumber and the PulseAudio compatibility service also restarted. Way Shell
 stayed running, reported the lost connection and reconnected. The recovered
 default output is the same built-in analog speaker device as before
-installation. Available logs do not establish what sent SIGKILL; this is not
-recorded as an uninterrupted audio hotplug pass. The user's keyboard and
-suspend/resume results remain pending.
+installation. Automatic audio recovery passed. Available logs do not establish
+what sent SIGKILL, so the temporary interruption remains recorded.
 
-## Current work
+The user subsequently confirmed navigation/focus and suspend/resume worked.
+The journal records a successful suspend and resume at 12:08:37–12:08:39 NZST.
+Final read-only verification at 12:10:47 confirmed the same shell process was
+active with zero service restarts, the installed RPM and executable matched,
+all three D-Bus names belonged to that process, and the original power-profile
+provider remained installed. There were no missing or Nix-store runtime
+libraries. Evidence is retained under
+`.cache/rust-migration/deployment/final-installed-20260916T121047/`.
+
+## Repository state
 
 The active checkout is the main repository at
 `/home/reubena/Documents/github/way-shell` on `rust-migration`, moved at the
@@ -201,10 +217,10 @@ the tray watcher, items, menus and all panel widgets also run in Rust.
 All switchers, activities, quick settings, the confirmation dialog and the
 complete message tray, level OSD, command server and application entry point now
 run in Rust. Cargo owns application compilation and tests; the temporary bridge,
-project C and Makefiles are removed. Final packaging checks and laptop
-installation have passed. Remaining hands-on checks are listed above.
+project C and Makefiles are removed. Final packaging checks, laptop
+installation and the agreed hands-on checks have passed.
 
 Following the user's updated direction, new migration tests are written in
-Rust. The final obsolete C checks are removed with the unused adapters after
-their Rust replacements pass. The tray and menu services switched together
+Rust. The final obsolete C checks were removed with the unused adapters after
+their Rust replacements passed. The tray and menu services switched together
 after their Rust integration checks, avoiding a temporary C menu adapter.
