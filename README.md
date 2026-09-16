@@ -1,10 +1,6 @@
 # Way-Shell
 
-[![Copr build status](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/package/way-shell/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/package/way-shell/)
-![AUR Version](https://img.shields.io/aur/version/way-shell)
-
-A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,
-libadwaita and gtk4-layer-shell.
+A GNOME-inspired desktop shell for Sway and Niri, written in Rust.
 
 ## Keyboard shortcuts
 
@@ -170,11 +166,6 @@ and one argument, `dark` or `light`. The script need not be executable.
 
 ### Bluetooth
 
-Quick settings provides Bluetooth power control and connect/disconnect actions for
-paired or trusted audio, input, and MIDI devices. BlueZ must be running. Your
-session needs access to `/dev/rfkill` to clear software radio blocks; hardware
-switches remain authoritative.
-
 **Bluetooth Settings** opens Blueman for discovery, pairing, and device removal.
 Install Blueman separately or choose another manager:
 
@@ -186,10 +177,6 @@ gsettings reset org.ldelossa.way-shell.system bluetooth-settings-command
 The command accepts quoted arguments without shell expansion. Changes apply on
 the next click, and launch failures appear in the menu. Power and device actions
 work independently of the external manager.
-
-Airplane Mode saves Bluetooth power and radio blocks and restores them when
-leaving. Explicit Bluetooth changes during Airplane Mode take precedence.
-Restoration is remembered for the lifetime of the shell process.
 
 ### Integrating with SwayFX
 
