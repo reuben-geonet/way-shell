@@ -7,6 +7,8 @@ license.workspace = true
 
 [dependencies]
 way-shell-core.workspace = true
+way-shell-shortcuts.workspace = true
+shlex.workspace = true
 serde_json.workspace = true
 glib.workspace = true
 gio.workspace = true
