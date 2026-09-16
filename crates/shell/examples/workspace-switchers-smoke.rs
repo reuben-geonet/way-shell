@@ -139,12 +139,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Move this window through the Rust selector",
     ))));
     app.present();
-    wait(&context, || app.is_mapped());
     let initial = manager
         .workspaces()
         .into_iter()
         .find(|workspace| workspace.focused)
         .unwrap();
+    // GTK mapping can precede the compositor placing the window. Ensure this
+    // workspace is occupied before switching away so Sway does not remove it.
+    wait(&context, || {
+        app.is_mapped() && window_is_on_workspace(niri, TITLE, &initial)
+    });
     rename.show();
     wait(&context, || rename.switcher().window().is_mapped());
     rename.switcher().activate(false);
