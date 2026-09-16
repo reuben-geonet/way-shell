@@ -69,9 +69,6 @@ impl NetworkState {
     pub fn has_wifi(&self) -> bool {
         self.devices.iter().any(|device| device.kind == 2)
     }
-    pub fn has_ethernet(&self) -> bool {
-        self.devices.iter().any(|device| device.kind == 1)
-    }
     pub fn wifi_state(&self) -> u32 {
         if !self.has_wifi() {
             return 0;
@@ -350,30 +347,5 @@ impl NetworkService {
             }]),
             done,
         )
-    }
-    /// Temporary Rust-to-C adapter access; permanent widgets use state().
-    #[doc(hidden)]
-    pub fn compatibility_client(&self) -> Option<glib::Object> {
-        self.imp()
-            .client
-            .borrow()
-            .as_ref()
-            .map(native::Client::object)
-    }
-    /// Owned native objects only for the temporary C compatibility facade.
-    #[doc(hidden)]
-    pub fn compatibility_devices(&self) -> Vec<glib::Object> {
-        self.imp()
-            .client
-            .borrow()
-            .as_ref()
-            .map_or_else(Vec::new, native::Client::devices)
-    }
-    #[doc(hidden)]
-    pub fn compatibility_primary(&self) -> Option<glib::Object> {
-        let id = self.state().primary?;
-        self.compatibility_devices()
-            .into_iter()
-            .find(|device| native::path(device) == id)
     }
 }

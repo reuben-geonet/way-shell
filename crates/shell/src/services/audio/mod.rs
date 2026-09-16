@@ -20,14 +20,6 @@ pub enum NodeKind {
     OutputStream,
 }
 impl NodeKind {
-    pub fn media_class(self) -> &'static str {
-        match self {
-            Self::Sink => "Audio/Sink",
-            Self::Source => "Audio/Source",
-            Self::InputStream => "Stream/Input/Audio",
-            Self::OutputStream => "Stream/Output/Audio",
-        }
-    }
     fn from_class(class: &str) -> Option<Self> {
         match class {
             "Audio/Sink" => Some(Self::Sink),
