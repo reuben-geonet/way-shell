@@ -30,6 +30,8 @@ pub enum WindowRole {
     LevelOsd,
     NotificationOsd,
     Dialog,
+    PanelPopup,
+    PanelPopupUnderlay,
 }
 
 impl WindowRole {
@@ -39,6 +41,18 @@ impl WindowRole {
                 "way-shell-panel",
                 Layer::Top,
                 &[Edge::Left, Edge::Right, Edge::Top][..],
+                KeyboardMode::None,
+            ),
+            Self::PanelPopup => (
+                "way-shell-panel-popup",
+                Layer::Overlay,
+                &[Edge::Top, Edge::Right][..],
+                KeyboardMode::Exclusive,
+            ),
+            Self::PanelPopupUnderlay => (
+                "way-shell-panel-popup-underlay",
+                Layer::Top,
+                &EDGES[..],
                 KeyboardMode::None,
             ),
             Self::QuickSettings => (
@@ -111,6 +125,11 @@ impl WindowRole {
             window.set_anchor(edge, anchors.contains(&edge));
         }
         match self {
+            Self::PanelPopup => {
+                window.set_margin(Edge::Top, 8);
+                window.set_margin(Edge::Right, 20);
+            }
+            Self::PanelPopupUnderlay => window.add_css_class("underlay"),
             Self::Panel => {
                 window.auto_exclusive_zone_enable();
                 window.set_size_request(-1, 30);

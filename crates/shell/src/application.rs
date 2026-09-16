@@ -15,6 +15,7 @@ use crate::{
         power::PowerService,
         power_profiles::PowerProfilesService,
         settings,
+        shortcuts::ShortcutsService,
         theme::{Theme, ThemeService},
         tray::TrayService,
         wayland::WaylandService,
@@ -28,12 +29,14 @@ use crate::{
         osd::LevelOsd,
         output_switcher::OutputSwitcher,
         panel::{PanelAction, PanelServices, Panels, status::StatusServices},
+        panel_popup::PopupEvent,
         quick_settings::{
             QuickSettingsEvent,
             controller::{QuickSettings, QuickSettingsServices},
             controls::SystemServices,
         },
         rename_switcher::RenameSwitcher,
+        shortcuts::ShortcutsSheet,
         workspace_switcher::{WorkspaceMode, WorkspaceSwitcher},
     },
 };
@@ -217,6 +220,7 @@ struct Services {
     notifications: NotificationsService,
     tray: Option<TrayService>,
     apps: AppCatalog,
+    shortcuts: Rc<ShortcutsService>,
 }
 impl Services {
     fn new(
@@ -261,7 +265,13 @@ impl Services {
         if state.available {
             bluetooth.set_airplane_mode(!state.networking_enabled);
         }
+        let shortcuts = ShortcutsService::new(
+            manager.clone(),
+            settings::open("org.ldelossa.way-shell.window-manager")
+                .map_err(|error| error.to_string())?,
+        );
         Ok(Self {
+            shortcuts,
             wayland,
             manager,
             theme,
@@ -290,6 +300,7 @@ impl Drop for Services {
         if let Some(handler) = self.brightness_handler.take() {
             self.logind.disconnect(handler);
         }
+        self.shortcuts.stop();
         self.apps.stop();
         self.clock.set_enabled(false);
         self.brightness.set_backend_available(false);
@@ -512,6 +523,16 @@ impl Runtime {
                             PanelAction::ToggleMessageTray => {
                                 desktop.message_tray.window().toggle()
                             }
+                            PanelAction::ToggleShortcuts(monitor) => {
+                                if !desktop.dialog.window().is_visible()
+                                    && let Err(error) = desktop.shortcuts.toggle_on(&monitor)
+                                {
+                                    glib::g_message!(
+                                        "way-shell",
+                                        "Could not show shortcuts: {error}"
+                                    );
+                                }
+                            }
                             PanelAction::ToggleQuickSettings => {
                                 desktop.quick_settings.window().toggle()
                             }
@@ -601,6 +622,7 @@ enum DesktopEvent {
     Activities(ActivitiesEvent),
     QuickSettings(QuickSettingsEvent),
     MessageTray(MessageTrayEvent),
+    Shortcuts(PopupEvent),
 }
 struct Desktop {
     activities: Activities,
@@ -613,6 +635,8 @@ struct Desktop {
     message_tray: Rc<MessageTray>,
     osd: Rc<LevelOsd>,
     panels: Panels,
+    shortcuts: Rc<ShortcutsSheet>,
+    popup_handlers: RefCell<Vec<(adw::Window, glib::SignalHandlerId)>>,
     events: RefCell<VecDeque<DesktopEvent>>,
     publishing: Cell<bool>,
     stopped: Cell<bool>,
@@ -676,6 +700,7 @@ impl Desktop {
         let workspace = WorkspaceSwitcher::new(services.manager.clone())?;
         let output = OutputSwitcher::new(services.manager.clone())?;
         let rename = RenameSwitcher::new(services.manager.clone())?;
+        let shortcuts = ShortcutsSheet::new(services.shortcuts.clone(), services.manager.clone())?;
         let panels = Panels::new(
             display,
             PanelServices {
@@ -696,6 +721,8 @@ impl Desktop {
             action,
         )?;
         let this = Rc::new(Self {
+            shortcuts,
+            popup_handlers: RefCell::new(Vec::new()),
             activities,
             app_switcher,
             workspace,
@@ -728,6 +755,31 @@ impl Desktop {
                 this.publish(DesktopEvent::MessageTray(event));
             }
         });
+        let weak = Rc::downgrade(&this);
+        this.shortcuts.popup().on_event(move |event| {
+            if let Some(this) = weak.upgrade() {
+                this.publish(DesktopEvent::Shortcuts(event));
+            }
+        });
+        for window in [
+            this.workspace.switcher().window(),
+            this.output.switcher().window(),
+            this.rename.switcher().window(),
+            this.app_switcher.window(),
+            this.dialog.window(),
+        ] {
+            let weak = Rc::downgrade(&this);
+            let handler = window.connect_visible_notify(move |window| {
+                if window.is_visible()
+                    && let Some(this) = weak.upgrade()
+                {
+                    this.shortcuts.hide();
+                }
+            });
+            this.popup_handlers
+                .borrow_mut()
+                .push((window.clone(), handler));
+        }
         Ok(this)
     }
     fn publish(&self, event: DesktopEvent) {
@@ -747,7 +799,20 @@ impl Desktop {
                 break;
             }
             match event {
+                DesktopEvent::Shortcuts(PopupEvent::Visible) => {
+                    if self.dialog.window().is_visible() {
+                        self.shortcuts.hide();
+                        continue;
+                    }
+                    self.activities.hide();
+                    self.quick_settings.window().hide();
+                    self.message_tray.window().hide();
+                    self.hide_selectors();
+                    self.rename.hide();
+                    self.app_switcher.hide();
+                }
                 DesktopEvent::Activities(ActivitiesEvent::WillShow) => {
+                    self.shortcuts.hide();
                     self.panels.set_activities_visible(true);
                     self.quick_settings.window().hide();
                     self.message_tray.window().hide();
@@ -757,15 +822,18 @@ impl Desktop {
                     self.panels.set_activities_visible(false)
                 }
                 DesktopEvent::QuickSettings(QuickSettingsEvent::Visible) => {
+                    self.shortcuts.hide();
                     self.panels.set_quick_settings_visible(true);
                     self.activities.hide();
                     self.message_tray.window().hide();
                     self.hide_selectors();
                 }
+                DesktopEvent::QuickSettings(QuickSettingsEvent::WillShow) => self.shortcuts.hide(),
                 DesktopEvent::QuickSettings(QuickSettingsEvent::Hidden) => {
                     self.panels.set_quick_settings_visible(false)
                 }
                 DesktopEvent::MessageTray(MessageTrayEvent::Visible) => {
+                    self.shortcuts.hide();
                     self.panels.set_message_tray_visible(true);
                     self.activities.hide();
                     self.quick_settings.window().hide();
@@ -789,6 +857,17 @@ impl Desktop {
             return Err("Desktop surfaces have closed".into());
         }
         match command {
+            Command::ShortcutsShow => {
+                if !self.dialog.window().is_visible() {
+                    self.shortcuts.show()?;
+                }
+            }
+            Command::ShortcutsHide => self.shortcuts.hide(),
+            Command::ShortcutsToggle => {
+                if !self.dialog.window().is_visible() {
+                    self.shortcuts.toggle()?;
+                }
+            }
             Command::MessageTrayOpen => {
                 self.message_tray.window().show();
             }
@@ -826,6 +905,10 @@ impl Desktop {
             return;
         }
         self.events.borrow_mut().clear();
+        for (window, handler) in self.popup_handlers.take() {
+            window.disconnect(handler);
+        }
+        self.shortcuts.close();
         self.panels.stop();
         self.osd.close();
         self.activities.close();
@@ -1102,6 +1185,40 @@ mod tests {
                         .all(|window| window.is_mapped())
                 });
                 assert!(!desktop.panels.windows().is_empty());
+                for _ in 0..2 {
+                    context
+                        .block_on(runtime.dispatch(Command::ShortcutsShow))
+                        .unwrap();
+                    assert!(desktop.shortcuts.popup().is_visible());
+                }
+                desktop.workspace.show(WorkspaceMode::FocusWorkspace);
+                assert!(!desktop.shortcuts.popup().is_visible());
+                context
+                    .block_on(runtime.dispatch(Command::ShortcutsShow))
+                    .unwrap();
+                assert!(!desktop.workspace.is_visible());
+                desktop
+                    .dialog
+                    .present("Confirm", "Confirmation retains focus", |_| {});
+                assert!(!desktop.shortcuts.popup().is_visible());
+                context
+                    .block_on(runtime.dispatch(Command::ShortcutsShow))
+                    .unwrap();
+                assert!(!desktop.shortcuts.popup().is_visible());
+                desktop.dialog.cancel();
+                context
+                    .block_on(runtime.dispatch(Command::ShortcutsToggle))
+                    .unwrap();
+                assert!(desktop.shortcuts.popup().is_visible());
+                context
+                    .block_on(runtime.dispatch(Command::ShortcutsToggle))
+                    .unwrap();
+                assert!(!desktop.shortcuts.popup().is_visible());
+                for _ in 0..2 {
+                    context
+                        .block_on(runtime.dispatch(Command::ShortcutsHide))
+                        .unwrap();
+                }
                 let old_panel = desktop.panels.windows().remove(0);
                 let socket = runtime
                     .ipc
@@ -1144,6 +1261,12 @@ mod tests {
                     desktop.quick_settings.window().is_visible()
                         && !desktop.message_tray.window().window().is_visible()
                 });
+                context
+                    .block_on(runtime.dispatch(Command::ShortcutsShow))
+                    .unwrap();
+                wait(&|| !desktop.quick_settings.window().is_visible());
+                desktop.message_tray.window().show();
+                wait(&|| !desktop.shortcuts.popup().is_visible());
                 context
                     .block_on(runtime.dispatch(Command::ThemeLight))
                     .unwrap();

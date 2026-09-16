@@ -588,6 +588,15 @@ fn navigation(key: gtk::gdk::Key, modifiers: gtk::gdk::ModifierType) -> Option<i
         None
     }
 }
+/// Internal controls documented by the shortcut sheet.
+pub const NAVIGATION: &[(&str, &str)] = &[
+    ("Type", "Search applications"),
+    ("Tab / Ctrl+N", "Next result"),
+    ("Shift+Tab / Ctrl+P", "Previous result"),
+    ("Enter", "Launch selected result"),
+    ("Escape", "Clear search"),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
