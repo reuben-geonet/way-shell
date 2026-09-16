@@ -62,7 +62,7 @@
 			When enabled way-shell will switch to the its light them.
 			While disabled the dark theme is shown.
 			When the theme is changed way-shell will execute a bash script at
-			~/.config/way-shell/on_theme_change.sh will be invoked with the
+			~/.config/way-shell/on_theme_changed.sh will be invoked with the
 			argument "dark" or "light" depending on which theme was picked.
             </description>
         </key>
@@ -86,14 +86,6 @@
             <description>
             Enabling this option will sort workspaces alphabetically.
             If its disabled workspaces are not sorted and are displayed in creation order.
-            </description>
-        </key>
-        <key name="desktop-wallpaper" type="s">
-            <default>"/no/file"</default>
-            <summary>A fully-qualified filesystem path desktop wallpaper image</summary>
-            <description>
-            Supplies an image to use in various aspects of Way-Shell where a
-            desktop wallpaper image is desired.
             </description>
         </key>
         <key name="ignored-toplevels-app-ids" type="s">
