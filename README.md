@@ -201,34 +201,31 @@ layer_effects "way-shell-quick-switcher" shadows enable; corner_radius 20
 layer_effects "way-shell-dialog" blur enable; shadows enable;
 ```
 
-Feel free to adjust these to your liking.
+## Nix commands
 
-## Road to v1.0
+Run these from the repository root.
 
-- [x] Multi-monitor support
-- [x] Scrolling workspaces bar
-- [x] Notifications daemon implementation and message tray ([Gnome 46+ style notifications](https://blogs.gnome.org/shell-dev/2024/04/23/notifications-46-and-beyond/))
-- [x] Calendar (in message tray)
-- [x] Quick Settings with button grid
-- [x] Network Manager integration
-- [x] Logind integration (restart/suspend/sleep/logout/brightness/idle inhibitor)
-- [x] In-panel wireplumber mixer (change audio input/output routes)
-- [x] PowerProfiles daemon integration
-- [x] Brightness and Audio sliders
-- [x] Airplane Mode toggle
-- [x] Night-light feature using wlr-gamma-control
-- [x] DConf integration (configuration is driven via dconf)
-- [x] CLI interface (way-sh)
-- [x] Media Player integration (control DBus announced media players)
-- [x] Keyboard backlight detection, OSD, and quick settings button
-- [x] Bluetooth quick settings (power, connect/disconnect, pairing through an external manager)
-- [x] Themeing (provide CSS override directory, light/dark theme switch button, and allow a script to be ran after the theme is switched)
-- [x] Verified Fedora RPM packaging through Nix
-- [ ] Debian packaging
-- [ ] Lock Screen (Wayland protocol based) implementation
-- [x] App/Workspace switcher (alt+tab)
-- [x] Workspace Overview/Application launcher overlay widget
-- [ ] Option to turn on idle inhibitor when video/audio sources are detected.
-- [x] Network Manager VPN (Wireguard Supported) integration in quick settings (toggle VPN's on an off).
-- [x] Rename workspace via on screen widget
-- [x] Tray Icons ([StatusNotifier protocol](https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/))
+| Command | Description |
+| --- | --- |
+| `nix develop` | Enter the development environment with Rust tools, native libraries and local schemas. |
+| `cargo fmt` (inside `nix develop`) | Apply Rust formatting to the working files. |
+| `nix build` | Build the native package and run its Cargo tests, linking the installed package at `result`. |
+| `nix build .#way-shell` | Build the native package explicitly, including its Cargo tests. |
+| `nix profile add .#way-shell` | Install the native package into your Nix profile. |
+| `nix flake check` | Run Rust formatting, Clippy, native package and schema checks, including the package's Cargo tests. |
+| `nix build .#check-format-rs` | Check Rust formatting without editing files. |
+| `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
+| `nix build .#native-package` | Check installed binaries, licenses, schemas, service paths and help output. |
+| `nix build .#native-schemas` | Check schema discovery through the installed application's wrapper environment. |
+| `nix build .#native-components` | Run the audio, GTK component and Sway/Niri runtime test suite. |
+| `nix build .#native-application-sway` | Test the installed application in an isolated Sway session. |
+| `nix build .#native-application-niri` | Test the installed application in an isolated Niri session. |
+| `nix build .#check-integration` | Run all three native integration targets. |
+| `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
+| `nix run .#rpm` | Build and verify RPMs for every configured Fedora release. |
+| `nix run .#rpm -- --fedora VERSION` | Build and verify RPMs for the selected Fedora release. |
+| `nix run .#rpm -- --list` | List the supported Fedora releases. |
+| `nix run .#rpm -- --help` | Show the RPM command's usage. |
+| `nix build .#rpms` | Build the aggregate verified RPM output directly. |
+| `nix build .#rpm-fedora-VERSION` | Build the verified RPM output for the selected Fedora release directly. |
+| `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
