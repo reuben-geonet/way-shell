@@ -1,11 +1,9 @@
-{ self, ... }:
 {
   perSystem =
     {
       config,
       pkgs,
       lib,
-      system,
       ...
     }:
     let
@@ -64,37 +62,8 @@
           '';
         }
       );
-      rpmApp = pkgs.writeShellApplication {
-        name = "rpm";
-        runtimeInputs = [ pkgs.nix ];
-        text = ''
-          fail() { echo "rpm: $*" >&2; exit 2; }
-          target=rpms
-          case "$#" in
-            0) ;;
-            1)
-              case "$1" in
-                --list) printf '%s\n' ${lib.escapeShellArgs releases}; exit 0 ;;
-                *) fail "invalid or incomplete argument: $1" ;;
-              esac ;;
-            2)
-              [ "$1" = --fedora ] || fail "expected --fedora VERSION"
-              case "$2" in
-                ${lib.concatStringsSep "|" releases}) target="rpm-fedora-$2" ;;
-                *) fail "unsupported Fedora release: $2 (use --list)" ;;
-              esac ;;
-            *) fail "too many arguments" ;;
-          esac
-          # Embed this flake's immutable snapshot, including dirty tracked edits.
-          # Never resolve '.' at runtime: callers may be in a different checkout.
-          exec nix build --no-update-lock-file \
-            --option allow-import-from-derivation false --print-build-logs \
-            "path:${self}#packages.${system}.$target"
-        '';
-      };
     in
     {
-      wayShell = { inherit rpmApp; };
       packages =
         lib.mapAttrs' (release: output: lib.nameValuePair "rpm-fedora-${release}" output) builds
         // {
@@ -106,10 +75,5 @@
             '') releases}
           '';
         };
-      apps.rpm = {
-        type = "app";
-        program = lib.getExe rpmApp;
-        meta.description = "Build RPMs for configured Fedora releases";
-      };
     };
 }
