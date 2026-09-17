@@ -209,18 +209,13 @@ Run these from the repository root.
 | --- | --- |
 | `nix develop` | Enter the development environment with Rust tools, native libraries and local schemas. |
 | `cargo fmt` (inside `nix develop`) | Apply Rust formatting to the working files. |
-| `nix build` | Build the native package and run its Cargo tests, linking the installed package at `result`. |
-| `nix build .#way-shell` | Build the native package explicitly, including its Cargo tests. |
+| `nix build` | Build the native package, linking it at `result`. |
+| `nix build .#way-shell` | Build the native package explicitly. |
 | `nix profile add .#way-shell` | Install the native package into your Nix profile. |
-| `nix flake check` | Run Rust formatting, Clippy, native package and schema checks, including the package's Cargo tests. |
+| `nix flake check` | Run Rust formatting and the lightweight native package check. |
 | `nix build .#check-format-rs` | Check Rust formatting without editing files. |
 | `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
-| `nix build .#native-package` | Check installed binaries, licenses, schemas, service paths and help output. |
-| `nix build .#native-schemas` | Check schema discovery through the installed application's wrapper environment. |
-| `nix build .#native-components` | Run the audio, GTK component and Sway/Niri runtime test suite. |
-| `nix build .#native-application-sway` | Test the installed application in an isolated Sway session. |
-| `nix build .#native-application-niri` | Test the installed application in an isolated Niri session. |
-| `nix build .#check-integration` | Run all three native integration targets. |
+| `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
 | `nix run .#rpm` | Build and verify RPMs for every configured Fedora release. |
 | `nix run .#rpm -- --fedora VERSION` | Build and verify RPMs for the selected Fedora release. |
