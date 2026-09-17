@@ -10,4 +10,4 @@ __pycache__/
 # Nix build outputs and Fedora lock update scratch directories
 /result
 /result-*
-/nix/fedora/locks/.update-*/
+/nix/packaging/fedora/locks/.update-*/

@@ -20,7 +20,7 @@
       ...
     }:
     let
-      fedoraTests = import ./fedora.nix { inherit config pkgs lib; };
+      fedoraTests = import ./fedora { inherit config pkgs lib; };
       tests = fedoraTests // {
         test-install-nixos = import ./nixos.nix { inherit config pkgs; };
       };

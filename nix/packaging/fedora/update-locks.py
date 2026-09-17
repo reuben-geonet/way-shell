@@ -37,9 +37,9 @@ def main():
     parser.add_argument("--spec", required=True, type=Path)
     args = parser.parse_args()
     root = Path.cwd()
-    if not (root / "nix/fedora/config.nix").is_file():
+    if not (root / "nix/packaging/fedora/config.nix").is_file():
         parser.error("run from the Way-Shell repository root")
-    lockdir = root / "nix/fedora/locks"
+    lockdir = root / "nix/packaging/fedora/locks"
     lockdir.mkdir(exist_ok=True)
     config = json.loads(args.config.read_text())
     ns = {
@@ -96,18 +96,18 @@ def main():
                 "rpmspec", "--define", f"fedora {release}", "--define", f"dist .fc{release}",
                 "--query", "--recommends", args.spec,
             ], text=True).splitlines()
-            for suffix, roots in {
-                "": config["packages"],
-                "-runtime": config["runtimePackages"],
-                "-services": recommendations,
+            for kind, roots in {
+                "build": config["packages"],
+                "runtime": config["runtimePackages"],
+                "services": recommendations,
             }.items():
                 packages = sorted(set(roots))
-                transaction = workspace / (suffix or "build")
+                transaction = workspace / kind
                 if packages:
                     # Store a solved transaction without installing anything. A plain
                     # `dnf download --resolve` can include conflicting providers.
                     subprocess.run(dnf + [
-                        f"--setopt=install_weak_deps={'True' if suffix == '-services' else 'False'}",
+                        f"--setopt=install_weak_deps={'True' if kind == 'services' else 'False'}",
                         "--assumeyes", "install", f"--store={transaction}", *packages,
                     ], check=True)
                 rpms = [hashes[path.name] for path in sorted((transaction / "packages").glob("*.rpm"))]
@@ -116,22 +116,22 @@ def main():
                     "nixpkgsRevision": args.revision, "requestedPackages": packages,
                     "repositories": [repo], "rpms": sorted(rpms, key=lambda rpm: rpm["url"]),
                 }
-                lock = stage / f"{release}{suffix}.json"
+                lock = stage / f"{release}-{kind}.json"
                 write_json(lock, manifest)
                 locks.append(lock)
                 # Service packages are repository candidates, not a preinstalled image.
                 # The installation test validates their DNF transaction with Way-Shell.
-                if suffix != "-services":
-                    print(f"Validating Fedora {release}{suffix} image ({len(rpms)} RPMs)", flush=True)
+                if kind != "services":
+                    print(f"Validating Fedora {release}-{kind} image ({len(rpms)} RPMs)", flush=True)
                     nix(
                         "build", "--file", args.tools / "update-image.nix", "--argstr", "nixpkgs", args.nixpkgs,
-                        "--argstr", "lock", lock, "--arg", "size", "4096" if suffix else "16384",
+                        "--argstr", "lock", lock, "--arg", "size", "16384" if kind == "build" else "4096",
                         "--no-link", "--max-jobs", "1", "--cores", "2", "--print-build-logs",
                     )
         # No committed file is replaced until every candidate image builds.
         for lock in locks:
             os.replace(lock, lockdir / lock.name)
-            print(f"Updated nix/fedora/locks/{lock.name}", flush=True)
+            print(f"Updated nix/packaging/fedora/locks/{lock.name}", flush=True)
 
 
 if __name__ == "__main__":

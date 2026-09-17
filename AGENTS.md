@@ -10,7 +10,7 @@ Build only what the current requirement needs. Prefer standard tools and straigh
 - `crates/shortcuts/`: Sway and Niri shortcut parsing.
 - `data/` and `gresources.xml`: Settings schemas, themes and bundled resources.
 - `scripts/install.sh`: Stages built binaries and resources for packaging.
-- `nix/`: Development environment, package builds and checks; Fedora VM tooling lives in `nix/fedora/`, OS installation tests in `nix/install-tests/`.
+- `nix/`: Development environment, package builds and checks; Fedora packaging and VM tooling live in `nix/packaging/fedora/`, OS installation tests in `nix/install-tests/` with Fedora tests in `nix/install-tests/fedora/`.
 - `way-shell.spec`: Fedora RPM definition.
 - `contrib/systemd/`: User service definition.
 - `tests/`: Shared test fixtures; Rust integration tests live in `crates/*/tests/`.
