@@ -32,8 +32,8 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
 For Nix development, an installable native Nix package, and locally built
-Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix run .#rpm -- --list`
-for the supported Fedora releases.
+Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix flake show`
+to discover available targets.
 
 An [AUR package](https://aur.archlinux.org/packages/way-shell) also exists for Arch-based distros, which can be installed with any AUR helper, or with `makepkg` if you're feeling lucky.
 
@@ -217,14 +217,11 @@ Run these from the repository root.
 | `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
 | `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
-| `nix run .#rpm` | Build RPMs for every configured Fedora release. |
-| `nix run .#rpm -- --fedora VERSION` | Build RPMs for the selected Fedora release. |
-| `nix run .#rpm -- --list` | List the supported Fedora releases. |
-| `nix build .#rpms` | Build the aggregate RPM output directly. |
-| `nix build .#rpm-fedora-VERSION` | Build the RPM output for the selected Fedora release directly. |
-| `nix run .#test-install` | Test package installation and removal on every supported system. |
-| `nix run .#test-install -- --fedora` | Test all supported Fedora releases. |
-| `nix run .#test-install -- --fedora VERSION` | Test one Fedora release. |
-| `nix run .#test-install -- --nixos` | Test installation into a user's Nix profile inside NixOS. |
-| `nix run .#test-install -- --list` | List supported installation-test systems and releases. |
+| `nix build .#rpms -L` | Build RPMs for every configured Fedora release. |
+| `nix build .#rpm-fedora-VERSION -L` | Build RPMs for the selected Fedora release. |
+| `nix build .#test-install -L` | Test package installation and removal on every supported system. |
+| `nix build .#test-install-fedora -L` | Test all supported Fedora releases. |
+| `nix build .#test-install-fedora-VERSION -L` | Test one Fedora release. |
+| `nix build .#test-install-nixos -L` | Test installation into a user's Nix profile inside NixOS. |
+| `nix flake show` | Discover available targets. |
 | `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
