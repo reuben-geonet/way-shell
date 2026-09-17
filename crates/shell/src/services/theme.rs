@@ -194,6 +194,11 @@ impl ThemeService {
     fn load_css(&self) {
         let style = self.imp().style.borrow();
         if let Some(style) = style.as_ref() {
+            // Keep native GTK/libadwaita controls in step with the shell CSS.
+            adw::StyleManager::for_display(&style.display).set_color_scheme(match self.theme() {
+                Theme::Light => adw::ColorScheme::ForceLight,
+                Theme::Dark => adw::ColorScheme::ForceDark,
+            });
             match self.theme().source(self.imp().directory.get().unwrap()) {
                 ThemeSource::File(path) => {
                     style.provider.load_from_file(&gio::File::for_path(path))
