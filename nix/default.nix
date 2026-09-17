@@ -5,8 +5,7 @@
     ./cargo.nix
     ./native.nix
     ./development.nix
-    ./fedora.nix
-    ./rpm.nix
+    ./packaging
     ./checks.nix
     ./install-tests
   ];
