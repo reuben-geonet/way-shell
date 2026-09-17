@@ -5,18 +5,13 @@
   releases = {
     "43" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os";
-      powerProvider = "power-profiles-daemon";
-      extraPackages = [ "power-profiles-daemon" ];
     };
     "44" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os";
-      powerProvider = "tuned-ppd";
-      # The pinned closure generator does not resolve RPM's conditional
-      # requirements; image validation identified these additional providers.
-      extraPackages = [
-        "tuned-ppd"
-        "rpm-plugin-selinux"
-      ];
+      # Fedora 44 workaround: the pinned resolver misses RPM's conditional
+      # SELinux dependency and util-linux's PAM dependencies with systemd.
+      # Remove these entries when it resolves them, then validate the image lock.
+      extraPackages = [ "rpm-plugin-selinux" "pam" "authselect-libs" ];
     };
   };
   arch = "x86_64";
@@ -31,45 +26,30 @@
         "gpgverify"
         "rust"
         "cargo"
+        "cargo-rpm-macros"
+        "cargo2rpm"
         "clang-devel"
         "libadwaita-devel"
         "gtk4-layer-shell-devel"
         "wireplumber-devel"
         "NetworkManager-libnm-devel"
         "pipewire-devel"
-        "pipewire"
-        "pipewire-pulseaudio"
         "pulseaudio-libs-devel"
         "wayland-devel"
         "glib2-devel"
         "redhat-rpm-config"
-        "NetworkManager"
-        "wireplumber"
-        "upower"
         "systemd"
+        # Fedora 43/44 resolver workaround: dbus and systemd use rich
+        # dependencies the pinned resolver skips. Remove these explicit
+        # providers when it resolves those dependencies, then validate the locks.
         "dbus-broker"
-        "dbus-daemon"
-        "binutils"
-        # These conditional requirements belong to the image's native tooling,
-        # even though the application no longer uses systemd macros or Python.
+        "util-linux-core"
+        # systemd-rpm-macros supplies the application's lifecycle macros.
         "systemd-rpm-macros"
+        # Fedora 43/44 resolver workaround: python3-setuptools satisfies a
+        # conditional tooling dependency. Remove its explicit entry once the
+        # resolver includes it automatically, then validate both image locks.
         "python3-setuptools"
-        # Installed-package smoke checks run both compositors as a private user.
-        "sway"
-        # The pinned resolver selects this provider of the sway-config virtual
-        # package. Selecting another provider would install conflicting configs.
-        "sway-config-upstream"
-        "niri"
-        "util-linux"
-        "shadow-utils"
-        "dejavu-sans-fonts"
-        "fontconfig"
-        "mesa-libEGL"
-        "mesa-dri-drivers"
-        # util-linux has conditional PAM requirements with systemd. The pinned
-        # resolver needs both providers explicitly for either Fedora release.
-        "pam"
-        "authselect-libs"
       ]
     )
   );

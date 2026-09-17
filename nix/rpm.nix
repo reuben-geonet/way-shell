@@ -11,9 +11,13 @@
     let
       cfg = config.wayShell;
       releases = builtins.attrNames cfg.fedora.releases;
-      archive = pkgs.runCommand "way-shell-${cfg.version}.tar.gz" { } ''
+      archive = assert lib.assertMsg (
+        lib.hasInfix "\nVersion: ${cfg.version}\n" (builtins.readFile ../way-shell.spec)
+      ) "Cargo and RPM versions disagree";
+      pkgs.runCommand "way-shell-${cfg.version}.tar.gz" { } ''
         mkdir source
         cp -r ${cfg.source}/. source/
+        cp ${../way-shell.spec} source/way-shell.spec
         chmod -R u+w source
         cp -rL ${cfg.cargoVendor} source/vendor
         cp -r ${cfg.dependencyLicenses} source/dependency-licenses
@@ -51,12 +55,10 @@
             rpmout=/var/tmp/way-shell-rpm
             mkdir -p "$rpmout"/{BUILD,BUILDROOT,SPECS,SOURCES,RPMS,SRPMS}
             export CARGO_HOME="$rpmout/cargo-home"
-            # Export the Fedora-built test helper separately from the RPM payload.
-            export WAY_SHELL_TEST_ARTIFACTS="$out/test-helpers"
             df -h /tmp "$rpmout"
             rustc --version
             cargo --version
-            rpmbuild -vv --define "_topdir $rpmout" -ta "$srcName"
+            rpmbuild --define "_topdir $rpmout" --define "_smp_mflags -j1" -ta "$srcName"
             runHook postBuild
           '';
         }
@@ -72,11 +74,6 @@
             }
             ''
               export RPM_DIRECTORY=${builds.${release}}/rpms/fedora-${release}-x86_64
-              export POWER_PROVIDER=${cfg.fedora.releases.${release}.powerProvider}
-              export SCHEMA_PROBE=${builds.${release}}/test-helpers/schema-probe
-              export APPLICATION_SMOKE_HELPER=${builds.${release}}/test-helpers/application-smoke
-              export APPLICATION_SMOKE_SCRIPT=${../tests/application-smoke.sh}
-              export EXPECTED_SCHEMAS=${lib.escapeShellArg (lib.concatStringsSep " " cfg.schemaIds)}
               source ${./tests/fedora-install.sh}
             ''
         )
