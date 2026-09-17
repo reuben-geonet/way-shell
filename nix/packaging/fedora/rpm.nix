@@ -11,12 +11,12 @@
       releases = builtins.attrNames cfg.fedora.releases;
       archive =
         assert lib.assertMsg (lib.hasInfix "\nVersion: ${cfg.version}\n" (
-          builtins.readFile ../way-shell.spec
+          builtins.readFile ../../../way-shell.spec
         )) "Cargo and RPM versions disagree";
         pkgs.runCommand "way-shell-${cfg.version}.tar.gz" { } ''
           mkdir source
           cp -r ${cfg.source}/. source/
-          cp ${../way-shell.spec} source/way-shell.spec
+          cp ${../../../way-shell.spec} source/way-shell.spec
           chmod -R u+w source
           cp -rL ${cfg.cargoVendor} source/vendor
           cp -r ${cfg.dependencyLicenses} source/dependency-licenses

@@ -9,7 +9,7 @@ in
 lib.mapAttrs' (
   release: _:
   let
-    runtimeImage = import ../fedora/image.nix {
+    runtimeImage = import ../../packaging/fedora/image.nix {
       inherit pkgs;
       manifest = cfg.runtimeManifests.${release};
       size = 4096;
@@ -32,7 +32,7 @@ lib.mapAttrs' (
         ''
           # DNF can silently skip unavailable recommendations; keep their lock current.
           rpmspec --define 'fedora ${release}' --define 'dist .fc${release}' \
-            --query --recommends ${../../way-shell.spec} | sort > recommendations
+            --query --recommends ${../../../way-shell.spec} | sort > recommendations
           diff -u ${
             pkgs.writeText "fedora-${release}-recommendations" (
               lib.concatMapStrings (package: package + "\n") cfg.serviceManifests.${release}.requestedPackages
@@ -56,7 +56,7 @@ lib.mapAttrs' (
             config.packages."rpm-fedora-${release}"
           }/rpms/fedora-${release}-${cfg.fedora.arch}
           export INSTALL_REPOSITORY=${repository}
-          source ${./fedora.sh}
+          source ${./install.sh}
         ''
     );
   in
