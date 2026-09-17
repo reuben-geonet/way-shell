@@ -23,13 +23,6 @@
         ];
       };
       version = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;
-      schemaIds = map (match: builtins.elemAt match 0) (
-        builtins.filter builtins.isList (
-          builtins.split ''<schema[^>]*id="([^"]+)"'' (
-            builtins.readFile ../data/org.ldelossa.way-shell.gschema.xml
-          )
-        )
-      );
     };
   };
 }

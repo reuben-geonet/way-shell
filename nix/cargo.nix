@@ -7,13 +7,12 @@
       strictDeps = true;
       enableParallelBuilding = false;
       cargoDeps = config.wayShell.cargoVendor;
-      # Keep the native Cargo layout used by the installer and test harnesses.
+      # Keep the native Cargo layout used by the shared installer.
       auditable = false;
       CARGO_TARGET_DIR = "target";
-      # Match the RPM check profile without changing local or release debug info.
+      # Keep optional developer checks small without changing release debug info.
       CARGO_INCREMENTAL = "0";
       CARGO_PROFILE_DEV_DEBUG = "0";
-      CARGO_PROFILE_TEST_DEBUG = "0";
       nativeBuildInputs = with pkgs; [
         pkg-config
         glib
