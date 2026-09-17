@@ -31,7 +31,7 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
-For Nix development, an installable native Nix package, and locally verified
+For Nix development, an installable native Nix package, and locally built
 Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix run .#rpm -- --list`
 for the supported Fedora releases.
 
@@ -217,10 +217,14 @@ Run these from the repository root.
 | `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
 | `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
-| `nix run .#rpm` | Build and verify RPMs for every configured Fedora release. |
-| `nix run .#rpm -- --fedora VERSION` | Build and verify RPMs for the selected Fedora release. |
+| `nix run .#rpm` | Build RPMs for every configured Fedora release. |
+| `nix run .#rpm -- --fedora VERSION` | Build RPMs for the selected Fedora release. |
 | `nix run .#rpm -- --list` | List the supported Fedora releases. |
-| `nix run .#rpm -- --help` | Show the RPM command's usage. |
-| `nix build .#rpms` | Build the aggregate verified RPM output directly. |
-| `nix build .#rpm-fedora-VERSION` | Build the verified RPM output for the selected Fedora release directly. |
+| `nix build .#rpms` | Build the aggregate RPM output directly. |
+| `nix build .#rpm-fedora-VERSION` | Build the RPM output for the selected Fedora release directly. |
+| `nix run .#test-install` | Test package installation and removal on every supported system. |
+| `nix run .#test-install -- --fedora` | Test all supported Fedora releases. |
+| `nix run .#test-install -- --fedora VERSION` | Test one Fedora release. |
+| `nix run .#test-install -- --nixos` | Test installation into a user's Nix profile inside NixOS. |
+| `nix run .#test-install -- --list` | List supported installation-test systems and releases. |
 | `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
