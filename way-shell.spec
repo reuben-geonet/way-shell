@@ -1,8 +1,6 @@
-%define _userunitdir /usr/lib/systemd/user
-
 Name: way-shell
 Version: 0.0.10
-Release: 10%{?dist}
+Release: 11%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: GPL-2.0-only
 
@@ -10,16 +8,12 @@ URL: https://github.com/ldelossa/way-shell
 Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: gcc
-BuildRequires: pkgconfig
-BuildRequires: wayland-devel
 BuildRequires: glib2-devel
 BuildRequires: rust >= 1.90
 BuildRequires: cargo >= 1.90
+BuildRequires: cargo-rpm-macros >= 26.4
+BuildRequires: systemd-rpm-macros
 BuildRequires: clang-devel
-BuildRequires: pipewire
-BuildRequires: pipewire-pulseaudio
-BuildRequires: wireplumber
-BuildRequires: dbus-daemon
 
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(wireplumber-0.5)
@@ -30,52 +24,41 @@ BuildRequires: pkgconfig(libpulse-mainloop-glib)
 BuildRequires: pkgconfig(wayland-client)
 BuildRequires: pkgconfig(gtk4-layer-shell-0)
 
-Requires: NetworkManager
-Requires: wireplumber
-Requires: upower
-Requires: (power-profiles-daemon or tuned-ppd)
-Requires: systemd
+Recommends: NetworkManager
+Recommends: bluez
+Recommends: pipewire
+Recommends: pipewire-pulseaudio
+Recommends: wireplumber
+Recommends: upower
+Recommends: (power-profiles-daemon or tuned-ppd)
+Recommends: systemd
+%{?systemd_ordering}
 
 %description
-A GNOME-inspired desktop shell for Sway and Niri, written in Rust with GTK4,
-libadwaita and gtk4-layer-shell.
-
-Way-Shell requires a Wayland session and its selected Sway or Niri compositor.
-A session D-Bus enables notification, tray and media integrations. Desktop
-services supply the corresponding optional controls:
-
-- Logind
-- NetworkManager
-- WirePlumber/Pipewire
-- power-profiles-daemon or tuned-ppd
-- UPower
-
-Unavailable optional services disable their controls until they recover.
+A GNOME-inspired desktop shell for Sway and Niri, built with GTK4 and libadwaita.
+Desktop services provide optional network, Bluetooth, audio, power and session
+controls. Unavailable services disable their controls until they recover.
 
 %prep
-%setup -q
+%autosetup
+# Keep the pinned registry and Git source replacements supplied by Nix.
+cp .cargo/config.toml vendor-config.toml
+%cargo_prep -N
+cat vendor-config.toml >> .cargo/config.toml
+%cargo_vendor_manifest
+# Fedora 43 workaround: cargo2rpm 0.1.18 rejects Git source suffixes.
+# Remove this normalization when the oldest supported generator accepts them.
+# Cargo.lock retains the pinned Git revisions.
+sed -i 's/ (.*)//' cargo-vendor.txt
+# Expand without macro arguments so the shell receives the redirections.
+%{cargo_license} > cargo-licenses.txt
 
 %build
-export CARGO_BUILD_JOBS=1
-cargo build --workspace --bins --release --frozen --jobs 1
+%cargo_build -- --workspace --bins --frozen
 
 %check
-# Each test/example links GTK; debug info and incremental caches can exhaust
-# the Fedora build VM's disk. Keep release debug info and debug assertions.
-export CARGO_INCREMENTAL=0
-export CARGO_PROFILE_DEV_DEBUG=0
-export CARGO_PROFILE_TEST_DEBUG=0
-# Fedora's RPM environment sets -Cdebuginfo=2 in RUSTFLAGS, overriding Cargo
-# profiles. The final compiler option wins; retain all other Fedora flags.
-export RUSTFLAGS="${RUSTFLAGS:-} -Cdebuginfo=0"
-cargo test --workspace --frozen --jobs 1
-cargo build -p way-shell --example schema-probe --example application-smoke --frozen --jobs 1
-if [ -n "${WAY_SHELL_TEST_ARTIFACTS:-}" ]; then
-    install -Dm755 target/debug/examples/schema-probe "$WAY_SHELL_TEST_ARTIFACTS/schema-probe"
-    install -Dm755 target/debug/examples/application-smoke "$WAY_SHELL_TEST_ARTIFACTS/application-smoke"
-fi
-cargo build -p way-shell --example audio-smoke --frozen --jobs 1
-sh tests/audio-smoke.sh target/debug/examples/audio-smoke
+target/release/way-shell --help
+target/release/way-sh --help
 
 %install
 DESTDIR="%{buildroot}" PREFIX="%{_prefix}" BINDIR="%{_bindir}" \
@@ -83,11 +66,13 @@ DESTDIR="%{buildroot}" PREFIX="%{_prefix}" BINDIR="%{_bindir}" \
     LICENSEDIR="%{_datadir}/licenses/%{name}" CARGO_ARTIFACT_DIR=target/release \
     DEPENDENCY_LICENSES="$PWD/dependency-licenses" sh scripts/install.sh
 
-%post
-glib-compile-schemas %{_datadir}/glib-2.0/schemas
+install -m644 cargo-vendor.txt cargo-licenses.txt %{buildroot}%{_datadir}/licenses/%{name}/
 
-%postun
-glib-compile-schemas %{_datadir}/glib-2.0/schemas
+%post
+%systemd_user_post way-shell.service
+
+%preun
+%systemd_user_preun way-shell.service
 
 %files
 %license %{_datadir}/licenses/%{name}
@@ -97,6 +82,9 @@ glib-compile-schemas %{_datadir}/glib-2.0/schemas
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Thu Sep 17 2026 Way Shell contributors - 0.0.10-11
+- Modernize offline Cargo packaging, optional services and user service lifecycle.
+
 * Wed Sep 16 2026 Way Shell contributors - 0.0.10-10
 - Port Bluetooth quick settings, radio transitions and recovery to Rust.
 

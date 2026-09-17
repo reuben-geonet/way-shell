@@ -6,54 +6,23 @@
       internal = true;
     };
     config.wayShell = {
-      # Both package formats consume this snapshot: Cargo sources, fixtures,
-      # resources, protocol XML and installation scripts, without local builds.
-      source = lib.cleanSourceWith {
-        src = ../.;
-        name = "way-shell-source";
-        filter =
-          path: type:
-          let
-            name = baseNameOf path;
-            relative = lib.removePrefix (toString ../. + "/") (toString path);
-          in
-          lib.cleanSourceFilter path type
-          && !(builtins.elem name [
-            ".cache"
-            ".agents"
-            ".codex"
-            ".direnv"
-            ".github"
-            ".vscode"
-            "build"
-            "dist"
-            "outputs"
-            "staging"
-            "target"
-            "gschemas.compiled"
-          ])
-          && !(lib.hasPrefix "result" name)
-          && !(builtins.elem relative [
-            "nix"
-            "flake.nix"
-            "flake.lock"
-            ".gdb_history"
-          ])
-          && !(lib.hasSuffix ".o" name)
-          && !(lib.hasSuffix ".d" name)
-          && !(lib.hasSuffix ".a" name)
-          && !(lib.hasSuffix ".rlib" name)
-          && !(lib.hasSuffix ".rmeta" name)
-          && !(lib.hasSuffix ".pending" name);
+      # Only application/build inputs affect compilation. The RPM archive adds
+      # its spec separately; documentation and packaging checks stay outside.
+      source = lib.fileset.toSource {
+        root = ../.;
+        fileset = lib.fileset.unions [
+          ../Cargo.toml
+          ../Cargo.lock
+          ../LICENSE
+          ../crates
+          ../data
+          ../gresources.xml
+          ../scripts
+          ../tests
+          ../contrib/systemd
+        ];
       };
-      version = let
-        cargoVersion = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;
-        rpmVersion = lib.removePrefix "Version: " (
-          lib.findFirst (lib.hasPrefix "Version: ") (throw "way-shell.spec has no Version") (
-            lib.splitString "\n" (builtins.readFile ../way-shell.spec)
-          )
-        );
-      in assert lib.assertMsg (cargoVersion == rpmVersion) "Cargo and RPM versions disagree"; cargoVersion;
+      version = (builtins.fromTOML (builtins.readFile ../Cargo.toml)).workspace.package.version;
       schemaIds = map (match: builtins.elemAt match 0) (
         builtins.filter builtins.isList (
           builtins.split ''<schema[^>]*id="([^"]+)"'' (

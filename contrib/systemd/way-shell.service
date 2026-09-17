@@ -2,7 +2,7 @@
 Description=Runs way-shell once sway session target is reached
 
 [Service]
-Type=Exec
+Type=exec
 # This is required when Way-Shell runs under systemd.
 #
 # Way-Shell launches other apps and these apps join the same control group,
