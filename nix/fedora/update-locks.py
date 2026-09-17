@@ -1,4 +1,4 @@
-"""Resolve with pinned Nixpkgs, validate every image, then replace the locks."""
+"""Resolve with DNF, validate every image, then replace the pinned RPM locks."""
 
 import argparse
 import base64
@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--nixpkgs", required=True)
     parser.add_argument("--revision", required=True)
     parser.add_argument("--tools", required=True, type=Path)
+    parser.add_argument("--spec", required=True, type=Path)
     args = parser.parse_args()
     root = Path.cwd()
     if not (root / "nix/fedora/config.nix").is_file():
@@ -41,13 +42,18 @@ def main():
     lockdir = root / "nix/fedora/locks"
     lockdir.mkdir(exist_ok=True)
     config = json.loads(args.config.read_text())
-    ns = {"repo": "http://linux.duke.edu/metadata/repo"}
+    ns = {
+        "repo": "http://linux.duke.edu/metadata/repo",
+        "rpm": "http://linux.duke.edu/metadata/common",
+    }
     # Keep staging on the same filesystem so os.replace is atomic per file.
     with tempfile.TemporaryDirectory(prefix=".update-", dir=lockdir) as temporary:
         stage = Path(temporary)
+        locks = []
         for release, settings in sorted(config["releases"].items()):
             print(f"Resolving Fedora {release}", flush=True)
-            packages = sorted(set(config["packages"] + settings.get("extraPackages", [])))
+            workspace = stage / release
+            (workspace / "root").mkdir(parents=True)
             base_url = settings["baseUrl"]
             repomd_url = base_url + "/repodata/repomd.xml"
             repomd = prefetch(repomd_url)
@@ -65,39 +71,67 @@ def main():
                     "timestamp": primary.findtext("repo:timestamp", namespaces=ns),
                 },
             }
-            request = stage / f"{release}-request.json"
-            write_json(request, {
-                "release": release, "packages": packages,
-                "archs": config["archs"], "repositories": [repo],
-            })
-            closure = nix(
-                "build", "--file", args.tools / "resolve.nix", "--argstr", "nixpkgs", args.nixpkgs,
-                "--argstr", "request", request, "--no-link", "--print-out-paths",
-                "--max-jobs", "1", "--cores", "2", "--print-build-logs",
-            )
-            rpms = json.loads(nix(
-                "eval", "--json", "--file", closure,
-                "--apply", "f: f { fetchurl = args: args; }",
-            ))
-            if not rpms or any(set(rpm) != {"url", "sha256"} for rpm in rpms):
-                raise ValueError("resolver did not produce SHA-256 RPM fetches")
-            manifest = {
-                "format": 1, "release": release, "arch": config["arch"],
-                "nixpkgsRevision": args.revision, "requestedPackages": packages,
-                "repositories": [repo], "rpms": sorted(rpms, key=lambda rpm: rpm["url"]),
-            }
-            lock = stage / f"{release}.json"
-            write_json(lock, manifest)
-            print(f"Validating Fedora {release} image ({len(rpms)} RPMs)", flush=True)
-            nix(
-                "build", "--file", args.tools / "update-image.nix", "--argstr", "nixpkgs", args.nixpkgs,
-                "--argstr", "lock", lock, "--no-link", "--max-jobs", "1", "--cores", "2",
-                "--print-build-logs",
-            )
-        # No committed file is replaced until all candidates build successfully.
-        for release in sorted(config["releases"]):
-            os.replace(stage / f"{release}.json", lockdir / f"{release}.json")
-            print(f"Updated nix/fedora/locks/{release}.json", flush=True)
+            # Read checksums from Fedora metadata, not from a second package list.
+            primary_path = prefetch(repo["primary"]["url"], checksum.text)["storePath"]
+            metadata = workspace / "primary.xml"
+            subprocess.run(["zstd", "-dq", primary_path, "-o", metadata], check=True)
+            hashes = {}
+            for _, package in ET.iterparse(metadata, events=("end",)):
+                if package.tag == "{" + ns["rpm"] + "}package":
+                    digest = package.find("rpm:checksum", ns)
+                    if digest.attrib["type"] != "sha256":
+                        raise ValueError("RPM metadata must use SHA-256")
+                    url = base_url + "/" + package.find("rpm:location", ns).attrib["href"]
+                    hashes[Path(url).name] = {"url": url, "sha256": digest.text}
+                    package.clear()
+            # An empty root and explicit configuration keep the host out of resolution.
+            dnf = [
+                "dnf5", "--config=/dev/null", f"--installroot={workspace}/root",
+                f"--releasever={release}", f"--forcearch={config['arch']}",
+                "--setopt=reposdir=", "--setopt=plugins=False",
+                f"--setopt=cachedir={workspace}/cache", f"--setopt=logdir={workspace}/logs",
+                f"--setopt=persistdir={workspace}/state", f"--repofrompath=fedora,{base_url}",
+            ]
+            recommendations = subprocess.check_output([
+                "rpmspec", "--define", f"fedora {release}", "--define", f"dist .fc{release}",
+                "--query", "--recommends", args.spec,
+            ], text=True).splitlines()
+            for suffix, roots in {
+                "": config["packages"],
+                "-runtime": config["runtimePackages"],
+                "-services": recommendations,
+            }.items():
+                packages = sorted(set(roots))
+                transaction = workspace / (suffix or "build")
+                if packages:
+                    # Store a solved transaction without installing anything. A plain
+                    # `dnf download --resolve` can include conflicting providers.
+                    subprocess.run(dnf + [
+                        f"--setopt=install_weak_deps={'True' if suffix == '-services' else 'False'}",
+                        "--assumeyes", "install", f"--store={transaction}", *packages,
+                    ], check=True)
+                rpms = [hashes[path.name] for path in sorted((transaction / "packages").glob("*.rpm"))]
+                manifest = {
+                    "format": 1, "release": release, "arch": config["arch"],
+                    "nixpkgsRevision": args.revision, "requestedPackages": packages,
+                    "repositories": [repo], "rpms": sorted(rpms, key=lambda rpm: rpm["url"]),
+                }
+                lock = stage / f"{release}{suffix}.json"
+                write_json(lock, manifest)
+                locks.append(lock)
+                # Service packages are repository candidates, not a preinstalled image.
+                # The installation test validates their DNF transaction with Way-Shell.
+                if suffix != "-services":
+                    print(f"Validating Fedora {release}{suffix} image ({len(rpms)} RPMs)", flush=True)
+                    nix(
+                        "build", "--file", args.tools / "update-image.nix", "--argstr", "nixpkgs", args.nixpkgs,
+                        "--argstr", "lock", lock, "--arg", "size", "4096" if suffix else "16384",
+                        "--no-link", "--max-jobs", "1", "--cores", "2", "--print-build-logs",
+                    )
+        # No committed file is replaced until every candidate image builds.
+        for lock in locks:
+            os.replace(lock, lockdir / lock.name)
+            print(f"Updated nix/fedora/locks/{lock.name}", flush=True)
 
 
 if __name__ == "__main__":

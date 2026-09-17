@@ -8,5 +8,6 @@
     ./fedora.nix
     ./rpm.nix
     ./checks.nix
+    ./install-tests
   ];
 }
