@@ -72,6 +72,7 @@ impl NotificationsList {
         dnd.set_size_request(200, -1);
         dnd.add_css_class("notifications-list-dnd");
         let dnd_list = gtk::ListBox::new();
+        dnd_list.add_css_class("notifications-list-dnd-container");
         dnd_list.set_selection_mode(gtk::SelectionMode::None);
         dnd_list.append(&dnd);
         controls.set_start_widget(Some(&dnd_list));
