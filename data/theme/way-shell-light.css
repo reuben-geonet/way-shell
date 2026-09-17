@@ -521,6 +521,11 @@ statuspage {
   margin: 6px;
 }
 
+#notifications-list .notifications-list-dnd-container {
+  background: transparent;
+  color: @text-general;
+}
+
 #notifications-list .notification-widget-media-button {
     padding: 4px;
     border-radius: 11px;
