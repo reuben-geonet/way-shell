@@ -1,24 +1,25 @@
 # Way-Shell
 
-[![Copr build status](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/package/way-shell/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/package/way-shell/)
-![AUR Version](https://img.shields.io/aur/version/way-shell)
+A GNOME-inspired desktop shell for Sway and Niri, written in Rust.
 
-A Gnome inspired desktop shell for Wayland compositors/window managers written
-in C and Gtk4.
+## Keyboard shortcuts
 
-Way-Shell expects a Gnome-like environment to be available.
-This means DBus must be running and the following services must be available:
+Use the panel’s **Keyboard shortcuts** button or `way-sh shortcuts toggle` to
+view saved Sway/Niri shortcuts and Way-Shell navigation.
 
-- Logind
-- NetworkManager
-- WirePlumber/Pipewire
-- UPower
+Way-Shell requires a Wayland session and its selected Sway or Niri compositor.
+A session D-Bus enables notification, tray and media integrations. These desktop
+services provide the corresponding controls:
 
-If you're using the default Fedora release these services should be available by default.
-If you're using a Fedora spin you may want to confirm these services exist. 
+- Logind for session actions and inhibitors
+- NetworkManager for networking
+- BlueZ for Bluetooth
+- WirePlumber/PipeWire for audio
+- UPower for battery state
+- power-profiles-daemon or tuned-ppd for power profiles
 
-Currently Way-Shell only supports Sway but this will change as the project
-matures.
+Unavailable optional services disable their controls. The controls recover when
+the services return.
 
 Way-Shell is in its very early stages of development so expect some crashes and
 bugs. However, it is my daily driver and I'm rather quick to fix show stopper
@@ -30,13 +31,34 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
-Way-Shell currently targets Fedora 40 and will not work with previous version. 
+For Nix development, an installable native Nix package, and locally built
+Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix flake show`
+to discover available targets.
 
 An [AUR package](https://aur.archlinux.org/packages/way-shell) also exists for Arch-based distros, which can be installed with any AUR helper, or with `makepkg` if you're feeling lucky.
 
-Other distros will need to build Way-Shell from source. 
+To build from source, use the pinned Nix development environment:
 
-The repository is rather self contained and the dependencies are listed at the top of the Makefile.
+```sh
+nix develop
+cargo build --workspace --locked
+cargo test --workspace --locked
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+target/debug/way-shell --help
+```
+
+The workspace uses Rust 2024 and requires Rust 1.90 or newer. Its four crates are
+`way-shell-core` (protocols and shared logic), `way-shell` (services and GTK UI),
+`way-shell-shortcuts` (compositor shortcut parsing), and `way-sh` (the command-line
+client, without GTK). `Cargo.lock` pins Rust
+dependencies; the Nix environment supplies the compiler and native libraries.
+See [the Nix commands below](#nix-commands) for packaging and optional developer
+checks.
+
+The old Fedora 40 toolbox build and Makefiles have been retired. Cargo is the
+application build tool; `scripts/install.sh` stages already-built files for Nix
+and RPM packaging.
 
 Contributions are very welcome if you're using Way-Shell on a distro other then Fedora!
 
@@ -81,13 +103,12 @@ The below table lists useful keymaps to keep in mind.
 | Super + g  | (In app switcher) move to next instance of an application if it exists |
 | Super + Shift + g  | (In app switcher) move to previous instance of an application if it exists |
 | Super + w | Open the workspace switcher (repeat to toggle close) |
-| Ctrl + Return | (In workspace switcher) create workspace with current search bar entry's text, useful if the desired name of a new workspace overlaps with an existing one. |
+| Ctrl + Return | Use the exact search text as the workspace target, even when it partially matches an existing name. Workspace creation depends on the compositor. |
 | Super + a | Open the workspace app switcher (repeat to toggle close) |
 | Super + o | Open the output switcher (repeat to toggle close) |
 | Super + r | Open the rename workspace switcher (repeat to toggle close) |
 
-All widgets which provide a list of selections (workspace switcher, app switcher, output switcher)
-support the following keybinds.
+The workspace, workspace-app and output switchers support these search/list keys.
 
 | Keybinding | Action |
 |------------|--------|
@@ -95,9 +116,67 @@ support the following keybinds.
 | Shift + Tab  | previous item |
 | Ctrl + n | next item |
 | Ctrl + p  | previous item |
-| UpArrow | next item |
-| DownArrow  | previous item |
+| DownArrow | next item |
+| UpArrow  | previous item |
 | Esc | Clear search, close widget if search is empty |
+
+The app switcher instead uses Super+Tab and Super+Shift+Tab to select applications,
+Super+g or Super+grave to select instances, and Shift to reverse instance selection.
+Super+Escape cancels; releasing Super activates the selection.
+
+`way-sh --help` and subcommand help work without a running shell. Commands use
+`$XDG_RUNTIME_DIR/way-shell.sock` in the current user session. A command exits
+with status 0 on success, 1 on an operational failure, or 2 for invalid arguments,
+and waits at most two seconds for a response. For example, `way-sh volume set 0.5`
+sets the output volume to 50%; the value must be finite and between 0 and 1.
+
+## Configuring Niri
+
+Way-Shell uses the same `way-sh` commands under Niri. Start it inside the Niri
+session, where `NIRI_SOCKET` and `WAYLAND_DISPLAY` identify that compositor.
+Select the backend explicitly with:
+
+```sh
+gsettings set org.ldelossa.way-shell.window-manager backend 'niri'
+```
+
+Restart Way-Shell after changing the backend. Set it to `'sway'` when selecting
+Sway explicitly. A saved backend choice takes precedence over session detection.
+The included user service is still named `way-shell.service` and retains its
+`sway-session.target` installation target; a Niri session should launch the shell
+through its own startup configuration or manage the service with its session.
+
+## Settings and themes
+
+Existing `org.ldelossa.way-shell` GSettings schemas and saved settings are retained.
+Use `gsettings list-recursively org.ldelossa.way-shell.system` to inspect system
+settings, and the `.panel`, `.notifications` and `.window-manager` schemas for
+the other controls. The installed package compiles its schemas; `nix develop`
+provides a local schema directory for source builds.
+
+Custom themes live in `$XDG_CONFIG_HOME/way-shell` (normally
+`~/.config/way-shell`). `way-sh theme dump-dark` and `way-sh theme dump-light`
+write the bundled CSS to `way-shell-dark.css` and `way-shell-light.css` there,
+replacing an existing file of the same name. Edit those files, then run
+`way-sh theme dark` or `way-sh theme light` to load them; repeating the command
+reloads the CSS. Missing custom CSS falls back to the embedded theme.
+
+If `on_theme_changed.sh` exists in that directory, Way-Shell runs it with Bash
+and one argument, `dark` or `light`. The script need not be executable.
+
+### Bluetooth
+
+**Bluetooth Settings** opens Blueman for discovery, pairing, and device removal.
+Install Blueman separately or choose another manager:
+
+```sh
+gsettings set org.ldelossa.way-shell.system bluetooth-settings-command 'your-manager --option'
+gsettings reset org.ldelossa.way-shell.system bluetooth-settings-command
+```
+
+The command accepts quoted arguments without shell expansion. Changes apply on
+the next click, and launch failures appear in the menu. Power and device actions
+work independently of the external manager.
 
 ### Integrating with SwayFX
 
@@ -122,33 +201,27 @@ layer_effects "way-shell-quick-switcher" shadows enable; corner_radius 20
 layer_effects "way-shell-dialog" blur enable; shadows enable;
 ```
 
-Feel free to adjust these to your liking.
+## Nix commands
 
-## Road to v1.0
+Run these from the repository root.
 
-- [x] Multi-monitor support
-- [x] Scrolling workspaces bar
-- [x] Notifications daemon implementation and message tray ([Gnome 46+ style notifications](https://blogs.gnome.org/shell-dev/2024/04/23/notifications-46-and-beyond/))
-- [x] Calendar (in message tray)
-- [x] Quick Settings with button grid
-- [x] Network Manager integration
-- [x] Logind integration (restart/suspend/sleep/logout/brightness/idle inhibitor)
-- [x] In-panel wireplumber mixer (change audio input/output routes)
-- [x] PowerProfiles daemon integration
-- [x] Brightness and Audio sliders
-- [x] Airplane Mode toggle
-- [x] Night-light feature using wlr-gamma-control
-- [x] DConf integration (configuration is driven via dconf)
-- [x] CLI interface (way-sh)
-- [x] Media Player integration (control DBus announced media players)
-- [x] Keyboard backlight detection, OSD, and quick settings button
-- [ ] Bluetooth integration (pair with discoverable bluetooth devices)
-- [x] Themeing (provide CSS override directory, light/dark theme switch button, and allow a script to be ran after the theme is switched)
-- [ ] Figure out proper rpm and deb packaging
-- [ ] Lock Screen (Wayland protocol based) implementation
-- [x] App/Workspace switcher (alt+tab)
-- [x] Workspace Overview/Application launcher overlay widget
-- [ ] Option to turn on idle inhibitor when video/audio sources are detected.
-- [x] Network Manager VPN (Wireguard Supported) integration in quick settings (toggle VPN's on an off).
-- [x] Rename workspace via on screen widget
-- [x] Tray Icons ([StatusNotifier protocol](https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/))
+| Command | Description |
+| --- | --- |
+| `nix develop` | Enter the development environment with Rust tools, native libraries and local schemas. |
+| `cargo fmt` (inside `nix develop`) | Apply Rust formatting to the working files. |
+| `nix build` | Build the native package, linking it at `result`. |
+| `nix build .#way-shell` | Build the native package explicitly. |
+| `nix profile add .#way-shell` | Install the native package into your Nix profile. |
+| `nix flake check` | Run Rust formatting and the lightweight native package check. |
+| `nix build .#check-format-rs` | Check Rust formatting without editing files. |
+| `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
+| `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
+| `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
+| `nix build .#rpms -L` | Build RPMs for every configured Fedora release. |
+| `nix build .#rpm-fedora-VERSION -L` | Build RPMs for the selected Fedora release. |
+| `nix build .#test-install -L` | Test package installation and removal on every supported system. |
+| `nix build .#test-install-fedora -L` | Test all supported Fedora releases. |
+| `nix build .#test-install-fedora-VERSION -L` | Test one Fedora release. |
+| `nix build .#test-install-nixos -L` | Test installation into a user's Nix profile inside NixOS. |
+| `nix flake show` | Discover available targets. |
+| `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |

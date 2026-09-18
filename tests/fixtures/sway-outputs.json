@@ -1,0 +1,4 @@
+[
+  {"name": "eDP-1", "make": "Example", "model": "Laptop", "serial": "", "current_workspace": "1: web", "active": true},
+  {"name": "DP-2", "make": "Example", "model": "External", "serial": "1234", "current_workspace": null, "active": false}
+]

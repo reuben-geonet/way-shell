@@ -43,7 +43,7 @@
  * exposes this 'row' node.
  */
 row:hover {
-	background: @transparent
+	background: @transparent;
 }
 
 /*
@@ -133,12 +133,9 @@ row:hover {
   margin-right: 6px;
 }
 
-#panel #workspaces-bar {
-  border-radius: 5px;
-}
-
 #panel scrollbar {
   opacity: 100;
+  min-height: 12px;
   margin-bottom: -12px;
   margin-left: 12px;
   margin-right: 12px;
@@ -383,7 +380,7 @@ statuspage {
 }
 
 
-#notification-list .notifications-list-controls {
+#notifications-list .notifications-list-controls {
   font-weight: bold;
   font-size: 8px;
 }
@@ -393,8 +390,8 @@ statuspage {
   color: @panel-button-color;
 }
 
-#notification-osd .notification-widget-header,
-#notification-list .notification-widget-header {
+#notifications-osd .notification-widget-header,
+#notifications-list .notification-widget-header {
 	margin-left: 2px;
     margin-right: 4px;
     margin-top: 2px;
@@ -437,7 +434,6 @@ statuspage {
 #notifications-osd .notification-widget-icon,
 #notifications-list .notification-widget-icon {
   border-radius: 50%;
-  overflow: hidden;
   padding: 8px;
 }
 
@@ -525,6 +521,11 @@ statuspage {
   margin: 6px;
 }
 
+#notifications-list .notifications-list-dnd-container {
+  background: transparent;
+  color: @text-general;
+}
+
 #notifications-list .notification-widget-media-button {
     padding: 4px;
     border-radius: 11px;
@@ -583,50 +584,6 @@ statuspage {
 }
 
 /*
- * Message Tray Media Players
- */
-
-#message-tray #media-players .media-player {
-       background: @notification-background;
-       border-radius: 10px;
-       margin: 4px;
-}
-
-#message-tray #media-players button {
-       background: transparent;
-}
-
-#message-tray #media-players button:hover {
-       background: @success;
-}
-
-#message-tray #media-players .media-player-title {
-       font-size: 15px;
-       font-weight: bold;
-}
-
-#message-tray #media-players .media-player-artist {
-       font-size: 14px;
-}
-
-#message-tray #media-players image {
-       margin: 2px;
-}
-
-#message-tray #media-players image {
-       margin: 4px;
-}
-
-#message-tray #media-players .media-player-labels {
-       padding-left: 6px;
-}
-
-#message-tray #media-players scrollbar {
-  opacity: 1;
-  margin-right: -18px;
-}
-
-/*
 / Quick Settings
 */
 #quick-settings {
@@ -652,13 +609,13 @@ statuspage {
   padding: 5px 10px;
 }
 
-#quick-settings #quick-settings-header.#battery-menu scale slider {
-	background: @transparent
+#quick-settings #battery-menu scale slider {
+	background: @transparent;
 }
-#quick-settings #quick-settings-header.#battery-menu scale highlight {
+#quick-settings #battery-menu scale highlight {
 	background: shade(@success, 2);
 }
-#quick-settings #quick-settings-header.#battery-menu label {
+#quick-settings #battery-menu label {
 	padding: 0px;
 	margin-left: 12px;
 	margin-right: 12px;
@@ -869,6 +826,31 @@ statuspage {
   margin: 6px;
 }
 
+/* Bluetooth uses the shared quick settings menu and theme colors. */
+#quick-settings-menu #options-container .quick-settings-menu-option-bluetooth image,
+#quick-settings-menu #options-container .quick-settings-menu-option-bluetooth label {
+  padding-left: 7px;
+  padding-right: 4px;
+}
+
+#quick-settings-menu .bluetooth-action {
+  opacity: 0.55;
+}
+
+#quick-settings-menu .bluetooth-placeholder {
+  font-weight: 700;
+  font-size: 13pt;
+  margin: 2em 4em;
+}
+
+#quick-settings-menu .bluetooth-separator {
+  margin: 8px 16px;
+}
+
+#quick-settings-menu .bluetooth-settings {
+  margin: 0 4px 4px;
+}
+
 .failure-banner {
   background-color: @failure;
   font-size: 20px;
@@ -981,7 +963,7 @@ statuspage {
 }
 
 #quick-settings.focused .quick-settings-grid-button-toggle.off:active {
-  background-color: shade(@panel-button-active, .5)
+  background-color: shade(@panel-button-active, .5);
 }
 
 /*
@@ -1013,26 +995,11 @@ statuspage {
     border-radius: 40px;
 }
 
-#activities .activities-workspace-overlay label {
-    font-weight: bold;
-    color: #ffffff;
-}
-
-#activities .activities-workspace-button {
-    background: @top-panel-background;
-    padding: 12px;
-	margin: 4px;
-}
-
-#activities .activities-workspace-button:hover {
-    background: @panel-button-hover;
-}
-
 /*
  * Dialog Overlay
  */
 #dialog-overlay {
-    background: @underlay-background-heavy
+    background: @underlay-background-heavy;
 }
 
 #dialog-overlay #dialog-overlay-container {
@@ -1087,7 +1054,7 @@ statuspage {
     margin: 10px;
 }
 
-#app-switcher, .app-switcher-app-widget-instances-win {
+#app-switcher {
     border-radius: 20px;
 }
 
@@ -1163,3 +1130,13 @@ statuspage {
    border-bottom-left-radius: 20px;
    border-bottom-right-radius: 20px;
 }
+
+/* Reusable panel popups and the shortcut help sheet. */
+.panel-popup { background: @base-panel-background; color: @panel-button-color; border: 1px solid @base-panel-border; border-radius: 14px; }
+.panel-popup-content { padding: 16px; }
+.shortcuts-heading { font-weight: bold; font-size: 1.1em; }
+.shortcut-key { font-weight: bold; }
+.shortcuts-details { font-size: 0.9em; opacity: 0.8; }
+.shortcuts-status { padding: 8px; }
+.panel-shortcuts { color: @panel-button-color; background: transparent; border: none; }
+.panel-shortcuts:hover { background: @panel-button-hover; }

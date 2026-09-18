@@ -1,8 +1,13 @@
-**.*o
-compile_commands.json
-way-shell
-.gdb_history
-way-sh/way-sh
-gresources.c
-gresources.h
+# Cargo build outputs
+/target/
+
+# Local development files
 /.cache/
+/.vscode/
+.gdb_history
+__pycache__/
+
+# Nix build outputs and Fedora lock update scratch directories
+/result
+/result-*
+/nix/packaging/fedora/locks/.update-*/

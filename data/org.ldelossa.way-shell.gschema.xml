@@ -8,6 +8,11 @@
 
     <!--system related settings-->
     <schema path="/org/ldelossa/way-shell/system/" id="org.ldelossa.way-shell.system">
+        <key name="bluetooth-settings-command" type="s">
+            <default>'blueman-manager'</default>
+            <summary>Command used to open Bluetooth settings</summary>
+            <description>Executable and optional quoted arguments for the Bluetooth manager. Shell expansion is not performed. Changes take effect on the next click.</description>
+        </key>
         <key name="suspend-method" type="s">
             <default>"suspend"</default>
             <summary>The suspend method used when suspend is invoked from Quick Settings</summary>
@@ -57,7 +62,7 @@
 			When enabled way-shell will switch to the its light them.
 			While disabled the dark theme is shown.
 			When the theme is changed way-shell will execute a bash script at
-			~/.config/way-shell/on_theme_change.sh will be invoked with the
+			~/.config/way-shell/on_theme_changed.sh will be invoked with the
 			argument "dark" or "light" depending on which theme was picked.
             </description>
         </key>
@@ -65,12 +70,20 @@
 
     <!--window manager related settings-->
     <schema path="/org/ldelossa/way-shell/window-manager/" id="org.ldelossa.way-shell.window-manager">
+        <key type="s" name="sway-config-path">
+            <default>''</default>
+            <summary>Optional absolute or ~/ Sway configuration path for shortcuts</summary>
+        </key>
+        <key type="s" name="niri-config-path">
+            <default>''</default>
+            <summary>Optional absolute or ~/ Niri configuration path for shortcuts</summary>
+        </key>
         <key name="backend" type="s">
             <default>"sway"</default>
             <summary>The window manager backend to use (default: sway)</summary>
             <description>
 			Instructs Way-Shell which window manager to use.
-			Currently supported options are "sway".
+			Currently supported options are "sway" and "niri".
 
 			Changing this setting requires a restart to take effect.
             </description>
@@ -81,14 +94,6 @@
             <description>
             Enabling this option will sort workspaces alphabetically.
             If its disabled workspaces are not sorted and are displayed in creation order.
-            </description>
-        </key>
-        <key name="desktop-wallpaper" type="s">
-            <default>"/no/file"</default>
-            <summary>A fully-qualified filesystem path desktop wallpaper image</summary>
-            <description>
-            Supplies an image to use in various aspects of Way-Shell where a
-            desktop wallpaper image is desired.
             </description>
         </key>
         <key name="ignored-toplevels-app-ids" type="s">
