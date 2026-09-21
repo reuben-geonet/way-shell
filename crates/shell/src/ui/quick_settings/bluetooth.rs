@@ -14,6 +14,21 @@ struct Row {
     action: gtk::Label,
     spinner: gtk::Spinner,
 }
+/// Paired devices shown before the device list starts scrolling.
+///
+/// The viewport grows with each row up to this count, then keeps the height
+/// of the first rows it covers and scrolls the rest.
+const MAX_VISIBLE_DEVICES: usize = 5;
+/// Viewport height used before row measurements are available.
+const FALLBACK_MAX_CONTENT_HEIGHT: i32 = 360;
+/// Viewport height for the first `max_devices` rows.
+///
+/// Returns `None` when there is nothing measurable yet so callers keep the
+/// current height instead of collapsing the list.
+fn capped_height(natural_heights: &[i32], max_devices: usize) -> Option<i32> {
+    let height: i32 = natural_heights.iter().take(max_devices).sum();
+    (height > 0).then_some(height)
+}
 pub struct BluetoothControls {
     service: BluetoothService,
     settings: gio::Settings,
@@ -43,7 +58,7 @@ impl BluetoothControls {
         let devices = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let scroll = gtk::ScrolledWindow::builder()
             .min_content_height(0)
-            .max_content_height(240)
+            .max_content_height(FALLBACK_MAX_CONTENT_HEIGHT)
             .propagate_natural_height(true)
             .vexpand(false)
             .child(&devices)
@@ -231,6 +246,22 @@ impl BluetoothControls {
             spinner,
         }
     }
+    fn update_viewport_height(&self, devices: &[BluetoothDevice]) {
+        let rows = self.rows.borrow();
+        let heights: Vec<i32> = devices
+            .iter()
+            .take(MAX_VISIBLE_DEVICES)
+            .filter_map(|device| rows.get(&device.path))
+            .map(|row| row.button.measure(gtk::Orientation::Vertical, -1).1)
+            .collect();
+        drop(rows);
+        if let Some(height) = capped_height(&heights, MAX_VISIBLE_DEVICES) {
+            self.scroll.set_max_content_height(height);
+        } else if devices.is_empty() {
+            self.scroll
+                .set_max_content_height(FALLBACK_MAX_CONTENT_HEIGHT);
+        }
+    }
     fn refresh(self: &Rc<Self>, reorder: bool) {
         if self.stopped.get() {
             return;
@@ -302,9 +333,10 @@ impl BluetoothControls {
         }
         self.placeholder.set_visible(state.devices.is_empty());
         self.scroll.set_visible(!state.devices.is_empty());
+        self.update_viewport_height(&state.devices);
         self.scroll.set_policy(
             gtk::PolicyType::Never,
-            if state.devices.len() > 1 {
+            if state.devices.len() > MAX_VISIBLE_DEVICES {
                 gtk::PolicyType::Automatic
             } else {
                 gtk::PolicyType::Never
@@ -382,5 +414,25 @@ impl BluetoothControls {
 impl Drop for BluetoothControls {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn viewport_grows_with_each_device_up_to_the_limit() {
+        assert_eq!(capped_height(&[], MAX_VISIBLE_DEVICES), None);
+        assert_eq!(capped_height(&[0, 0], MAX_VISIBLE_DEVICES), None);
+        assert_eq!(capped_height(&[64], MAX_VISIBLE_DEVICES), Some(64));
+        assert_eq!(capped_height(&[64, 64], MAX_VISIBLE_DEVICES), Some(128));
+    }
+    #[test]
+    fn viewport_stops_growing_after_five_devices() {
+        let heights = [60, 62, 58, 64, 61, 59, 63];
+        assert_eq!(
+            capped_height(&heights, MAX_VISIBLE_DEVICES),
+            Some(60 + 62 + 58 + 64 + 61)
+        );
     }
 }
