@@ -28,8 +28,16 @@ jobs:
             nix-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-
             nix-${{ runner.os }}-${{ runner.arch }}-
 
+      - name: Retain native Cargo dependencies
+        run: |
+          time nix build .#cargo-deps-native --out-link result-cargo-deps
+          nix path-info --closure-size ./result-cargo-deps
+
       - name: Check flake
-        run: nix flake check --print-build-logs
+        run: nix flake check --option allow-import-from-derivation false --print-build-logs
+
+      - name: Check dependency inputs and native reuse
+        run: python3 nix/check-dependency-inputs.py --build
 
   installation-matrix:
     runs-on: ubuntu-24.04
@@ -74,5 +82,25 @@ jobs:
             nix-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ matrix.name }}-
             nix-${{ runner.os }}-${{ runner.arch }}-
 
+      - name: Retain Cargo dependencies
+        run: |
+          package_test='${{ matrix.name }}'
+          case "$package_test" in
+            test-install-nixos) deps=cargo-deps-native ;;
+            test-install-fedora-*) deps="cargo-deps-${package_test#test-install-}" ;;
+            *) exit 0 ;;
+          esac
+          time nix build ".#$deps" --out-link result-cargo-deps --print-build-logs
+          nix path-info --closure-size ./result-cargo-deps
+
       - name: Test package installation
         run: nix build --print-build-logs '.#${{ matrix.attr }}'
+
+      - name: Check Fedora artifact reuse
+        run: |
+          package_test='${{ matrix.name }}'
+          case "$package_test" in
+            test-install-fedora-*)
+              python3 nix/check-dependency-inputs.py --fedora "${package_test#test-install-fedora-}"
+              ;;
+          esac

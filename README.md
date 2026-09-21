@@ -225,3 +225,83 @@ Run these from the repository root.
 | `nix build .#test-install-nixos -L` | Test installation into a user's Nix profile inside NixOS. |
 | `nix flake show` | Discover available targets. |
 | `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
+
+Native package builds use two Nix outputs: `cargo-deps-native` compiles a Crane
+stub workspace, and `way-shell` imports those artifacts before compiling the real
+workspace. Both use the pinned Nix compiler and libraries, release profile,
+workspace binaries, frozen dependencies and one job. Vendored registry and Git
+sources and license collection are shared with RPM packaging. Clippy and the
+development shell retain their separate workflows.
+
+Every configured Fedora release has the same split through
+`cargo-deps-fedora-VERSION` and `rpm-fedora-VERSION`.
+Each stage boots a fresh VM from the same locked Fedora image. Both use the same
+RPM build paths, `%cargo_prep` and `%cargo_build`, including Fedora's `rpm`
+profile and `target/release` symlink. The first stage stops after `%build`, cleans
+workspace artifacts with Cargo, and exports the remaining target tree using the
+pinned Crane hooks. The application stage unpacks a writable copy after `%prep`.
+Fedora uses Crane's
+directory export followed by a tar archive that preserves timestamps: the default
+compressed exporter resets them to epoch 1, which predates Fedora headers tracked
+by bindgen. The adapter does not edit Cargo fingerprints.
+The optional `way_shell_artifacts_import` and `way_shell_artifacts_export` RPM
+macros are supplied only by Nix; normal RPM/SRPM builds and published application
+source archives do not require a cache.
+
+Compiled artifacts are separate for native Nix and every Fedora release and
+architecture, since their compilers and native libraries differ.
+
+Application code, build-script contents, resources, documentation and installation
+tests do not invalidate dependency artifacts. Dependency declarations, Cargo
+features/profiles, the lockfile, compiler, native environment and compilation
+settings do. Fedora also conservatively invalidates on any spec edit. Crane
+preserves the dependency-relevant manifest fields; adding or removing Cargo
+targets can also invalidate the stub. These are immutable Nix outputs, not VM
+snapshots or persistent incremental compilation directories. Workspace crates
+are expected to rebuild. CI retains explicit dependency output roots until the
+existing Nix cache save step; the installation-test matrix is unchanged.
+
+Useful diagnostics:
+
+```sh
+nix eval --option allow-import-from-derivation false .#cargo-deps-native.drvPath
+nix build .#cargo-deps-native --out-link result-cargo-deps -L
+nix path-info --closure-size ./result-cargo-deps
+python3 nix/check-dependency-inputs.py
+python3 nix/check-dependency-inputs.py --build
+python3 nix/check-dependency-inputs.py --fedora 43 --fedora 44
+nix log .#way-shell  # Expect Fresh gtk4/glib/wireplumber and Compiling way-shell.
+nix build .#cargo-deps-fedora-43 --out-link result-cargo-deps-fedora-43 -L
+nix build .#rpm-fedora-43 -L
+nix build .#test-install-fedora-43 -L
+```
+
+The regression script evaluates isolated source edits with import-from-derivation
+disabled; `--build` additionally builds the native package before and after an
+application edit and checks reuse and real binary help output. `--fedora VERSION` checks the same
+reuse contract using RPM build logs in fresh VMs. On a KVM host,
+repeat the Fedora build after an application-only edit: the dependency derivation
+path must stay fixed, third-party crates (including GTK) must be `Fresh`, and real
+workspace code and the shell build script must compile. Check schemas/resources
+and run the existing installation tests. Also build the application SRPM without
+the optional macros. Compare initial and follow-up CI runs for dependency cache
+restoration, compilation skipped, elapsed build time and closure size; local
+build reuse alone does not establish CI cache persistence.
+
+Local validation on 2026-09-18 passed flake checks with IFD disabled, native
+and Fedora 43 application-edit reuse, NixOS profile installation and Fedora 43
+installation. All external crates were fresh in application builds, including GTK
+and WirePlumber; only the four workspace crates compiled. Measured Cargo phase
+times and dependency output sizes were:
+
+| Environment | Cold dependencies | Application | After source edit | Artifact NAR | Closure |
+| --- | --- | --- | --- | --- | --- |
+| Native Nix | 5m10s | 1m27s | 1m44s | 197.1 MiB | 421.0 MiB |
+| Fedora 43 | 6m37s | 1m35s | 1m32s | 387.7 MiB | 620.9 MiB |
+
+An ordinary Fedora 43 build without artifact macros also passed (10m29s in
+Cargo), with matching RPM requirements, provides, scriptlets, installed-file
+metadata and all 641 license paths/checksums. Its SRPM contains the standalone
+spec and vendored configuration. VM validation ran sequentially to fit the host's
+available disk space. These are local measurements; initial/follow-up GitHub
+Actions cache restoration and timings still need to be compared after CI runs.
