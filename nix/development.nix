@@ -9,7 +9,9 @@
     {
       devShells.default = pkgs.mkShell {
         inputsFrom = [ config.packages.way-shell ];
-        packages = [ pkgs.gdb ];
+        packages = with pkgs; [ gdb rustc cargo rustfmt clippy rust-analyzer sway niri mesa ];
+        nativeBuildInputs = [ pkgs.rustPlatform.bindgenHook ];
+        WAY_SHELL_TEST_EGL_VENDOR = "${pkgs.mesa}/share/glvnd/egl_vendor.d/50_mesa.json";
         shellHook = ''
             export GSETTINGS_SCHEMA_DIR="$PWD/.cache/nix/schemas"
           mkdir -p "$GSETTINGS_SCHEMA_DIR"

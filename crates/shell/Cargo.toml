@@ -1,0 +1,34 @@
+[package]
+name = "way-shell"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+way-shell-core.workspace = true
+serde_json.workspace = true
+glib.workspace = true
+gio.workspace = true
+gtk.workspace = true
+adw.workspace = true
+gtk4-layer-shell.workspace = true
+wayland-client.workspace = true
+wayland-protocols-wlr.workspace = true
+wireplumber.workspace = true
+pulse.workspace = true
+pulse-glib.workspace = true
+
+[build-dependencies]
+pkg-config.workspace = true
+
+[lints]
+workspace = true
+
+[[example]]
+name = "schema-probe"
+test = true
+
+[[example]]
+name = "application-smoke"
+test = true

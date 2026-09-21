@@ -1,0 +1,4 @@
+{"Ok":{"Outputs":{
+  "eDP-1":{"name":"eDP-1","make":"BOE","model":"Panel","serial":null,"logical":{"x":0,"y":0}},
+  "DP-1":{"name":"DP-1","make":"Dell","model":"External","serial":"example","logical":{"x":1920,"y":0}}
+}}}

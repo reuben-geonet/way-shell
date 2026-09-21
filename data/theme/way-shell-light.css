@@ -43,7 +43,7 @@
  * exposes this 'row' node.
  */
 row:hover {
-	background: @transparent
+	background: @transparent;
 }
 
 /*
@@ -139,6 +139,7 @@ row:hover {
 
 #panel scrollbar {
   opacity: 100;
+  min-height: 12px;
   margin-bottom: -12px;
   margin-left: 12px;
   margin-right: 12px;
@@ -437,7 +438,6 @@ statuspage {
 #notifications-osd .notification-widget-icon,
 #notifications-list .notification-widget-icon {
   border-radius: 50%;
-  overflow: hidden;
   padding: 8px;
 }
 
@@ -652,13 +652,13 @@ statuspage {
   padding: 5px 10px;
 }
 
-#quick-settings #quick-settings-header.#battery-menu scale slider {
-	background: @transparent
+#quick-settings #battery-menu scale slider {
+	background: @transparent;
 }
-#quick-settings #quick-settings-header.#battery-menu scale highlight {
+#quick-settings #battery-menu scale highlight {
 	background: shade(@success, 2);
 }
-#quick-settings #quick-settings-header.#battery-menu label {
+#quick-settings #battery-menu label {
 	padding: 0px;
 	margin-left: 12px;
 	margin-right: 12px;
@@ -981,7 +981,7 @@ statuspage {
 }
 
 #quick-settings.focused .quick-settings-grid-button-toggle.off:active {
-  background-color: shade(@panel-button-active, .5)
+  background-color: shade(@panel-button-active, .5);
 }
 
 /*
@@ -1032,7 +1032,7 @@ statuspage {
  * Dialog Overlay
  */
 #dialog-overlay {
-    background: @underlay-background-heavy
+    background: @underlay-background-heavy;
 }
 
 #dialog-overlay #dialog-overlay-container {

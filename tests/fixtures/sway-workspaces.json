@@ -1,0 +1,4 @@
+[
+  {"id": 17, "num": 1, "name": "1: web", "urgent": false, "output": "eDP-1", "focused": true, "visible": true, "rect": {"x": 0, "y": 0, "width": 1920, "height": 1080}},
+  {"id": 29, "num": -1, "name": "日本語", "urgent": true, "output": "DP-2", "focused": false, "visible": true, "rect": {"x": 1920, "y": 0, "width": 2560, "height": 1440}}
+]

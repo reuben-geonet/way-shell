@@ -1,0 +1,37 @@
+[workspace]
+members = ["crates/core", "crates/shell", "crates/cli"]
+resolver = "3"
+
+[workspace.package]
+version = "0.0.10"
+edition = "2024"
+rust-version = "1.90"
+license = "GPL-2.0-only"
+repository = "https://github.com/ldelossa/way-shell"
+
+[workspace.dependencies]
+way-shell-core = { path = "crates/core" }
+glib = "=0.21.5"
+gio = "=0.21.5"
+gtk = { package = "gtk4", version = "=0.10.3" }
+adw = { package = "libadwaita", version = "=0.8.1", features = ["v1_4"] }
+gtk4-layer-shell = "=0.7.1"
+clap = { version = "=4.6.7", features = ["derive"] }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+wayland-client = "=0.31.15"
+wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
+wireplumber = { git = "https://github.com/saivert/wireplumber.rs", rev = "04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc", default-features = false, features = ["v0_5", "futures"] }
+pkg-config = "=0.3.34"
+
+pulse = { package = "libpulse-sys", version = "=1.23.0" }
+pulse-glib = { package = "libpulse-mainloop-glib-sys", version = "=1.22.0" }
+
+[profile.dev]
+debug = 1
+
+[profile.release]
+debug = 1
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
