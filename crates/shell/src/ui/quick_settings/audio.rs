@@ -306,7 +306,14 @@ impl AudioControls {
             return;
         };
         let result = if let Some(value) = value {
-            self.service.set_volume(node.id, value)
+            let muted = node.volume.as_ref().is_some_and(|volume| volume.mute);
+            self.service.set_volume(node.id, value).and_then(|()| {
+                if muted {
+                    self.service.set_muted(node.id, false)
+                } else {
+                    Ok(())
+                }
+            })
         } else {
             self.service.set_muted(
                 node.id,
