@@ -288,9 +288,13 @@ fn audio_view(state: &AudioState) -> AudioView {
         .and_then(|node| node.volume.as_ref())
         .filter(|volume| state.available && volume.volume.is_finite());
     let icon = match volume {
-        Some(volume) if !volume.mute && volume.volume < 0.25 => "audio-volume-low-symbolic",
-        Some(volume) if !volume.mute && volume.volume < 0.5 => "audio-volume-medium-symbolic",
-        Some(volume) if !volume.mute => "audio-volume-high-symbolic",
+        Some(volume) if !volume.mute && volume.volume > 0.0 && volume.volume < 0.25 => {
+            "audio-volume-low-symbolic"
+        }
+        Some(volume) if !volume.mute && volume.volume > 0.0 && volume.volume < 0.5 => {
+            "audio-volume-medium-symbolic"
+        }
+        Some(volume) if !volume.mute && volume.volume > 0.0 => "audio-volume-high-symbolic",
         _ => "audio-volume-muted-symbolic",
     };
     AudioView {
@@ -492,7 +496,8 @@ mod tests {
     #[test]
     fn speaker_volume_thresholds_and_mute_match_existing_panel() {
         for (volume, level) in [
-            (0.0, "low"),
+            (0.0, "muted"),
+            (0.001, "low"),
             (0.249, "low"),
             (0.25, "medium"),
             (0.499, "medium"),

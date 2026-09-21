@@ -107,7 +107,7 @@ impl VolumeView {
             .filter(|volume| volume.volume.is_finite() && volume.volume >= 0.0);
         let value = volume.map_or(0.0, |volume| volume.volume.min(1.0));
         let muted = volume.is_none_or(|volume| volume.mute);
-        let level = if muted {
+        let level = if muted || value <= 0.0 {
             "muted"
         } else if value < 0.25 {
             "low"
@@ -780,7 +780,7 @@ mod tests {
     fn volume_mapping_preserves_levels_and_disables_invalid_values() {
         let mut sink = node(1, NodeKind::Sink);
         for (level, suffix) in [
-            (0.0, "low"),
+            (0.001, "low"),
             (0.249, "low"),
             (0.25, "medium"),
             (0.499, "medium"),
@@ -793,6 +793,12 @@ mod tests {
             assert_eq!(view.icon, format!("audio-volume-{suffix}-symbolic"));
             assert_eq!(view.value, level.min(1.0));
         }
+        sink.volume.as_mut().unwrap().volume = 0.0;
+        sink.volume.as_mut().unwrap().mute = false;
+        let view = VolumeView::of(Some(&sink), NodeKind::Sink);
+        assert_eq!(view.icon, "audio-volume-muted-symbolic");
+        assert!(!view.muted, "zero volume shows muted icon without muting");
+        sink.volume.as_mut().unwrap().volume = 1.0;
         sink.volume.as_mut().unwrap().mute = true;
         let view = VolumeView::of(Some(&sink), NodeKind::Sink);
         assert_eq!(view.icon, "audio-volume-muted-symbolic");

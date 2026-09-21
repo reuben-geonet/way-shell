@@ -66,7 +66,7 @@ impl AudioLevel {
     }
 }
 fn volume_icon(volume: f64, muted: bool) -> &'static str {
-    if muted {
+    if muted || volume <= 0.0 {
         "audio-volume-muted-symbolic"
     } else if volume < 0.25 {
         "audio-volume-low-symbolic"
@@ -407,9 +407,9 @@ impl Drop for LevelOsd {
 mod tests {
     use super::*;
     #[test]
-    fn audio_icons_preserve_thresholds_and_unmuted_zero() {
+    fn audio_icons_preserve_thresholds_and_zero_shows_muted() {
         for (volume, muted, expected) in [
-            (0.0, false, "audio-volume-low-symbolic"),
+            (0.0, false, "audio-volume-muted-symbolic"),
             (0.249, false, "audio-volume-low-symbolic"),
             (0.25, false, "audio-volume-medium-symbolic"),
             (0.5, false, "audio-volume-high-symbolic"),
