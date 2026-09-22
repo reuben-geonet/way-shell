@@ -1,5 +1,5 @@
 //! Network tiles own only service snapshots, GTK widgets and cancellable requests.
-use super::{grid::GridButton, menu::Menu};
+use super::{QuickSettingsWindow, grid::GridButton, menu::Menu};
 use crate::services::network::{
     AccessPoint, Device, NetworkService, NetworkState, SavedConnection,
 };
@@ -7,8 +7,13 @@ use adw::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
-    rc::Rc,
+    rc::{Rc, Weak},
 };
+
+/// Wi-Fi networks shown before the list starts scrolling.
+const MAX_VISIBLE_NETWORKS: usize = 5;
+/// VPN rows shown before the list starts scrolling.
+const MAX_VISIBLE_VPN: usize = 5;
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 struct AccessPointKey(Vec<u8>, bool, u32, u32);
@@ -113,6 +118,7 @@ impl DeviceTile {
 type Changed = Rc<dyn Fn()>;
 pub struct NetworkControls {
     service: NetworkService,
+    window: Weak<QuickSettingsWindow>,
     handler: RefCell<Option<glib::SignalHandlerId>>,
     devices: RefCell<HashMap<String, Rc<DeviceTile>>>,
     order: RefCell<Vec<String>>,
@@ -128,8 +134,8 @@ pub struct NetworkControls {
     observers: RefCell<Vec<Changed>>,
 }
 impl NetworkControls {
-    pub fn new(service: NetworkService) -> Rc<Self> {
-        let vpn = VpnMenu::new(service.clone());
+    pub fn new(service: NetworkService, window: &Rc<QuickSettingsWindow>) -> Rc<Self> {
+        let vpn = VpnMenu::new(service.clone(), window);
         let vpn_tile = GridButton::new(
             "VPN",
             Some(""),
@@ -139,6 +145,7 @@ impl NetworkControls {
         let airplane = GridButton::new("Airplane Mode", None, "airplane-mode-symbolic", None);
         let this = Rc::new(Self {
             service,
+            window: Rc::downgrade(window),
             handler: RefCell::new(None),
             devices: RefCell::new(HashMap::new()),
             order: RefCell::new(Vec::new()),
@@ -359,8 +366,8 @@ impl NetworkControls {
         self.updating.set(false);
     }
     fn make_device(self: &Rc<Self>, device: &Device) -> Rc<DeviceTile> {
-        let wifi =
-            (device.kind == 2).then(|| WifiMenu::new(self.service.clone(), device.id.clone()));
+        let wifi = (device.kind == 2)
+            .then(|| WifiMenu::new(self.service.clone(), device.id.clone(), self.window.clone()));
         let tile = GridButton::new(
             if wifi.is_some() { "Wi-Fi" } else { "Wired" },
             Some(""),
@@ -479,6 +486,7 @@ impl Drop for NetworkControls {
 struct WifiMenu {
     service: NetworkService,
     device: String,
+    window: Weak<QuickSettingsWindow>,
     menu: Menu,
     spinner: gtk::Spinner,
     refresh_button: gtk::Button,
@@ -489,9 +497,8 @@ struct WifiMenu {
     enabled: Cell<bool>,
 }
 impl WifiMenu {
-    fn new(service: NetworkService, device: String) -> Rc<Self> {
-        let menu = Menu::new("Wi-Fi", "network-wireless-signal-excellent-symbolic", true);
-        menu.widget().set_size_request(-1, 420);
+    fn new(service: NetworkService, device: String, window: Weak<QuickSettingsWindow>) -> Rc<Self> {
+        let menu = Menu::new("Wi-Fi", "network-wireless-signal-excellent-symbolic");
         let failure_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         failure_box.add_css_class("failure-banner");
         let failure = gtk::Button::with_label("Failed to connect to network");
@@ -508,6 +515,7 @@ impl WifiMenu {
         let this = Rc::new(Self {
             service,
             device,
+            window,
             menu,
             spinner,
             refresh_button,
@@ -581,7 +589,7 @@ impl WifiMenu {
         for (_, row) in old {
             row.stop();
             if row.root.parent().is_some() {
-                self.menu.options().remove(&row.root);
+                self.menu.list().remove(&row.root);
             }
         }
         if self.stopped.get() {
@@ -591,18 +599,25 @@ impl WifiMenu {
             return;
         }
         let mut previous: Option<gtk::Widget> = None;
-        for row in ordered {
+        for row in &ordered {
             if row.root.parent().is_none() {
-                self.menu.options().append(&row.root);
+                self.menu.list().append(&row.root);
             }
             self.menu
-                .options()
+                .list()
                 .reorder_child_after(&row.root, previous.as_ref());
             previous = Some(row.root.clone().upcast());
             if self.stopped.get() {
                 row.stop();
                 break;
             }
+        }
+        self.menu.update_viewport(MAX_VISIBLE_NETWORKS);
+        self.shrink();
+    }
+    fn shrink(&self) {
+        if let Some(window) = self.window.upgrade() {
+            window.shrink();
         }
     }
     fn scan(self: &Rc<Self>) {
@@ -667,6 +682,8 @@ impl WifiMenu {
             row.revealer.set_reveal_child(true);
             row.password.grab_focus();
         }
+        self.menu.update_viewport(MAX_VISIBLE_NETWORKS);
+        self.shrink();
     }
     fn error(&self, title: &str, diagnostic: Option<&str>) {
         if self.stopped.get() {
@@ -902,6 +919,7 @@ impl Drop for VpnRow {
 }
 struct VpnMenu {
     service: NetworkService,
+    window: Weak<QuickSettingsWindow>,
     menu: Menu,
     rows: RefCell<HashMap<String, Rc<VpnRow>>>,
     stopped: Cell<bool>,
@@ -909,10 +927,11 @@ struct VpnMenu {
     pending: RefCell<Option<NetworkState>>,
 }
 impl VpnMenu {
-    fn new(service: NetworkService) -> Rc<Self> {
+    fn new(service: NetworkService, window: &Rc<QuickSettingsWindow>) -> Rc<Self> {
         Rc::new(Self {
             service,
-            menu: Menu::new("VPN", "network-vpn-symbolic", false),
+            window: Rc::downgrade(window),
+            menu: Menu::new("VPN", "network-vpn-symbolic"),
             rows: RefCell::new(HashMap::new()),
             stopped: Cell::new(false),
             updating: Cell::new(false),
@@ -972,7 +991,7 @@ impl VpnMenu {
         for (_, row) in old {
             row.stop();
             if row.widget.parent().is_some() {
-                self.menu.options().remove(&row.widget);
+                self.menu.list().remove(&row.widget);
             }
         }
         let mut previous: Option<gtk::Widget> = None;
@@ -982,12 +1001,16 @@ impl VpnMenu {
                 continue;
             }
             if row.widget.parent().is_none() {
-                self.menu.options().append(&row.widget);
+                self.menu.list().append(&row.widget);
             }
             self.menu
-                .options()
+                .list()
                 .reorder_child_after(&row.widget, previous.as_ref());
             previous = Some(row.widget.clone().upcast());
+        }
+        self.menu.update_viewport(MAX_VISIBLE_VPN);
+        if let Some(window) = self.window.upgrade() {
+            window.shrink();
         }
     }
     fn row(self: &Rc<Self>, saved: &SavedConnection) -> Rc<VpnRow> {

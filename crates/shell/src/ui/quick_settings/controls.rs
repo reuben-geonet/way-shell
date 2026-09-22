@@ -13,6 +13,9 @@ use std::{
     rc::Rc,
 };
 
+/// Power profiles shown before the list starts scrolling.
+const MAX_VISIBLE_PROFILES: usize = 5;
+
 #[derive(Clone)]
 pub struct SystemServices {
     pub theme: ThemeService,
@@ -63,7 +66,7 @@ pub struct SystemControls {
 }
 impl SystemControls {
     pub fn new(services: SystemServices) -> Rc<Self> {
-        let profiles_menu = Menu::new("Performance", "power-profile-balanced-symbolic", false);
+        let profiles_menu = Menu::new("Performance", "power-profile-balanced-symbolic");
         let profiles = GridButton::new(
             "Performance",
             Some("Unavailable"),
@@ -71,7 +74,7 @@ impl SystemControls {
             Some(profiles_menu.widget().upcast_ref()),
         );
         let idle = GridButton::new("Idle Inhibitor", None, "radio-mixed-symbolic", None);
-        let night_menu = Menu::new("Temperature", "night-light-symbolic", false);
+        let night_menu = Menu::new("Temperature", "night-light-symbolic");
         let temperature =
             gtk::Scale::with_range(gtk::Orientation::Horizontal, 1000.0, 6800.0, 500.0);
         temperature.set_value(3000.0);
@@ -90,7 +93,7 @@ impl SystemControls {
             "night-light-symbolic",
             Some(night_menu.widget().upcast_ref()),
         );
-        let keyboard_menu = Menu::new("Keyboard Backlight", "keyboard-brightness-symbolic", false);
+        let keyboard_menu = Menu::new("Keyboard Backlight", "keyboard-brightness-symbolic");
         let keyboard_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 1.0);
         keyboard_scale.set_round_digits(0);
         keyboard_menu.options().append(&keyboard_scale);
@@ -398,8 +401,8 @@ impl SystemControls {
         {
             return;
         }
-        while let Some(child) = self.profiles_menu.options().first_child() {
-            self.profiles_menu.options().remove(&child);
+        while let Some(child) = self.profiles_menu.list().first_child() {
+            self.profiles_menu.list().remove(&child);
         }
         for profile in state.profiles {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -426,8 +429,9 @@ impl SystemControls {
                     }
                 });
             });
-            self.profiles_menu.options().append(&row);
+            self.profiles_menu.list().append(&row);
         }
+        self.profiles_menu.update_viewport(MAX_VISIBLE_PROFILES);
     }
 }
 impl Drop for SystemControls {

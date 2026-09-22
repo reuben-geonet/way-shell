@@ -83,7 +83,7 @@ impl SystemHeader {
         power_button.add_css_class("circular");
         end.append(&power_button);
         center.set_end_widget(Some(&end));
-        let battery_menu = Menu::new("Battery", "battery-full-symbolic", false);
+        let battery_menu = Menu::new("Battery", "battery-full-symbolic");
         let battery_contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
         battery_contents.set_widget_name("battery-menu");
         let battery_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);

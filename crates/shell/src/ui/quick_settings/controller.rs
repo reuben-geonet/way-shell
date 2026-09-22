@@ -45,8 +45,8 @@ impl QuickSettings {
         let bluetooth =
             BluetoothControls::new(services.bluetooth, system_settings.clone(), &window);
         let system = SystemControls::new(services.system.clone());
-        let network = NetworkControls::new(services.network);
-        let audio = AudioControls::new(services.audio);
+        let network = NetworkControls::new(services.network, &window);
+        let audio = AudioControls::new(services.audio, &window);
         let weak = Rc::downgrade(&audio);
         let mixer = MixerSlot {
             button: audio.mixer_button().clone(),
