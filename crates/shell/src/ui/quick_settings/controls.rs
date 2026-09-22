@@ -13,6 +13,9 @@ use std::{
     rc::Rc,
 };
 
+/// Power profiles shown before the list starts scrolling.
+const MAX_VISIBLE_PROFILES: usize = 5;
+
 #[derive(Clone)]
 pub struct SystemServices {
     pub theme: ThemeService,
@@ -398,8 +401,8 @@ impl SystemControls {
         {
             return;
         }
-        while let Some(child) = self.profiles_menu.options().first_child() {
-            self.profiles_menu.options().remove(&child);
+        while let Some(child) = self.profiles_menu.list().first_child() {
+            self.profiles_menu.list().remove(&child);
         }
         for profile in state.profiles {
             let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
@@ -426,8 +429,9 @@ impl SystemControls {
                     }
                 });
             });
-            self.profiles_menu.options().append(&row);
+            self.profiles_menu.list().append(&row);
         }
+        self.profiles_menu.update_viewport(MAX_VISIBLE_PROFILES);
     }
 }
 impl Drop for SystemControls {
