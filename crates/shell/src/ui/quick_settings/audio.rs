@@ -1,12 +1,12 @@
 //! Quick-settings device levels and stream routing on the owned audio service.
 
-use super::menu::Menu;
+use super::{QuickSettingsWindow, menu::Menu};
 use crate::services::audio::{AudioNode, AudioService, AudioState, NodeKind, NodeState};
 use gtk::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -93,6 +93,9 @@ fn linked_target(state: &AudioState, stream: &AudioNode) -> Option<NodeKey> {
             .map(NodeKey::of)
     })
 }
+
+/// Mixer rows shown before the list starts scrolling.
+const MAX_VISIBLE_ROWS: usize = 5;
 
 struct VolumeView {
     value: f64,
@@ -181,6 +184,7 @@ impl MainScale {
 /// per-device widgets and cancellable stream moves; no native service pointer escapes.
 pub struct AudioControls {
     service: AudioService,
+    window: Weak<QuickSettingsWindow>,
     button: gtk::Button,
     menu: Menu,
     empty: gtk::Label,
@@ -195,9 +199,8 @@ pub struct AudioControls {
     closed: Cell<bool>,
 }
 impl AudioControls {
-    pub fn new(service: AudioService) -> Rc<Self> {
-        let menu = Menu::new("Mixer", "audio-speakers-symbolic", true);
-        menu.widget().set_size_request(-1, 420);
+    pub fn new(service: AudioService, window: &Rc<QuickSettingsWindow>) -> Rc<Self> {
+        let menu = Menu::new("Mixer", "audio-speakers-symbolic");
         let empty = gtk::Label::new(Some("Audio service is unavailable"));
         menu.options().append(&empty);
         let button = gtk::Button::from_icon_name("audio-speakers-symbolic");
@@ -214,6 +217,7 @@ impl AudioControls {
         scales.set_child(Some(&contents));
         let this = Rc::new(Self {
             service,
+            window: Rc::downgrade(window),
             button,
             menu,
             empty,
@@ -370,7 +374,7 @@ impl AudioControls {
         for row in old {
             if !rows.iter().any(|current| Rc::ptr_eq(current, &row)) {
                 row.close();
-                self.menu.options().remove(&row.root);
+                self.menu.list().remove(&row.root);
             }
         }
         let mut previous: Option<gtk::Widget> = None;
@@ -379,10 +383,10 @@ impl AudioControls {
                 break;
             }
             if row.root.parent().is_none() {
-                self.menu.options().append(&row.root);
+                self.menu.list().append(&row.root);
             }
             self.menu
-                .options()
+                .list()
                 .reorder_child_after(&row.root, previous.as_ref());
             previous = Some(row.root.clone().upcast());
             row.update(self, state, node);
@@ -393,6 +397,13 @@ impl AudioControls {
             "Audio service is unavailable"
         });
         self.empty.set_visible(rows.is_empty());
+        self.menu.update_viewport(MAX_VISIBLE_ROWS);
+        self.shrink();
+    }
+    fn shrink(&self) {
+        if let Some(window) = self.window.upgrade() {
+            window.shrink();
+        }
     }
     fn application_icon(&self, application: &str) -> Option<gio::Icon> {
         if application.is_empty() {
@@ -494,12 +505,17 @@ impl MixerRow {
             route_task: RefCell::new(None),
         });
         let weak = Rc::downgrade(&this);
+        let owner_weak = Rc::downgrade(owner);
         this.button.connect_clicked(move |_| {
             if let Some(this) = weak.upgrade().filter(|row| !row.closed.get()) {
                 let reveal = !this.revealer.reveals_child();
                 this.revealer.set_reveal_child(reveal);
                 if reveal && let Some(child) = this.revealer.child() {
                     child.grab_focus();
+                }
+                if let Some(owner) = owner_weak.upgrade() {
+                    owner.menu.update_viewport(MAX_VISIBLE_ROWS);
+                    owner.shrink();
                 }
             }
         });

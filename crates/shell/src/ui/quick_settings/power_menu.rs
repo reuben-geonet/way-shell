@@ -91,7 +91,7 @@ impl PowerMenu {
         settings: gio::Settings,
         request: impl Fn(Confirmation) + 'static,
     ) -> Rc<Self> {
-        let menu = Menu::new("Power Off", "system-shutdown-symbolic", false);
+        let menu = Menu::new("Power Off", "system-shutdown-symbolic");
         let rows = SystemAction::ALL
             .into_iter()
             .map(|action| {
