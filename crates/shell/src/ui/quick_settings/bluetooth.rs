@@ -14,6 +14,8 @@ struct Row {
     action: gtk::Label,
     spinner: gtk::Spinner,
 }
+/// Paired devices shown before the device list starts scrolling.
+const MAX_VISIBLE_DEVICES: usize = 5;
 pub struct BluetoothControls {
     service: BluetoothService,
     settings: gio::Settings,
@@ -287,7 +289,7 @@ impl BluetoothControls {
             previous = Some(row.button.clone());
         }
         self.placeholder.set_visible(state.devices.is_empty());
-        self.menu.update_viewport(5);
+        self.menu.update_viewport(MAX_VISIBLE_DEVICES);
         self.placeholder.set_label(if !state.ready {
             "Bluetooth service unavailable"
         } else if state.hardware_blocked {
