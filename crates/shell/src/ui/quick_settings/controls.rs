@@ -10,6 +10,7 @@ use crate::services::{
 use gtk::prelude::*;
 use std::{
     cell::{Cell, RefCell},
+    collections::HashMap,
     rc::Rc,
 };
 
@@ -51,6 +52,7 @@ pub struct SystemControls {
     profiles: Rc<GridButton>,
     profiles_menu: Menu,
     profiles_state: RefCell<Option<ProfilesState>>,
+    profile_rows: RefCell<HashMap<String, gtk::Box>>,
     idle: Rc<GridButton>,
     nightlight: Rc<GridButton>,
     temperature: gtk::Scale,
@@ -121,6 +123,7 @@ impl SystemControls {
             profiles,
             profiles_menu,
             profiles_state: RefCell::new(None),
+            profile_rows: RefCell::new(HashMap::new()),
             idle,
             nightlight,
             temperature,
@@ -401,37 +404,55 @@ impl SystemControls {
         {
             return;
         }
-        while let Some(child) = self.profiles_menu.list().first_child() {
-            self.profiles_menu.list().remove(&child);
-        }
+        let mut old = self.profile_rows.take();
+        let mut next = HashMap::new();
+        let mut previous: Option<gtk::Widget> = None;
         for profile in state.profiles {
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-            row.add_css_class("quick-settings-menu-option-power-profiles");
-            let button = gtk::Button::new();
-            button.set_hexpand(true);
-            let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-            contents.append(&gtk::Image::from_icon_name(profile_icon(Some(&profile))));
-            let label = gtk::Label::new(Some(&profile));
-            label.set_xalign(0.0);
-            label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-            contents.append(&label);
-            button.set_child(Some(&contents));
-            row.append(&button);
-            self.clicked(&button, move |this| {
-                let weak = Rc::downgrade(this);
-                this.services.profiles.set_profile(&profile, move |result| {
-                    if let Some(this) = weak.upgrade()
-                        && !this.stopped.get()
-                    {
-                        this.profiles.widget().set_tooltip_text(
-                            result.err().map(|error| error.to_string()).as_deref(),
-                        );
-                    }
-                });
-            });
-            self.profiles_menu.list().append(&row);
+            let row = old
+                .remove(&profile)
+                .unwrap_or_else(|| self.profile_row(&profile));
+            if row.parent().is_none() {
+                self.profiles_menu.list().append(&row);
+            }
+            self.profiles_menu
+                .list()
+                .reorder_child_after(&row, previous.as_ref());
+            previous = Some(row.clone().upcast());
+            next.insert(profile, row);
         }
+        for (_, row) in old {
+            self.profiles_menu.list().remove(&row);
+        }
+        self.profile_rows.replace(next);
         self.profiles_menu.update_viewport(MAX_VISIBLE_PROFILES);
+    }
+    fn profile_row(self: &Rc<Self>, profile: &str) -> gtk::Box {
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        row.add_css_class("quick-settings-menu-option-power-profiles");
+        let button = gtk::Button::new();
+        button.set_hexpand(true);
+        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        contents.append(&gtk::Image::from_icon_name(profile_icon(Some(profile))));
+        let label = gtk::Label::new(Some(profile));
+        label.set_xalign(0.0);
+        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        contents.append(&label);
+        button.set_child(Some(&contents));
+        row.append(&button);
+        let profile = profile.to_owned();
+        self.clicked(&button, move |this| {
+            let weak = Rc::downgrade(this);
+            this.services.profiles.set_profile(&profile, move |result| {
+                if let Some(this) = weak.upgrade()
+                    && !this.stopped.get()
+                {
+                    this.profiles
+                        .widget()
+                        .set_tooltip_text(result.err().map(|error| error.to_string()).as_deref());
+                }
+            });
+        });
+        row
     }
 }
 impl Drop for SystemControls {
