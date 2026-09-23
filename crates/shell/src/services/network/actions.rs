@@ -249,12 +249,13 @@ impl NetworkService {
                 .iter()
                 .find(|known| known.id == device)
                 .ok_or_else(|| invalid("Network device is no longer available"))?;
-            device
-                .active_connection
-                .as_deref()
-                .map(deactivate)
-                .transpose()
-                .map(|call| call.into_iter().collect())
+            Ok(vec![Call {
+                path: device.id.clone(),
+                interface: "org.freedesktop.NetworkManager.Device",
+                method: "Disconnect",
+                parameters: ().to_variant(),
+                reply: "()",
+            }])
         })();
         self.execute(calls, done)
     }

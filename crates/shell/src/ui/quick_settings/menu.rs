@@ -3,6 +3,10 @@ use gtk::prelude::*;
 
 /// Viewport height used before row measurements are available.
 const FALLBACK_MAX_CONTENT_HEIGHT: i32 = 360;
+/// Leave room for the panel, window margin and bottom edge of the monitor.
+const SCREEN_VERTICAL_MARGIN: i32 = 64;
+/// Conservative viewport until the quick-settings window is mapped.
+const UNMAPPED_MAX_CONTENT_HEIGHT: i32 = 170;
 /// Viewport height for the first `max_visible` rows.
 ///
 /// Returns `None` when there is nothing measurable yet so callers keep the
@@ -98,15 +102,23 @@ impl Menu {
     }
     /// Fit the viewport to the first `max_visible` rows, scrolling the rest.
     pub fn update_viewport(&self, max_visible: usize) {
+        let rows = std::iter::successors(self.list.first_child(), |row| row.next_sibling());
+        self.update_viewport_rows(max_visible, rows);
+    }
+    /// Fit the viewport to the supplied rows, which may be nested in the list.
+    pub fn update_viewport_rows(
+        &self,
+        max_visible: usize,
+        rows: impl IntoIterator<Item = gtk::Widget>,
+    ) {
+        self.scroll.set_min_content_height(0);
         let mut heights = Vec::new();
         let mut count = 0;
-        let mut child = self.list.first_child();
-        while let Some(widget) = child {
+        for widget in rows {
             count += 1;
             if heights.len() < max_visible {
                 heights.push(widget.measure(gtk::Orientation::Vertical, -1).1);
             }
-            child = widget.next_sibling();
         }
         if let Some(height) = capped_height(&heights, max_visible) {
             self.scroll.set_max_content_height(height);
@@ -123,6 +135,35 @@ impl Menu {
                 gtk::PolicyType::Never
             },
         );
+    }
+    /// Reserve the measured viewport height, bounded by space on this monitor.
+    pub fn fit_viewport_to_screen(&self) {
+        if !self.scroll.get_visible() {
+            return;
+        }
+        let preferred = self.scroll.max_content_height();
+        let available = self
+            .root
+            .root()
+            .and_downcast::<gtk::Window>()
+            .and_then(|window| {
+                let surface = window.surface()?;
+                let monitor = self.root.display().monitor_at_surface(&surface)?;
+                (window.height() > 0).then(|| {
+                    monitor.geometry().height()
+                        - (window.height() - self.scroll.height()).max(0)
+                        - SCREEN_VERTICAL_MARGIN
+                })
+            })
+            .unwrap_or(UNMAPPED_MAX_CONTENT_HEIGHT);
+        let minimum = self.scroll.measure(gtk::Orientation::Vertical, -1).0;
+        let height = preferred.min(available.max(minimum));
+        self.scroll.set_max_content_height(height);
+        self.scroll.set_min_content_height(height);
+        if height < preferred {
+            self.scroll
+                .set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        }
     }
     pub fn set_title(&self, title: &str) {
         self.title.set_label(title);

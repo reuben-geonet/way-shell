@@ -90,6 +90,10 @@ impl native::Client {
                     ssid: settings
                         .as_ref()
                         .and_then(|settings| settings.get("802-11-wireless")?.get("ssid")?.get()),
+                    last_used: settings
+                        .as_ref()
+                        .and_then(|settings| settings.get("connection")?.get("timestamp")?.get())
+                        .unwrap_or(0),
                 }
             })
             .collect()
