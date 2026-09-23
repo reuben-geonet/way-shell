@@ -14,8 +14,12 @@ use std::{
 pub struct Device {
     pub id: String,
     pub interface: String,
+    pub description: String,
     pub kind: u32,
     pub state: u32,
+    pub managed: bool,
+    pub carrier: bool,
+    pub available_connections: Vec<String>,
     pub active_connection: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -37,6 +41,7 @@ pub struct SavedConnection {
     pub name: String,
     pub kind: String,
     pub ssid: Option<Vec<u8>>,
+    pub last_used: u64,
 }
 impl SavedConnection {
     pub fn is_vpn(&self) -> bool {
@@ -257,6 +262,27 @@ impl NetworkService {
         for object in client.connections() {
             let weak = self.downgrade();
             let handler = object.connect_local("changed", false, move |_| {
+                if let Some(service) = weak.upgrade() {
+                    service.refresh();
+                }
+                None
+            });
+            watchers.push(Subscription {
+                object,
+                handler: Some(handler),
+            });
+        }
+        for signal in [
+            "device-added",
+            "device-removed",
+            "connection-added",
+            "connection-removed",
+            "active-connection-added",
+            "active-connection-removed",
+        ] {
+            let object = client.object();
+            let weak = self.downgrade();
+            let handler = object.connect_local(signal, false, move |_| {
                 if let Some(service) = weak.upgrade() {
                     service.refresh();
                 }

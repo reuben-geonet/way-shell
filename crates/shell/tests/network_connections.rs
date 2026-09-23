@@ -276,6 +276,18 @@ fn exercise(context: &glib::MainContext, address: &str) {
             .build()
             .unwrap(),
     );
+    let disconnect_node = gio::DBusNodeInfo::for_xml("<node><interface name='org.freedesktop.NetworkManager.Device'><method name='Disconnect'/></interface></node>").unwrap();
+    let recorded = calls.clone();
+    registrations.push(
+        daemon
+            .register_object(DEVICE, &disconnect_node.interfaces()[0])
+            .method_call(move |_, _, _, _, method, args, call| {
+                recorded.borrow_mut().push((method.into(), args));
+                call.return_value(None);
+            })
+            .build()
+            .unwrap(),
+    );
     let scan_node = gio::DBusNodeInfo::for_xml("<node><interface name='org.freedesktop.NetworkManager.Device.Wireless'><method name='RequestScan'><arg type='a{sv}' direction='in'/></method></interface></node>").unwrap();
     let recorded = calls.clone();
     registrations.push(
@@ -401,16 +413,7 @@ fn exercise(context: &glib::MainContext, address: &str) {
     });
     wait(context, || result.borrow().is_some());
     result.borrow_mut().take().unwrap().unwrap();
-    assert_eq!(calls.borrow()[0].0, "DeactivateConnection");
-    assert_eq!(
-        calls.borrow()[0]
-            .1
-            .get::<(glib::variant::ObjectPath,)>()
-            .unwrap()
-            .0
-            .as_str(),
-        ACTIVE
-    );
+    assert_eq!(calls.borrow()[0].0, "Disconnect");
     calls.borrow_mut().clear();
     let out = result.clone();
     service.request_scan(DEVICE, move |reply| {

@@ -342,8 +342,12 @@ mod tests {
             devices: vec![Device {
                 id: "wifi".into(),
                 interface: "wlan0".into(),
+                description: "wlan0".into(),
                 kind: 2,
                 state: 100,
+                managed: true,
+                carrier: false,
+                available_connections: Vec::new(),
                 active_connection: None,
             }],
             ..NetworkState::default()

@@ -808,6 +808,28 @@ label.day-number.today:focus {
   color: @panel-button-color;
 }
 
+#quick-settings-menu #container #options-container button.quick-settings-wired-adapter {
+  font-weight: bold;
+}
+
+#quick-settings-menu #container #options-container button.quick-settings-wired-adapter.disconnect:hover {
+  background-color: @failure;
+  color: #ffffff;
+}
+
+#quick-settings-menu #container #options-container button.quick-settings-wired-adapter.reconnect:hover {
+  background-color: @success;
+  color: #ffffff;
+}
+
+#quick-settings-menu #container #options-container checkbutton.quick-settings-wired-profile {
+  padding: 8px 10px;
+}
+
+#quick-settings-menu #container #options-container checkbutton.quick-settings-wired-profile:hover {
+  background-color: @quick-settings-menu-option-hover;
+}
+
 /*
  * Quick Settings Menu Wifi Options
  */

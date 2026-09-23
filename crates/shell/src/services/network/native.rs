@@ -17,6 +17,10 @@ unsafe extern "C" {
     fn nm_active_connection_get_devices(connection: *mut GObject) -> *const glib::ffi::GPtrArray;
     fn nm_device_get_device_type(device: *mut GObject) -> u32;
     fn nm_device_get_state(device: *mut GObject) -> u32;
+    fn nm_device_get_managed(device: *mut GObject) -> glib::ffi::gboolean;
+    fn nm_device_get_description(device: *mut GObject) -> *const c_char;
+    fn nm_device_get_available_connections(device: *mut GObject) -> *const glib::ffi::GPtrArray;
+    fn nm_device_ethernet_get_carrier(device: *mut GObject) -> glib::ffi::gboolean;
     fn nm_object_get_path(object: *mut GObject) -> *const c_char;
     fn nm_client_dbus_call(
         client: *mut GObject,
@@ -156,8 +160,29 @@ impl Client {
                     interface: device
                         .property::<Option<String>>("interface")
                         .unwrap_or_default(),
+                    description: {
+                        let value = unsafe { nm_device_get_description(device.as_ptr()) };
+                        if value.is_null() {
+                            String::new()
+                        } else {
+                            unsafe { CStr::from_ptr(value) }
+                                .to_string_lossy()
+                                .into_owned()
+                        }
+                    },
                     kind: unsafe { nm_device_get_device_type(device.as_ptr()) },
                     state: unsafe { nm_device_get_state(device.as_ptr()) },
+                    managed: unsafe { nm_device_get_managed(device.as_ptr()) != 0 },
+                    carrier: unsafe {
+                        nm_device_get_device_type(device.as_ptr()) == 1
+                            && nm_device_ethernet_get_carrier(device.as_ptr()) != 0
+                    },
+                    available_connections: unsafe {
+                        objects(nm_device_get_available_connections(device.as_ptr()))
+                    }
+                    .iter()
+                    .map(super::connections::saved_path)
+                    .collect(),
                     active_connection: super::connections::device_active(device),
                 })
                 .collect(),
