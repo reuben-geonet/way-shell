@@ -298,6 +298,22 @@ impl Grid {
                 unique.push(button);
             }
         }
+        let unchanged = {
+            let current = self.buttons.borrow();
+            current.len() == unique.len()
+                && current
+                    .iter()
+                    .zip(&unique)
+                    .all(|(old, new)| Rc::ptr_eq(old, new))
+        };
+        if unchanged {
+            return;
+        }
+        let focused = self
+            .root
+            .root()
+            .and_then(|root| root.focus())
+            .filter(|widget| widget.is_ancestor(&self.root));
         let old_buttons = self.buttons.replace(unique.clone());
         for button in old_buttons {
             if !unique.iter().any(|new| Rc::ptr_eq(new, &button)) {
@@ -355,6 +371,9 @@ impl Grid {
             rows.push(Row { root, center });
         }
         self.rows.replace(rows);
+        if let Some(widget) = focused.filter(|widget| widget.is_ancestor(&self.root)) {
+            widget.grab_focus();
+        }
         self.publish_focus(
             !self.stopped.get() && unique.iter().any(|button| button.revealer.reveals_child()),
         );
