@@ -1,5 +1,28 @@
+{ inputs, ... }:
 {
   perSystem = { config, pkgs, ... }: {
+    wayShell.craneLib = inputs.crane.mkLib pkgs;
+    wayShell.dummySource = config.wayShell.craneLib.mkDummySrc {
+      src = config.wayShell.source;
+    };
+    wayShell.fedoraDummySource = config.wayShell.craneLib.mkDummySrc {
+      src = config.wayShell.source;
+      # Bundle the stub build script: compressed RPM source archives cannot
+      # retain references to Crane's default absolute store path.
+      dummyBuildrs = "crane-dummy-build.rs";
+      extraDummyScript = ''
+        for manifest in "$out"/crates/*/Cargo.toml; do
+          echo 'fn main() {}' > "$(dirname "$manifest")/crane-dummy-build.rs"
+        done
+      '';
+    };
+    # Crane reads config.toml at the vendor root. Keep importCargoLock's
+    # registry and pinned Git replacements, with an absolute vendor path.
+    wayShell.craneVendor = pkgs.runCommand "way-shell-crane-vendor" { } ''
+      mkdir -p "$out"
+      sed 's|directory = "cargo-vendor-dir"|directory = "${config.wayShell.cargoVendor}"|' \
+        ${config.wayShell.cargoVendor}/.cargo/config.toml > "$out/config.toml"
+    '';
     # Shared by the native package and the standalone Rust checks.
     wayShell.rustBuildArgs = {
       inherit (config.wayShell) version;

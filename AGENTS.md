@@ -2,6 +2,8 @@
 
 Build only what the current requirement needs. Prefer standard tools and straightforward code; introduce abstractions, dependencies and configuration only for a concrete benefit. Treat every helper and test as an ongoing maintenance cost. Document temporary workarounds with the affected versions and removal conditions.
 
+Package builds use Nix-managed, immutable Cargo dependency artifacts, built separately from application sources and reused by the application build. Use the pinned Crane helpers for workspace stubs and artifact handling. Each packaging environment—including native Nix and each supported distribution release and architecture—must build its own artifacts with matching toolchains, native libraries, Cargo features, profiles and flags. Distribution package builds run both stages in fresh target-distribution VMs with consistent build paths. Application source edits must not invalidate the dependency stage; changes to dependency manifests, lockfiles or compilation inputs must. Persist artifacts as declared Nix outputs so existing CI caching can reuse them, rather than introducing mutable shared Cargo directories or persistent build VMs. Follow this model when adding packaging for other distributions, including Debian.
+
 ## Project structure
 
 - `crates/shell/`: GTK desktop shell and desktop service integrations.

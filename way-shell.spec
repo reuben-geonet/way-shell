@@ -54,7 +54,9 @@ sed -i 's/ (.*)//' cargo-vendor.txt
 %{cargo_license} > cargo-licenses.txt
 
 %build
+%{?way_shell_artifacts_import}
 %cargo_build -- --workspace --bins --frozen
+%{?way_shell_artifacts_export}
 
 %check
 target/release/way-shell --help
