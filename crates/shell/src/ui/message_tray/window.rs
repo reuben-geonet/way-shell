@@ -19,6 +19,8 @@ pub enum MessageTrayEvent {
 type Observer = Rc<dyn Fn(MessageTrayEvent)>;
 const SCREEN_VERTICAL_MARGIN: i32 = 80;
 pub(super) const PREFERRED_HEIGHT: i32 = 600;
+// Both bundled tray themes use 6 px padding and a 1 px border on each edge.
+pub(super) const TRAY_VERTICAL_INSET: i32 = 14;
 
 fn height_budget(monitor_height: i32) -> i32 {
     (monitor_height - SCREEN_VERTICAL_MARGIN).max(0)
