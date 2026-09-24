@@ -38,9 +38,9 @@ impl MessageTray {
         let notifications = NotificationsList::new(
             services.notifications.clone(),
             settings.clone(),
-            move || {
+            move |height| {
                 if let Some(window) = weak.upgrade() {
-                    window.shrink();
+                    window.fit_height(height);
                 }
             },
         );
@@ -53,7 +53,7 @@ impl MessageTray {
         let calendar = Calendar::new(services.clock).map_err(|error| error.to_string())?;
         let osd = NotificationOsd::new(services.notifications, settings)?;
         let left = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        left.set_size_request(469, 600);
+        left.set_width_request(469);
         left.append(notifications.widget());
         let right = gtk::Box::new(gtk::Orientation::Vertical, 0);
         right.set_hexpand(true);
@@ -64,6 +64,12 @@ impl MessageTray {
             .content()
             .append(&gtk::Separator::new(gtk::Orientation::Vertical));
         window.content().append(&right);
+        let weak = Rc::downgrade(&notifications);
+        window.on_height_budget(move |budget| {
+            if let Some(notifications) = weak.upgrade() {
+                notifications.set_height_budget(budget);
+            }
+        });
         let this = Rc::new(Self {
             window,
             notifications,
