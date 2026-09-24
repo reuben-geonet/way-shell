@@ -2,6 +2,7 @@
 use super::{
     notification_card::widget_children,
     notification_group::{GroupEvent, NotificationGroup},
+    window::PREFERRED_HEIGHT,
 };
 use crate::services::notifications::{
     CloseReason, Notification, NotificationEvent, NotificationsService,
@@ -21,10 +22,25 @@ enum Update {
     Hidden,
     PruneEmpty,
 }
+// Both bundled tray themes use 6 px padding and a 1 px border on each edge.
+const TRAY_VERTICAL_INSET: i32 = 14;
+
+fn scroll_height_limit(tray_budget: i32, controls_height: i32) -> i32 {
+    (tray_budget - controls_height - TRAY_VERTICAL_INSET).max(0)
+}
+
+fn tray_height(natural_list_height: i32, controls_height: i32, budget: i32) -> i32 {
+    (natural_list_height + controls_height + TRAY_VERTICAL_INSET)
+        .max(PREFERRED_HEIGHT)
+        .min(budget)
+}
+
 pub struct NotificationsList {
     root: gtk::Box,
     list: gtk::Box,
     scroll: gtk::ScrolledWindow,
+    controls: gtk::CenterBox,
+    height_budget: Cell<i32>,
     status: adw::StatusPage,
     clear: gtk::Button,
     dnd: adw::SwitchRow,
@@ -38,13 +54,13 @@ pub struct NotificationsList {
     updating: Cell<bool>,
     changing_dnd: Cell<bool>,
     stopped: Cell<bool>,
-    shrink: Box<dyn Fn()>,
+    fit_height: Box<dyn Fn(i32)>,
 }
 impl NotificationsList {
     pub fn new(
         service: NotificationsService,
         settings: gio::Settings,
-        shrink: impl Fn() + 'static,
+        fit_height: impl Fn(i32) + 'static,
     ) -> Rc<Self> {
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         root.set_widget_name("notifications-list");
@@ -53,7 +69,9 @@ impl NotificationsList {
         root.append(&container);
         let scroll = gtk::ScrolledWindow::new();
         scroll.set_vexpand(true);
-        scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Never);
+        scroll.set_min_content_height(0);
+        scroll.set_propagate_natural_height(true);
+        scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
         let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
         list.set_widget_name("notifications-list-list");
         list.set_vexpand(true);
@@ -84,6 +102,8 @@ impl NotificationsList {
             root,
             list,
             scroll,
+            controls,
+            height_budget: Cell::new(PREFERRED_HEIGHT),
             status,
             clear,
             dnd,
@@ -97,7 +117,7 @@ impl NotificationsList {
             updating: Cell::new(false),
             changing_dnd: Cell::new(false),
             stopped: Cell::new(false),
-            shrink: Box::new(shrink),
+            fit_height: Box::new(fit_height),
         });
         let weak = Rc::downgrade(&this);
         this.clear.connect_clicked(move |_| {
@@ -146,6 +166,10 @@ impl NotificationsList {
     }
     pub fn widget(&self) -> &gtk::Box {
         &self.root
+    }
+    pub fn set_height_budget(&self, budget: i32) {
+        self.height_budget.set(budget);
+        self.resize();
     }
     pub fn clear_button(&self) -> &gtk::Button {
         &self.clear
@@ -220,7 +244,6 @@ impl NotificationsList {
             if self.stopped.get() {
                 break;
             }
-            let mut shrink = false;
             match update {
                 Update::Seed(notification)
                 | Update::Event(NotificationEvent::Added { notification, .. }) => {
@@ -233,13 +256,11 @@ impl NotificationsList {
                 }) => {
                     if previous.request.app_name != notification.request.app_name {
                         self.remove(&previous.request.app_name, notification.id);
-                        shrink = true;
                     }
                     self.add(notification);
                 }
                 Update::Event(NotificationEvent::Closed { notification, .. }) => {
                     self.remove(&notification.request.app_name, notification.id);
-                    shrink = true;
                 }
                 Update::Media(widgets) => {
                     let mut unique = Vec::new();
@@ -249,28 +270,23 @@ impl NotificationsList {
                         }
                     }
                     self.media.replace(unique);
-                    shrink = true;
                 }
                 Update::Collapse => {
                     for group in self.groups() {
                         group.collapse();
                     }
-                    shrink = true;
                 }
-                Update::Hidden => {
-                    shrink = true;
-                }
+                Update::Hidden => {}
                 Update::PruneEmpty => {
                     let groups = self.groups();
                     for group in groups.iter().filter(|group| group.is_empty()) {
                         group.stop();
                     }
                     self.groups.borrow_mut().retain(|group| !group.is_empty());
-                    shrink = true;
                 }
             }
             self.rebuild();
-            self.resize(shrink);
+            self.resize();
         }
         self.updating.set(false);
     }
@@ -283,12 +299,7 @@ impl NotificationsList {
                     && !this.stopped.get()
                 {
                     match event {
-                        GroupEvent::WillExpand => {
-                            this.scroll.set_size_request(-1, -1);
-                            this.scroll
-                                .set_policy(gtk::PolicyType::Never, gtk::PolicyType::Always);
-                        }
-                        GroupEvent::Resized { shrink } => this.resize(shrink),
+                        GroupEvent::WillExpand | GroupEvent::Resized { .. } => this.resize(),
                         GroupEvent::Empty => this.update(Update::PruneEmpty),
                     }
                 }
@@ -338,28 +349,39 @@ impl NotificationsList {
         self.status.set_visible(empty);
         self.scroll.set_visible(!empty);
     }
-    fn resize(&self, shrink: bool) {
+    fn resize(&self) {
         if self.stopped.get() {
             return;
         }
-        if shrink {
-            (self.shrink)();
-        }
+        let (_, controls_height, _, _) = self.controls.measure(gtk::Orientation::Vertical, -1);
+        self.scroll.set_max_content_height(scroll_height_limit(
+            self.height_budget.get(),
+            controls_height,
+        ));
         let (_, natural, _, _) = self.list.measure(gtk::Orientation::Vertical, -1);
-        self.scroll
-            .set_size_request(-1, if natural >= 900 { 1080 } else { -1 });
-        self.scroll.set_policy(
-            gtk::PolicyType::Never,
-            if natural >= 900 {
-                gtk::PolicyType::Always
-            } else {
-                gtk::PolicyType::Never
-            },
-        );
+        (self.fit_height)(tray_height(
+            natural,
+            controls_height,
+            self.height_budget.get(),
+        ));
     }
 }
 impl Drop for NotificationsList {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn scroll_limit_leaves_controls_and_tray_padding_visible() {
+        assert_eq!(scroll_height_limit(400, 60), 326);
+        assert_eq!(scroll_height_limit(1000, 60), 926);
+        assert_eq!(tray_height(1400, 60, 400), 400);
+        assert_eq!(tray_height(1400, 60, 1000), 1000);
+        assert_eq!(tray_height(250, 60, 1000), 600);
     }
 }
