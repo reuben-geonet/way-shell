@@ -2,7 +2,7 @@
 use super::{
     notification_card::widget_children,
     notification_group::{GroupEvent, NotificationGroup},
-    window::PREFERRED_HEIGHT,
+    window::{PREFERRED_HEIGHT, TRAY_VERTICAL_INSET},
 };
 use crate::services::notifications::{
     CloseReason, Notification, NotificationEvent, NotificationsService,
@@ -22,9 +22,6 @@ enum Update {
     Hidden,
     PruneEmpty,
 }
-// Both bundled tray themes use 6 px padding and a 1 px border on each edge.
-const TRAY_VERTICAL_INSET: i32 = 14;
-
 fn scroll_height_limit(tray_budget: i32, controls_height: i32) -> i32 {
     (tray_budget - controls_height - TRAY_VERTICAL_INSET).max(0)
 }

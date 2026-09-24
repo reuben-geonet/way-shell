@@ -16,7 +16,7 @@ use media::MediaCards;
 use notification_list::NotificationsList;
 use notification_osd::NotificationOsd;
 use std::{cell::Cell, rc::Rc};
-use window::{MessageTrayEvent, MessageTrayWindow};
+use window::{MessageTrayEvent, MessageTrayWindow, TRAY_VERTICAL_INSET};
 
 pub struct MessageTrayServices {
     pub clock: ClockService,
@@ -51,6 +51,11 @@ impl MessageTray {
             }
         });
         let calendar = Calendar::new(services.clock).map_err(|error| error.to_string())?;
+        let calendar_scroll = gtk::ScrolledWindow::new();
+        calendar_scroll.set_min_content_height(0);
+        calendar_scroll.set_propagate_natural_height(true);
+        calendar_scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        calendar_scroll.set_child(Some(calendar.widget()));
         let osd = NotificationOsd::new(services.notifications, settings)?;
         let left = gtk::Box::new(gtk::Orientation::Vertical, 0);
         left.set_width_request(469);
@@ -58,7 +63,7 @@ impl MessageTray {
         let right = gtk::Box::new(gtk::Orientation::Vertical, 0);
         right.set_hexpand(true);
         right.set_vexpand(true);
-        right.append(calendar.widget());
+        right.append(&calendar_scroll);
         window.content().append(&left);
         window
             .content()
@@ -66,6 +71,7 @@ impl MessageTray {
         window.content().append(&right);
         let weak = Rc::downgrade(&notifications);
         window.on_height_budget(move |budget| {
+            calendar_scroll.set_max_content_height((budget - TRAY_VERTICAL_INSET).max(0));
             if let Some(notifications) = weak.upgrade() {
                 notifications.set_height_budget(budget);
             }
