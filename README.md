@@ -230,3 +230,12 @@ Run these from the repository root.
 | `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
 | `nix run .#update-arch-locks` | Resolve the newest complete dated Arch snapshot and validate its build and runtime images. |
 | `nix run .#update-arch-locks -- --snapshot YYYY-MM-DD` | Use an explicit Arch snapshot date. |
+| `nix run .#bump-version -- X.Y.Z` | Update Cargo, RPM and Arch release versions. |
+
+For a release, refresh the Arch lock, bump the version, run the checks and
+installation targets, then tag the commit `vX.Y.Z` on `main`. The tag workflow
+publishes RPMs, an Arch package, checksums, and a matching `PKGBUILD` and
+vendored source archive. Download the latter two into one directory and run
+`makepkg -si` to rebuild for your current Arch system. Refresh the Arch lock
+monthly and before each release. A downloaded package installed with `pacman -U`
+is not enrolled in automatic `pacman -Syu` updates.
