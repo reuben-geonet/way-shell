@@ -7,10 +7,27 @@
 }:
 {
   # Keep matrix metadata under a recognised output so strict flake checks pass.
-  flake.lib.githubActions = inputs.nix-github-actions.lib.mkGithubMatrix {
-    attrPrefix = "packages";
-    checks = lib.genAttrs config.systems (system: (getSystem system).wayShell.installationTests);
-  };
+  flake.lib.githubActions =
+    let
+      githubActions = inputs.nix-github-actions.lib.mkGithubMatrix {
+        attrPrefix = "packages";
+        checks = lib.genAttrs config.systems (system: (getSystem system).wayShell.installationTests);
+      };
+    in
+    githubActions
+    // {
+      matrix.include = map (
+        entry:
+        entry
+        // {
+          package =
+            if entry.name == "test-install-nixos" then
+              "way-shell"
+            else
+              "package-${lib.removePrefix "test-install-" entry.name}";
+        }
+      ) githubActions.matrix.include;
+    };
 
   perSystem =
     {
