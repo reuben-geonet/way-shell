@@ -12,7 +12,10 @@
     };
     packages.packages = pkgs.runCommand "way-shell-packages" { } ''
       mkdir -p "$out"
-      cp -r ${config.packages.fedora-packages}/rpms "$out/"
+      mkdir -p "$out/rpms"
+      ${lib.concatMapStringsSep "\n" (release: ''
+        cp -r ${config.packages."package-fedora-${release}"}/rpms/* "$out/rpms/"
+      '') (builtins.attrNames config.wayShell.fedora.releases)}
       mkdir -p "$out/arch"
       cp ${config.packages.package-arch}/*.pkg.tar.zst "$out/arch/"
     '';
