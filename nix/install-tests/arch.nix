@@ -19,7 +19,7 @@ vm.runInLinuxImage (pkgs.runCommand "way-shell-arch-installation" {
   export XDG_DATA_DIRS=/usr/local/share:/usr/share GSETTINGS_BACKEND=memory
   mkdir -p "$HOME" "$XDG_DATA_HOME" "$out/logs"
   exec > >(tee "$out/logs/check.log") 2>&1
-  packages=(${config.packages.package-arch}/*.pkg.tar.zst)
+  packages=(${config.packages.package-arch}/release/*.pkg.tar.zst)
   test "''${#packages[@]}" -eq 1
   pacman -U --noconfirm "''${packages[0]}"
   test -f /usr/share/glib-2.0/schemas/org.ldelossa.way-shell.gschema.xml
