@@ -217,8 +217,8 @@ Run these from the repository root.
 | `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
 | `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
-| `nix build .#rpms -L` | Build RPMs for every configured Fedora release. |
-| `nix build .#rpm-fedora-VERSION -L` | Build RPMs for the selected Fedora release. |
+| `nix build .#packages -L` | Build Arch and both Fedora packages. |
+| `nix build .#package-fedora-VERSION -L` | Build RPMs for Fedora 43 or 44. |
 | `nix build .#test-install -L` | Test package installation and removal on every supported system. |
 | `nix build .#test-install-fedora -L` | Test all supported Fedora releases. |
 | `nix build .#test-install-fedora-VERSION -L` | Test one Fedora release. |
