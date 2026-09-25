@@ -2,7 +2,7 @@ Name: way-shell
 Version: 0.0.10
 Release: 11%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
-License: GPL-2.0-only
+License: AGPL-3.0-only AND Apache-2.0 AND MIT
 
 URL: https://github.com/ldelossa/way-shell
 Source0: %{name}-%{version}.tar.gz

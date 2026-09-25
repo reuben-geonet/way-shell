@@ -37,7 +37,7 @@
             meta = {
               description = "GNOME-like desktop shell for Sway and Niri";
               homepage = "https://github.com/ldelossa/way-shell";
-              license = lib.licenses.gpl2Only;
+              license = lib.licenses.agpl3Only;
               platforms = [ "x86_64-linux" ];
               mainProgram = "way-shell";
             };

@@ -62,6 +62,15 @@ and RPM packaging.
 
 Contributions are very welcome if you're using Way-Shell on a distro other then Fedora!
 
+## License
+
+Way-Shell is licensed under `AGPL-3.0-only`. See [LICENSE](LICENSE) for the
+full license text. Packaged third-party dependency notices are installed under
+`share/licenses/way-shell/dependencies/`; Fedora packages also include
+`cargo-vendor.txt` and `cargo-licenses.txt` in `share/licenses/way-shell/`.
+The Apache-2.0 and MIT entries in package metadata describe bundled
+dependencies; they are not alternative licenses for Way-Shell.
+
 ## Video Demonstration
 
 [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/sOooD4Q3mYU/0.jpg)](https://www.youtube.com/watch?v=sOooD4Q3mYU)
