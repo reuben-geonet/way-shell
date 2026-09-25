@@ -8,6 +8,15 @@
     let
       package = config.packages.way-shell;
       coreChecks = {
+        release-versions = pkgs.runCommand "way-shell-release-versions" { } ''
+          grep -Fx 'Version: ${config.wayShell.version}' ${../way-shell.spec}
+          grep -Fx 'pkgver=${config.wayShell.version}' ${./packaging/arch/PKGBUILD.in}
+          for name in way-sh way-shell way-shell-core way-shell-shortcuts; do
+            ${pkgs.python3}/bin/python3 -c 'import sys,tomllib; d=tomllib.load(open(sys.argv[1],"rb")); assert next(p["version"] for p in d["package"] if p["name"] == sys.argv[2]) == sys.argv[3]' \
+              ${../Cargo.lock} "$name" ${config.wayShell.version}
+          done
+          touch "$out"
+        '';
         check-format-rs =
           pkgs.runCommand "way-shell-check-format-rs"
             {
