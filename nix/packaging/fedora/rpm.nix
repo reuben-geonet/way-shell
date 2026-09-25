@@ -45,6 +45,13 @@
       );
     in
     {
-      packages = lib.mapAttrs' (release: output: lib.nameValuePair "package-fedora-${release}" output) builds;
+      packages = lib.mapAttrs' (
+        release: output:
+        lib.nameValuePair "package-fedora-${release}" (pkgs.runCommand "way-shell-${cfg.version}-fedora-${release}-package" { } ''
+          mkdir -p "$out/release" "$out/logs"
+          cp ${output}/rpms/*/*.rpm "$out/release/"
+          cp -r ${output}/logs/. "$out/logs/"
+        '')
+      ) builds;
     };
 }
