@@ -1,8 +1,8 @@
 { pkgs }:
 pkgs.vmTools.override {
   customQemu = pkgs.writeShellScript "way-shell-qemu" ''
-    # Fedora needs CPU features beyond QEMU's default CPU. Require KVM, and
-    # retain readable serial output in both the Nix log and successful outputs.
+    # Guest distributions need CPU features beyond QEMU's default CPU. Require
+    # KVM and retain readable serial output in Nix logs and successful outputs.
     set +e
     set -o pipefail
     ${pkgs.qemu_kvm}/bin/qemu-system-x86_64 \

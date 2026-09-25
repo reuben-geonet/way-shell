@@ -4,7 +4,7 @@
   size ? 16384,
 }:
 let
-  vm = import ./vm-tools.nix { inherit pkgs; };
+  vm = import ../vm-tools.nix { inherit pkgs; };
 in
 vm.fillDiskWithRPMs {
   name = "fedora-${manifest.release}-${manifest.arch}";

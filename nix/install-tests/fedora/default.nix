@@ -53,7 +53,7 @@ lib.mapAttrs' (
         }
         ''
           export RPM_DIRECTORY=${
-            config.packages."rpm-fedora-${release}"
+            config.packages."package-fedora-${release}"
           }/rpms/fedora-${release}-${cfg.fedora.arch}
           export INSTALL_REPOSITORY=${repository}
           source ${./install.sh}
