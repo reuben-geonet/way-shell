@@ -54,7 +54,7 @@
               exec python3 ${./update-locks.py} \
                 --config ${pkgs.writeText "fedora-config.json" (builtins.toJSON fedora)} \
                 --nixpkgs ${inputs.nixpkgs} --revision ${inputs.nixpkgs.rev} \
-                --tools ${./.} --spec ${../../../way-shell.spec} "$@"
+                --tools ${../.}/fedora --spec ${../../../way-shell.spec} "$@"
             '';
           }
         );
