@@ -894,7 +894,7 @@ version = "1.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8f0126756ef34be1acc91a0533d329c1d6eebf69a3bea1a2a9475fa86dbf6cb"
 dependencies = [
- "glib-sys 0.21.5",
+ "glib-sys 0.22.9",
  "libpulse-sys",
  "pkg-config",
 ]
@@ -1527,7 +1527,7 @@ name = "way-shell"
 version = "1.0.0"
 dependencies = [
  "gio",
- "glib 0.21.5",
+ "glib 0.22.9",
  "gtk4",
  "gtk4-layer-shell",
  "libadwaita",
