@@ -1,5 +1,5 @@
 pkgname=way-shell
-pkgver=0.0.10
+pkgver=1.0.0
 pkgrel=1
 pkgdesc='GNOME-like desktop shell for Sway and Niri'
 arch=('x86_64')
