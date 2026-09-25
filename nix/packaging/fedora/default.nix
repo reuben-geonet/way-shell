@@ -34,7 +34,7 @@
         inherit fedora manifests;
         runtimeManifests = readManifests "runtime" fedora.runtimePackages;
         serviceManifests = readManifests "services" null;
-        vmTools = import ./vm-tools.nix { inherit pkgs; };
+        vmTools = import ../vm-tools.nix { inherit pkgs; };
         images = lib.mapAttrs (_: manifest: import ./image.nix { inherit pkgs manifest; }) manifests;
       };
       apps.update-fedora-locks = {
