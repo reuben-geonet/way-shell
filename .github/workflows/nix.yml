@@ -31,10 +31,10 @@ jobs:
       - name: Check flake
         run: nix flake check --print-build-logs
 
-  installation-matrix:
+  build-matrix:
     runs-on: ubuntu-24.04
     outputs:
-      matrix: ${{ steps.installation-matrix.outputs.matrix }}
+      matrix: ${{ steps.build-matrix.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -42,19 +42,19 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
 
-      - name: Generate installation matrix
-        id: installation-matrix
+      - name: Generate build matrix
+        id: build-matrix
         run: |
           matrix="$(nix eval --json .#lib.githubActions.matrix)"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
-  install-packages:
+  build-packages:
     name: ${{ matrix.name }}
-    needs: installation-matrix
+    needs: build-matrix
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.installation-matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.build-matrix.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -74,5 +74,8 @@ jobs:
             nix-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ matrix.name }}-
             nix-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Test package installation
+      - name: Build package
+        run: nix build --print-build-logs '.#${{ matrix.package }}'
+
+      - name: Test installation
         run: nix build --print-build-logs '.#${{ matrix.attr }}'
