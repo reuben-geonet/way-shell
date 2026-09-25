@@ -1,0 +1,102 @@
+name: Update VM locks
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fedora:
+    name: Update Fedora locks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          extra_nix_config: |
+            abort-on-warn = true
+
+      - name: Update and validate Fedora images
+        run: nix run .#update-fedora-locks
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          client-id: ${{ vars.VM_LOCKS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.VM_LOCKS_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update Fedora PR
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          add-paths: nix/packaging/fedora/locks/*.json
+          commit-message: 'nix: update Fedora VM locks'
+          branch: ci/update-fedora-vm-locks
+          base: main
+          delete-branch: true
+          title: 'nix: update Fedora VM locks'
+          body: |
+            Weekly Fedora VM lock refresh. The updater validated every candidate Fedora image before committing these locks.
+
+      - name: Enable rebase auto merge
+        if: vars.VM_LOCKS_AUTOMERGE_ENABLED == 'true' && steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: gh pr merge "$PR_NUMBER" --auto --rebase
+
+  arch:
+    name: Update Arch locks
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+        with:
+          extra_nix_config: |
+            abort-on-warn = true
+
+      - name: Update and validate Arch images
+        run: nix run .#update-arch-locks
+
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          client-id: ${{ vars.VM_LOCKS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.VM_LOCKS_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update Arch PR
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          add-paths: nix/packaging/arch/locks/*.json
+          commit-message: 'nix: update Arch VM locks'
+          branch: ci/update-arch-vm-locks
+          base: main
+          delete-branch: true
+          title: 'nix: update Arch VM locks'
+          body: |
+            Weekly Arch VM lock refresh. The updater validated every candidate Arch image before committing these locks.
+
+      - name: Enable rebase auto merge
+        if: vars.VM_LOCKS_AUTOMERGE_ENABLED == 'true' && steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: gh pr merge "$PR_NUMBER" --auto --rebase
