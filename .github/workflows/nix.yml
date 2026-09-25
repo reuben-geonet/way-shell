@@ -75,7 +75,24 @@ jobs:
             nix-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build package
-        run: nix build --print-build-logs '.#${{ matrix.package }}'
+        id: build
+        run: nix build --print-build-logs '.#${{ matrix.package }}' --out-link package-result
 
       - name: Test installation
         run: nix build --print-build-logs '.#${{ matrix.attr }}'
+
+      - name: Stage binary package
+        if: always() && steps.build.outcome == 'success' && matrix.package != 'way-shell'
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp package-result/release/* dist/
+
+      - name: Upload binary package
+        if: always() && steps.build.outcome == 'success' && matrix.package != 'way-shell'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: binary-${{ matrix.name }}
+          path: dist/*
+          retention-days: 14
+          if-no-files-found: error
