@@ -36,6 +36,8 @@
           env -i HOME="$TMPDIR" ${package}/bin/way-shell --help > "$out/way-shell-help.txt"
           env -i HOME="$TMPDIR" ${package}/bin/way-sh --help > "$out/way-sh-help.txt"
           test -s ${package}/share/licenses/way-shell/LICENSE
+          grep -Fq 'GNU AFFERO GENERAL PUBLIC LICENSE' ${package}/share/licenses/way-shell/LICENSE
+          grep -Fq '13. Remote Network Interaction; Use with the GNU General Public License.' ${package}/share/licenses/way-shell/LICENSE
           grep -Fx 'ExecStart=${package}/bin/way-shell' ${package}/lib/systemd/user/way-shell.service
           env -i HOME="$TMPDIR" GSETTINGS_BACKEND=memory ${pkgs.glib.bin}/bin/gsettings \
             --schemadir ${package}/share/gsettings-schemas/${package.name}/glib-2.0/schemas \
