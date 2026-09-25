@@ -1,0 +1,32 @@
+pkgname=way-shell
+pkgver=0.0.10
+pkgrel=1
+pkgdesc='GNOME-like desktop shell for Sway and Niri'
+arch=('x86_64')
+url='https://github.com/ldelossa/way-shell'
+license=('GPL-2.0-only')
+options=('!debug')
+depends=('gtk4' 'libadwaita' 'gtk4-layer-shell' 'wireplumber' 'libpulse' 'libnm' 'pipewire' 'systemd-libs')
+makedepends=('rust' 'clang' 'pkgconf')
+optdepends=('networkmanager: network controls' 'bluez: Bluetooth controls' 'upower: battery status' 'pipewire-pulse: PulseAudio service' 'power-profiles-daemon: power profiles')
+source=("way-shell-${pkgver}.tar.gz")
+sha256sums=('@SOURCE_SHA256@')
+
+build() {
+  cd "way-shell-${pkgver}"
+  export CARGO_HOME="$srcdir/cargo-home"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }--remap-path-prefix=$srcdir/way-shell-${pkgver}=/usr/src/way-shell-${pkgver}"
+  cargo build --workspace --bins --release --frozen --offline --jobs 1
+}
+
+check() {
+  "$srcdir/target/release/way-shell" --help
+  "$srcdir/target/release/way-sh" --help
+}
+
+package() {
+  cd "way-shell-${pkgver}"
+  DESTDIR="$pkgdir" PREFIX=/usr CARGO_ARTIFACT_DIR="$srcdir/target/release" \
+    DEPENDENCY_LICENSES="$PWD/dependency-licenses" sh scripts/install.sh
+}
