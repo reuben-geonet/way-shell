@@ -212,12 +212,13 @@ Run these from the repository root.
 | `nix build` | Build the native package, linking it at `result`. |
 | `nix build .#way-shell` | Build the native package explicitly. |
 | `nix profile add .#way-shell` | Install the native package into your Nix profile. |
-| `nix flake check` | Run Rust formatting and the lightweight native package check. |
+| `nix flake check` | Check version agreement, Rust formatting and the native package. |
 | `nix build .#check-format-rs` | Check Rust formatting without editing files. |
 | `nix build .#clippy-rs` | Run Clippy across the Rust workspace and all targets with warnings treated as errors. |
 | `nix build .#native-package` | Check installed executable startup, licenses, service paths and schemas. |
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
-| `nix build .#packages -L` | Build Arch and both Fedora packages. |
+| `nix build .#packages -L` | Assemble installers, source archive, PKGBUILD and checksums in `result/release/`. |
+| `nix build .#release-source-files -L` | Build the source archive and matching PKGBUILD without the VM packages. |
 | `nix build .#package-fedora-VERSION -L` | Build RPMs for Fedora 43 or 44. |
 | `nix build .#package-arch -L` | Build a pacman package from the pinned Arch snapshot. |
 | `nix build .#test-install -L` | Test package installation and removal on every supported system. |
