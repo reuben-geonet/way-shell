@@ -17,7 +17,7 @@
         cp ${config.packages."package-fedora-${release}"}/release/*.rpm "$out/rpms/"
       '') (builtins.attrNames config.wayShell.fedora.releases)}
       mkdir -p "$out/arch"
-      cp ${config.packages.package-arch}/*.pkg.tar.zst "$out/arch/"
+      cp ${config.packages.package-arch}/release/*.pkg.tar.zst "$out/arch/"
     '';
   };
 }

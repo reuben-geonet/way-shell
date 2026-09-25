@@ -32,7 +32,7 @@ The demo above is using [SwayFX](https://github.com/WillPower3309/swayfx) which 
 A [copr](https://copr.fedorainfracloud.org/coprs/ldelossa/Way-Shell/) exists for installing Way-Shell on Fedora. 
 
 For Nix development, an installable native Nix package, and locally built
-Fedora RPMs, see [the Nix commands below](#nix-commands). Run `nix flake show`
+Fedora and Arch packages, see [the Nix commands below](#nix-commands). Run `nix flake show`
 to discover available targets.
 
 An [AUR package](https://aur.archlinux.org/packages/way-shell) also exists for Arch-based distros, which can be installed with any AUR helper, or with `makepkg` if you're feeling lucky.
@@ -219,9 +219,13 @@ Run these from the repository root.
 | `nix build .#cargo-vendor` | Fetch the locked Rust dependencies into a Cargo vendor directory. |
 | `nix build .#packages -L` | Build Arch and both Fedora packages. |
 | `nix build .#package-fedora-VERSION -L` | Build RPMs for Fedora 43 or 44. |
+| `nix build .#package-arch -L` | Build a pacman package from the pinned Arch snapshot. |
 | `nix build .#test-install -L` | Test package installation and removal on every supported system. |
 | `nix build .#test-install-fedora -L` | Test all supported Fedora releases. |
 | `nix build .#test-install-fedora-VERSION -L` | Test one Fedora release. |
+| `nix build .#test-install-arch -L` | Test Arch installation, commands, schemas and removal. |
 | `nix build .#test-install-nixos -L` | Test installation into a user's Nix profile inside NixOS. |
 | `nix flake show` | Discover available targets. |
 | `nix run .#update-fedora-locks` | Regenerate and validate the configured Fedora dependency locks. |
+| `nix run .#update-arch-locks` | Resolve the newest complete dated Arch snapshot and validate its build and runtime images. |
+| `nix run .#update-arch-locks -- --snapshot YYYY-MM-DD` | Use an explicit Arch snapshot date. |

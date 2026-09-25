@@ -23,7 +23,7 @@
         diskImageFormat = "qcow2";
         memSize = 3072;
         buildCommand = ''
-          mkdir -p "$out/logs" /var/tmp/way-shell-build
+          mkdir -p "$out/release" "$out/logs" /var/tmp/way-shell-build
           exec > >(tee "$out/logs/build.log") 2>&1
           cp ${archive} /var/tmp/way-shell-build/way-shell-${config.wayShell.version}.tar.gz
           cp ${pkgbuild} /var/tmp/way-shell-build/PKGBUILD
@@ -32,7 +32,7 @@
           HOME=/var/tmp/way-shell-build USER=nobody LOGNAME=nobody \
             setpriv --reuid=65534 --regid=65534 --clear-groups \
               makepkg --noconfirm --nodeps --clean --cleanbuild
-          cp ./*.pkg.tar.zst "$out/"
+          cp ./*.pkg.tar.zst "$out/release/"
         '';
       });
     in {
