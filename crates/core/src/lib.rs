@@ -1,6 +1,7 @@
 //! Display-independent Way Shell contracts and domain logic.
 
 pub mod audio;
+pub mod capture;
 pub mod clock;
 pub mod commands;
 pub mod gamma;

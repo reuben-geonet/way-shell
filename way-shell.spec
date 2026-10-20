@@ -24,6 +24,7 @@ BuildRequires: pkgconfig(libpulse-mainloop-glib)
 BuildRequires: pkgconfig(wayland-client)
 BuildRequires: pkgconfig(gtk4-layer-shell-0)
 
+Recommends: grim
 Recommends: NetworkManager
 Recommends: bluez
 Recommends: pipewire

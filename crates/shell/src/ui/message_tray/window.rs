@@ -26,6 +26,8 @@ fn height_budget(monitor_height: i32) -> i32 {
     (monitor_height - SCREEN_VERTICAL_MARGIN).max(0)
 }
 
+type HeightObserver = Box<dyn Fn(i32)>;
+
 pub struct MessageTrayWindow {
     visibility: VisibilityController,
     content: gtk::Box,
@@ -33,7 +35,7 @@ pub struct MessageTrayWindow {
     observers: RefCell<Vec<Observer>>,
     events: RefCell<VecDeque<MessageTrayEvent>>,
     height_budget: Cell<i32>,
-    height_observer: RefCell<Option<Box<dyn Fn(i32)>>>,
+    height_observer: RefCell<Option<HeightObserver>>,
     monitor: RefCell<Option<(gtk::gdk::Monitor, glib::SignalHandlerId)>>,
     publishing: Cell<bool>,
     desired: Cell<bool>,
@@ -189,6 +191,14 @@ impl MessageTrayWindow {
             self.show();
         }
     }
+    pub fn hide_now(&self) {
+        let revision = self.next_revision();
+        self.desired.set(false);
+        self.cancel_animation();
+        self.visibility.hide_now();
+        self.window().set_opacity(0.0);
+        self.hidden(revision);
+    }
     pub fn shrink(&self) {
         self.fit_height(PREFERRED_HEIGHT);
     }
@@ -293,6 +303,14 @@ impl MessageTrayWindow {
         self.publishing.set(false);
     }
 }
+impl Drop for MessageTrayWindow {
+    fn drop(&mut self) {
+        self.observers.get_mut().clear();
+        self.events.get_mut().clear();
+        self.close();
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -301,12 +319,5 @@ mod tests {
     fn monitor_budget_reserves_panel_and_screen_margins() {
         assert_eq!(height_budget(480), 400);
         assert_eq!(height_budget(1080), 1000);
-    }
-}
-impl Drop for MessageTrayWindow {
-    fn drop(&mut self) {
-        self.observers.get_mut().clear();
-        self.events.get_mut().clear();
-        self.close();
     }
 }

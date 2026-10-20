@@ -1171,3 +1171,11 @@ label.day-number.today:focus {
 .shortcuts-status { padding: 8px; }
 .panel-shortcuts { color: @panel-button-color; background: transparent; border: none; }
 .panel-shortcuts:hover { background: @panel-button-hover; }
+
+/* Frozen screenshot surfaces and their launch-monitor controls. */
+window.screenshot-overlay { background: #000000; border-radius: 0; box-shadow: none; }
+.screenshot-toolbar { background: @base-panel-background; color: @text-general; border: 1px solid @base-panel-border; border-radius: 18px; padding: 16px; box-shadow: 0 4px 20px @box-shadow; }
+.screenshot-toolbar button { min-height: 30px; padding: 6px 12px; }
+.screenshot-toolbar button:checked, .screenshot-toolbar button.suggested-action { background: @quick-settings-button; color: @text-general; }
+.screenshot-toolbar button:hover { background: @quick-settings-button-hover; }
+.screenshot-status { font-size: 0.9em; }

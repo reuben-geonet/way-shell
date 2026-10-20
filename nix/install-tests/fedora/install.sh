@@ -27,7 +27,11 @@ dnf=(dnf5 --assumeyes --setopt=reposdir=/tmp/way-shell-repos)
 "${dnf[@]}" install "${application[0]}"
 /usr/bin/way-shell --help
 /usr/bin/way-sh --help
+/usr/bin/way-sh screenshot --help
 gsettings list-recursively org.ldelossa.way-shell.system > "$out/logs/settings.txt"
+grep -Fx 'org.ldelossa.way-shell.system screenshot-copy-to-clipboard true' "$out/logs/settings.txt"
+
+command -v grim
 
 "${dnf[@]}" remove way-shell
 if rpm -q way-shell; then

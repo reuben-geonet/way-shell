@@ -31,6 +31,7 @@ pub struct NotificationOsd {
     updates: RefCell<VecDeque<Update>>,
     updating: Cell<bool>,
     tray_visible: Cell<bool>,
+    suppressed: Cell<bool>,
     stopped: Cell<bool>,
 }
 impl NotificationOsd {
@@ -61,6 +62,7 @@ impl NotificationOsd {
             updates: RefCell::new(VecDeque::new()),
             updating: Cell::new(false),
             tray_visible: Cell::new(false),
+            suppressed: Cell::new(false),
             stopped: Cell::new(false),
         });
         let weak = Rc::downgrade(&this);
@@ -106,6 +108,14 @@ impl NotificationOsd {
     pub fn set_tray_visible(&self, visible: bool) {
         self.tray_visible.set(visible);
     }
+    pub fn set_suppressed(&self, suppressed: bool) {
+        self.suppressed.set(suppressed);
+        if suppressed {
+            self.cancel_timeout();
+            self.revealer.set_reveal_child(false);
+            self.window.hide();
+        }
+    }
     pub fn hide(self: &Rc<Self>) {
         self.update(Update::Hide);
     }
@@ -142,7 +152,10 @@ impl NotificationOsd {
             match update {
                 Update::Event(event) => match *event {
                     NotificationEvent::Added { notification, .. } => {
-                        if !self.tray_visible.get() && !self.settings.boolean("do-not-disturb") {
+                        if !self.suppressed.get()
+                            && !self.tray_visible.get()
+                            && !self.settings.boolean("do-not-disturb")
+                        {
                             self.present(notification);
                         }
                     }

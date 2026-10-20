@@ -21,6 +21,7 @@
     "(power-profiles-daemon or tuned-ppd)",
     "NetworkManager",
     "bluez",
+    "grim",
     "pipewire",
     "pipewire-pulseaudio",
     "systemd",
@@ -233,6 +234,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/g/grep-3.12-2.fc43.x86_64.rpm"
     },
     {
+      "sha256": "61a09930083093fcb235ef72fb3714f86ed461f91c881b99aee7834da6075224",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/g/grim-1.5.0-2.fc43.x86_64.rpm"
+    },
+    {
       "sha256": "4e24f6891c4cd1698027441204eb878828926def8a47ae7d6d17c8985e8a5d62",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/g/gsm-1.0.23-1.fc43.x86_64.rpm"
     },
@@ -437,6 +442,10 @@
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/l/libplist-2.6.0-5.fc43.x86_64.rpm"
     },
     {
+      "sha256": "fadb9f24114ce5374b407d7bf2cc559d7745f36a2554d82ff8e8664eb370510c",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/l/libpng-1.6.50-2.fc43.x86_64.rpm"
+    },
+    {
       "sha256": "6a95315add28de830715d894d06a9b01e0a7695f7461ef0aa441877442b608a0",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/l/libpsl-0.21.5-6.fc43.x86_64.rpm"
     },
@@ -515,6 +524,10 @@
     {
       "sha256": "45f0511bf14199890cceadd6d5133fe19f00f674d347ab678312f0aedc3058b6",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/l/libvorbis-1.3.7-13.fc43.x86_64.rpm"
+    },
+    {
+      "sha256": "051beda159619fad9d2ca8a7e207efa3baeadedbd3d563e14c5ff894124febcc",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/l/libwayland-client-1.24.0-1.fc43.x86_64.rpm"
     },
     {
       "sha256": "833bf0fc6e9bb014ba07c7fbf702f6ffe0af7fa2117b91ed472924d8cfd37705",
@@ -651,6 +664,10 @@
     {
       "sha256": "63f2467a54b6cc49d3945e0d7307904c03cb0cfce1154cc820b2e6731c126271",
       "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/pipewire-pulseaudio-1.4.8-2.fc43.x86_64.rpm"
+    },
+    {
+      "sha256": "b4d44642eeac3fb6dad21c367c63c5f88a41c76f2446bf7cce6a5f3b8c95a89e",
+      "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os/Packages/p/pixman-0.46.2-2.fc43.x86_64.rpm"
     },
     {
       "sha256": "e15cd58e871fa5dac795dd0bd2b9eb554f8e3c79f98a4d6fc662ee8960902bd2",

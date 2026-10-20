@@ -37,6 +37,7 @@ pub struct SystemHeader {
     battery_time: gtk::Label,
     battery_percent: gtk::Label,
     power_button: gtk::Button,
+    screenshot_button: gtk::Button,
     power_menu: Rc<PowerMenu>,
     mixer: Option<MixerSlot>,
     revealers: [gtk::Revealer; 3],
@@ -76,6 +77,11 @@ impl SystemHeader {
         battery_button.set_child(Some(&contents));
         center.set_start_widget(Some(&battery_button));
         let end = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let screenshot_button = gtk::Button::from_icon_name("camera-photo-symbolic");
+        screenshot_button.add_css_class("circular");
+        screenshot_button.set_tooltip_text(Some("Take a screenshot"));
+        screenshot_button.update_property(&[gtk::accessible::Property::Label("Take a screenshot")]);
+        end.append(&screenshot_button);
         if let Some(mixer) = &mixer {
             end.append(&mixer.button);
         }
@@ -126,6 +132,7 @@ impl SystemHeader {
             battery_time,
             battery_percent,
             power_button,
+            screenshot_button,
             power_menu,
             mixer,
             revealers,
@@ -163,6 +170,9 @@ impl SystemHeader {
         this.watch(&this.notifications);
         this.refresh();
         this
+    }
+    pub fn screenshot_button(&self) -> &gtk::Button {
+        &self.screenshot_button
     }
     pub fn widget(&self) -> &gtk::Box {
         &self.root

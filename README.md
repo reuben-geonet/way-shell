@@ -248,3 +248,47 @@ vendored source archive. Download the latter two into one directory and run
 `makepkg -si` to rebuild for your current Arch system. Refresh the Arch lock
 monthly and before each release. A downloaded package installed with `pacman -U`
 is not enrolled in automatic `pacman -Syu` updates.
+
+## Screenshots
+
+Install `grim`, then use the camera button in Quick Settings or
+`way-sh screenshot show` (`hide` and `toggle` are also available). The desktop
+freezes on every active monitor. Choose Area, Window, Screen or All screens,
+then Capture; Escape cancels. Window capture crops the visible desktop, so
+other windows overlapping it remain in the image. Window mode requires geometry
+from the compositor. Per-monitor snapshots can represent slightly different
+frames.
+
+Use S/W/C/A to select a mode, and Enter or Space to capture. With the canvas
+focused, arrows move an area and Shift+arrows resize it; Ctrl changes the step
+from one to ten logical pixels. In Window and Screen modes, arrows select a
+target. Drag inside an area to move it, drag its edges to resize, or drag outside
+it to draw another rectangle, including across monitors. Tab navigates controls.
+The toolbar stays on the monitor where capture was launched.
+
+Add a Print Screen binding to your own compositor configuration:
+
+```sway
+bindsym Print exec way-sh screenshot show
+```
+
+```kdl
+binds {
+    Print { spawn "way-sh" "screenshot" "show"; }
+}
+```
+
+Captures save as PNGs under XDG Pictures/Screenshots (Home/Screenshots if Pictures
+is undefined) and also copy to the clipboard. Both settings apply on the next
+Capture press:
+
+```sh
+gsettings set org.ldelossa.way-shell.system screenshot-save-directory '~/Screenshots'
+gsettings set org.ldelossa.way-shell.system screenshot-copy-to-clipboard false
+```
+
+An empty directory setting restores the default. Custom directories must be
+absolute or start with `~/`; environment variables are not expanded. Existing
+files are never overwritten. A save failure leaves the frozen preview available
+for retry and reports whether clipboard copying succeeded. Pointer capture,
+recording, delays and annotation are not included.
