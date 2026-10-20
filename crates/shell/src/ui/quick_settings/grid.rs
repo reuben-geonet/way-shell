@@ -43,18 +43,13 @@ impl GridButton {
         icon.add_css_class("quick-settings-grid-button-icon");
         contents.append(&icon);
         let text = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        text.set_valign(gtk::Align::Center);
         let title = tile_label(title, "quick-settings-grid-button-title");
         let subtitle_widget = tile_label(
             subtitle.unwrap_or(""),
             "quick-settings-grid-button-subtitle",
         );
         subtitle_widget.set_visible(subtitle.is_some());
-        if subtitle.is_some() {
-            toggle.add_css_class("with-subtitle");
-        } else {
-            title.set_vexpand(true);
-            title.set_valign(gtk::Align::Center);
-        }
         text.append(&title);
         text.append(&subtitle_widget);
         contents.append(&text);
@@ -125,15 +120,6 @@ impl GridButton {
     pub fn set_optional_subtitle(&self, subtitle: Option<&str>) {
         self.subtitle.set_label(subtitle.unwrap_or(""));
         self.subtitle.set_visible(subtitle.is_some());
-        self.title.set_vexpand(false);
-        if let Some(text) = self.title.parent() {
-            text.set_valign(gtk::Align::Center);
-        }
-        if subtitle.is_some() {
-            self.toggle.add_css_class("with-subtitle");
-        } else {
-            self.toggle.remove_css_class("with-subtitle");
-        }
     }
     pub fn set_icon(&self, icon: &str) {
         self.icon.set_icon_name(Some(icon));
