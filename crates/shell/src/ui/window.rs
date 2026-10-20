@@ -32,11 +32,18 @@ pub enum WindowRole {
     Dialog,
     PanelPopup,
     PanelPopupUnderlay,
+    Screenshot,
 }
 
 impl WindowRole {
     fn configure(self, window: &adw::Window) {
         let (namespace, layer, anchors, keyboard) = match self {
+            Self::Screenshot => (
+                "way-shell-screenshot",
+                Layer::Overlay,
+                &EDGES[..],
+                KeyboardMode::None,
+            ),
             Self::Panel => (
                 "way-shell-panel",
                 Layer::Top,
@@ -125,6 +132,7 @@ impl WindowRole {
             window.set_anchor(edge, anchors.contains(&edge));
         }
         match self {
+            Self::Screenshot => window.set_exclusive_zone(-1),
             Self::PanelPopup => {
                 window.set_margin(Edge::Top, 8);
                 window.set_margin(Edge::Right, 20);

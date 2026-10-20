@@ -225,3 +225,13 @@ fn shortcut_commands_append_wire_opcodes() {
         status(output, 0);
     }
 }
+
+#[test]
+fn screenshot_commands_append_opcodes() {
+    let server = Server::new();
+    for (action, opcode) in [("show", 37u32), ("hide", 38), ("toggle", 39)] {
+        let (bytes, output) = server.exchange(&["screenshot", action], &[1, 0, 0, 0]);
+        assert_eq!(bytes, opcode.to_le_bytes());
+        assert!(output.status.success());
+    }
+}

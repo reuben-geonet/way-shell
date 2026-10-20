@@ -130,7 +130,7 @@ fn valid_wire_requests_async_results_and_concurrent_clients() {
             assert!(!response(&context, &fast));
             assert!(response(&context, &slow));
             assert_eq!(*calls.borrow(), [Command::VolumeUp, Command::VolumeDown]);
-            let peers: Vec<_> = (1..=36)
+            let peers: Vec<_> = (1..=39)
                 .map(|opcode| {
                     let peer = client();
                     send(
@@ -186,10 +186,13 @@ fn valid_wire_requests_async_results_and_concurrent_clients() {
                     Command::ShortcutsShow,
                     Command::ShortcutsHide,
                     Command::ShortcutsToggle,
+                    Command::ScreenshotShow,
+                    Command::ScreenshotHide,
+                    Command::ScreenshotToggle,
                 ]
             );
             assert!(calls.borrow().contains(&Command::VolumeSet(0.375)));
-            assert_eq!(calls.borrow().last(), Some(&Command::ShortcutsToggle));
+            assert_eq!(calls.borrow().last(), Some(&Command::ScreenshotToggle));
             let pathname = directory.0.join("legacy-client.sock");
             let legacy = UnixDatagram::bind(&pathname).unwrap();
             legacy.set_nonblocking(true).unwrap();
@@ -226,7 +229,7 @@ fn invalid_lengths_opcodes_floats_and_unreplyable_senders_never_dispatch() {
                 vec![2],
                 vec![2, 0, 0],
                 vec![0; 4],
-                vec![37, 0, 0, 0],
+                vec![40, 0, 0, 0],
                 vec![2, 0, 0, 0, 0],
                 vec![4, 0, 0, 0],
                 vec![0; 9],

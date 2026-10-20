@@ -197,6 +197,113 @@ pub fn command(action: &Action) -> Result<Value, String> {
     Ok(json!({"Action":action}))
 }
 
+/// Niri tile coordinates are logical and relative to the workspace's output.
+/// Older Niri versions without tile geometry still support every other mode.
+pub fn capture_layout(
+    outputs: &Value,
+    workspaces: &Value,
+    windows: &Value,
+) -> Result<crate::capture::CaptureLayout, String> {
+    use crate::capture::{CaptureLayout, CaptureOutput, CaptureWindow, Rect};
+    let outputs = outputs.as_object().ok_or("Invalid Niri capture outputs")?;
+    let workspaces = workspaces
+        .as_array()
+        .ok_or("Invalid Niri capture workspaces")?;
+    let windows = windows.as_array().ok_or("Invalid Niri capture windows")?;
+    let mut displays = Vec::new();
+    for (connector, output) in outputs {
+        if output["logical"].is_null() || output["current_mode"].is_null() {
+            continue;
+        }
+        let logical = &output["logical"];
+        let bounds: Rect = serde_json::from_value(logical.clone()).map_err(|e| e.to_string())?;
+        let transform = logical["transform"]
+            .as_str()
+            .ok_or("Missing Niri transform")?
+            .to_owned();
+        let mode =
+            &output["modes"][output["current_mode"].as_u64().ok_or("Invalid Niri mode")? as usize];
+        let mut native_size = (
+            mode["width"]
+                .as_u64()
+                .and_then(|v| u32::try_from(v).ok())
+                .ok_or("Missing Niri mode width")?,
+            mode["height"]
+                .as_u64()
+                .and_then(|v| u32::try_from(v).ok())
+                .ok_or("Missing Niri mode height")?,
+        );
+        if matches!(
+            transform.as_str(),
+            "90" | "270" | "Flipped90" | "Flipped270"
+        ) {
+            native_size = (native_size.1, native_size.0);
+        }
+        displays.push(CaptureOutput {
+            connector: connector.clone(),
+            bounds,
+            scale: logical["scale"].as_f64().ok_or("Missing Niri scale")?,
+            transform,
+            native_size,
+        });
+    }
+    let focused_output = workspaces
+        .iter()
+        .find(|w| w["is_focused"] == true)
+        .and_then(|w| w["output"].as_str())
+        .map(str::to_owned);
+    let mut targets = Vec::new();
+    for window in windows {
+        let Some(workspace) = workspaces
+            .iter()
+            .find(|w| w["id"] == window["workspace_id"] && w["is_active"] == true)
+        else {
+            continue;
+        };
+        let Some(output) = displays
+            .iter()
+            .find(|o| Some(o.connector.as_str()) == workspace["output"].as_str())
+        else {
+            continue;
+        };
+        let geometry = &window["layout"];
+        let pair = |value: &Value| -> Option<(f64, f64)> {
+            Some((value.get(0)?.as_f64()?, value.get(1)?.as_f64()?))
+        };
+        let (Some((x, y)), Some((width, height)), Some(id)) = (
+            pair(&geometry["tile_pos_in_workspace_view"]),
+            pair(&geometry["tile_size"]),
+            window["id"].as_u64(),
+        ) else {
+            continue;
+        };
+        let bounds = Rect {
+            x: output.bounds.x + x,
+            y: output.bounds.y + y,
+            width,
+            height,
+        };
+        if !bounds.valid() {
+            continue;
+        }
+        let Some(bounds) = bounds.intersection(output.bounds) else {
+            continue;
+        };
+        targets.push(CaptureWindow {
+            id,
+            title: window["title"].as_str().unwrap_or("Untitled window").into(),
+            bounds,
+            focused: window["is_focused"] == true,
+        });
+    }
+    CaptureLayout {
+        outputs: displays,
+        windows: targets,
+        focused_output,
+    }
+    .validate()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

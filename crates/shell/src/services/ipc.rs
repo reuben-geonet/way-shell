@@ -68,6 +68,9 @@ pub enum Command {
     ShortcutsShow,
     ShortcutsHide,
     ShortcutsToggle,
+    ScreenshotShow,
+    ScreenshotHide,
+    ScreenshotToggle,
 }
 impl Command {
     fn decode(bytes: &[u8]) -> Option<Self> {
@@ -109,6 +112,9 @@ impl Command {
             34 => Self::ShortcutsShow,
             35 => Self::ShortcutsHide,
             36 => Self::ShortcutsToggle,
+            37 => Self::ScreenshotShow,
+            38 => Self::ScreenshotHide,
+            39 => Self::ScreenshotToggle,
             // Opcode zero historically decoded but had no successful operation.
             _ => return None,
         })

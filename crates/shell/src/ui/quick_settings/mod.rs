@@ -137,6 +137,14 @@ impl QuickSettingsWindow {
             self.show();
         }
     }
+    pub fn hide_now(&self) {
+        let revision = self.next_revision();
+        self.desired.set(false);
+        self.cancel_animation();
+        self.visibility.hide_now();
+        self.window().set_opacity(0.0);
+        self.hidden(revision);
+    }
     pub fn set_focused(&self, focused: bool) {
         self.focused.set(focused && !self.closed.get());
         if self.focusing.replace(true) {

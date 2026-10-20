@@ -118,6 +118,19 @@ impl QuickSettings {
         });
         let weak = Rc::downgrade(&this);
         this.window.on_event(move |event| {
+            if event == QuickSettingsEvent::WillShow
+                && let Some(this) = weak.upgrade()
+            {
+                let available = crate::services::screenshot::available();
+                this.header.screenshot_button().set_sensitive(available);
+                this.header
+                    .screenshot_button()
+                    .set_tooltip_text(Some(if available {
+                        "Take a screenshot"
+                    } else {
+                        "Install grim to take screenshots"
+                    }));
+            }
             if event == QuickSettingsEvent::Hidden
                 && let Some(this) = weak.upgrade()
             {
@@ -139,6 +152,9 @@ impl QuickSettings {
             });
         this.update_tiles();
         Ok(this)
+    }
+    pub fn screenshot_button(&self) -> &gtk::Button {
+        self.header.screenshot_button()
     }
     pub fn window(&self) -> &Rc<QuickSettingsWindow> {
         &self.window

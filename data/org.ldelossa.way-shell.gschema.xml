@@ -8,6 +8,15 @@
 
     <!--system related settings-->
     <schema path="/org/ldelossa/way-shell/system/" id="org.ldelossa.way-shell.system">
+        <key name="screenshot-save-directory" type="s">
+            <default>''</default>
+            <summary>Screenshot destination directory</summary>
+            <description>Empty uses Pictures/Screenshots, or Home/Screenshots when Pictures is undefined. Otherwise use an absolute directory or ~/ path.</description>
+        </key>
+        <key name="screenshot-copy-to-clipboard" type="b">
+            <default>true</default>
+            <summary>Also copy captured PNG images to the clipboard</summary>
+        </key>
         <key name="bluetooth-settings-command" type="s">
             <default>'blueman-manager'</default>
             <summary>Command used to open Bluetooth settings</summary>

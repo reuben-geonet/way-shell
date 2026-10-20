@@ -23,6 +23,7 @@ pkgs.testers.runNixOSTest {
     machine.succeed(as_user("nix profile add ${package}"))
     machine.succeed(as_user("way-shell --help"))
     machine.succeed(as_user("way-sh --help"))
+    machine.succeed(as_user("way-sh screenshot --help"))
     machine.succeed(as_user(
         "GSETTINGS_BACKEND=memory gsettings --schemadir "
         "$HOME/.nix-profile/share/gsettings-schemas/${package.name}/glib-2.0/schemas "

@@ -26,7 +26,11 @@ vm.runInLinuxImage (pkgs.runCommand "way-shell-arch-installation" {
   test -f /usr/lib/systemd/user/way-shell.service
   /usr/bin/way-shell --help
   /usr/bin/way-sh --help
+  /usr/bin/way-sh screenshot --help
+  pacman -Qi way-shell > "$out/logs/package.txt"
+  grep -Fq "grim: screenshot capture" "$out/logs/package.txt"
   gsettings list-recursively org.ldelossa.way-shell.system > "$out/logs/settings.txt"
+  grep -Fx 'org.ldelossa.way-shell.system screenshot-copy-to-clipboard true' "$out/logs/settings.txt"
   pacman -R --noconfirm way-shell
   ! pacman -Q way-shell
 '')

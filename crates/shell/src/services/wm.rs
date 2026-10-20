@@ -573,6 +573,122 @@ fn find_sway_socket() -> Result<PathBuf, String> {
         .ok_or_else(|| "No Sway IPC socket was found in XDG_RUNTIME_DIR".into())
 }
 
+/// Closing or dropping an on-demand request cancels its transport, independently
+/// of the long-lived workspace subscriptions.
+struct CaptureConnection(Connection);
+impl Drop for CaptureConnection {
+    fn drop(&mut self) {
+        self.0.close();
+    }
+}
+#[derive(Default)]
+struct CaptureReply {
+    result: Option<Result<serde_json::Value, String>>,
+    waker: Option<std::task::Waker>,
+}
+fn complete_capture(
+    state: &std::rc::Weak<RefCell<CaptureReply>>,
+    result: Result<serde_json::Value, String>,
+) {
+    if let Some(state) = state.upgrade() {
+        let waker = {
+            let mut state = state.borrow_mut();
+            if state.result.is_some() {
+                return;
+            }
+            state.result = Some(result);
+            state.waker.take()
+        };
+        if let Some(waker) = waker {
+            waker.wake();
+        }
+    }
+}
+impl WindowManager {
+    async fn capture_query(&self, kind: u32, request: &str) -> Result<serde_json::Value, String> {
+        use std::{rc::Rc, task::Poll};
+        if self.imp().stopped.get() {
+            return Err("Compositor service has stopped".into());
+        }
+        let state = Rc::new(RefCell::new(CaptureReply::default()));
+        let receive = Rc::downgrade(&state);
+        let closed = receive.clone();
+        let backend = self.backend();
+        let request_key = request.to_owned();
+        let mut sway_decoder = sway::Decoder::default();
+        let mut niri_decoder = niri::Decoder::default();
+        let connection = CaptureConnection(Connection::connect(
+            &self.socket_path(),
+            move |bytes| {
+                let result = match backend {
+                    Backend::Sway => sway_decoder.push(bytes).and_then(|frames| {
+                        frames
+                            .into_iter()
+                            .map(|frame| {
+                                if frame.kind != kind {
+                                    return Err("Unexpected Sway capture reply".into());
+                                }
+                                serde_json::from_slice(&frame.payload).map_err(|e| e.to_string())
+                            })
+                            .collect::<Result<Vec<_>, String>>()
+                    }),
+                    Backend::Niri => niri_decoder.push(bytes).and_then(|values| {
+                        values
+                            .into_iter()
+                            .map(|value| {
+                                if let Some(error) = value["Err"].as_str() {
+                                    return Err(error.to_owned());
+                                }
+                                value
+                                    .get("Ok")
+                                    .and_then(|v| v.get(&request_key))
+                                    .cloned()
+                                    .ok_or("Unexpected Niri capture reply".into())
+                            })
+                            .collect::<Result<Vec<_>, String>>()
+                    }),
+                };
+                match result {
+                    Ok(values) => {
+                        for value in values {
+                            complete_capture(&receive, Ok(value));
+                        }
+                    }
+                    Err(error) => complete_capture(&receive, Err(error)),
+                }
+                Ok(())
+            },
+            move |error| complete_capture(&closed, Err(error)),
+        )?);
+        connection.0.send(match backend {
+            Backend::Sway => sway::encode(kind, b"")?,
+            Backend::Niri => niri::encode(&serde_json::json!(request)),
+        })?;
+        std::future::poll_fn(move |cx| {
+            let mut state = state.borrow_mut();
+            match state.result.take() {
+                Some(result) => Poll::Ready(result),
+                None => {
+                    state.waker = Some(cx.waker().clone());
+                    Poll::Pending
+                }
+            }
+        })
+        .await
+    }
+    pub async fn capture_layout(&self) -> Result<way_shell_core::capture::CaptureLayout, String> {
+        let outputs = self.capture_query(sway::OUTPUTS, "Outputs").await?;
+        match self.backend() {
+            Backend::Sway => sway::capture_layout(&outputs, &self.capture_query(4, "Tree").await?),
+            Backend::Niri => {
+                let workspaces = self.capture_query(0, "Workspaces").await?;
+                let windows = self.capture_query(0, "Windows").await?;
+                niri::capture_layout(&outputs, &workspaces, &windows)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

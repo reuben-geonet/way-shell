@@ -1,0 +1,42 @@
+{
+  "DP-1": {
+    "name": "DP-1",
+    "current_mode": 0,
+    "modes": [
+      {
+        "width": 200,
+        "height": 125
+      }
+    ],
+    "logical": {
+      "x": -160,
+      "y": 0,
+      "width": 160,
+      "height": 100,
+      "scale": 1.25,
+      "transform": "Normal"
+    }
+  },
+  "DP-2": {
+    "name": "DP-2",
+    "current_mode": 0,
+    "modes": [
+      {
+        "width": 240,
+        "height": 150
+      }
+    ],
+    "logical": {
+      "x": 0,
+      "y": -160,
+      "width": 100,
+      "height": 160,
+      "scale": 1.5,
+      "transform": "90"
+    }
+  },
+  "off": {
+    "logical": null,
+    "current_mode": null
+  }
+}

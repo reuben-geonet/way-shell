@@ -161,6 +161,128 @@ pub fn command(action: &Action) -> Result<String, String> {
     })
 }
 
+/// Decode the on-demand screenshot inventory. Only visible workspace leaves
+/// represent windows; containers and scratchpad workspaces are never targets.
+pub fn capture_layout(
+    outputs: &serde_json::Value,
+    tree: &serde_json::Value,
+) -> Result<crate::capture::CaptureLayout, String> {
+    use crate::capture::{CaptureLayout, CaptureOutput, CaptureWindow, Rect};
+    let inventory = outputs.as_array().ok_or("Invalid Sway capture outputs")?;
+    let mut displays = Vec::new();
+    for output in inventory {
+        if output["active"] != true || output.get("power") == Some(&serde_json::Value::Bool(false))
+        {
+            continue;
+        }
+        let connector = output["name"]
+            .as_str()
+            .ok_or("Missing Sway connector")?
+            .to_owned();
+        let bounds: Rect =
+            serde_json::from_value(output["rect"].clone()).map_err(|e| e.to_string())?;
+        let transform = output["transform"]
+            .as_str()
+            .ok_or("Missing Sway transform")?
+            .to_owned();
+        let mode = &output["current_mode"];
+        let mut native_size = (
+            mode["width"]
+                .as_u64()
+                .and_then(|v| u32::try_from(v).ok())
+                .ok_or("Missing Sway mode width")?,
+            mode["height"]
+                .as_u64()
+                .and_then(|v| u32::try_from(v).ok())
+                .ok_or("Missing Sway mode height")?,
+        );
+        if matches!(
+            transform.as_str(),
+            "90" | "270" | "flipped-90" | "flipped-270"
+        ) {
+            native_size = (native_size.1, native_size.0);
+        }
+        displays.push(CaptureOutput {
+            connector,
+            bounds,
+            scale: output["scale"].as_f64().ok_or("Missing Sway scale")?,
+            transform,
+            native_size,
+        });
+    }
+    fn visit(
+        node: &serde_json::Value,
+        visible: bool,
+        inventory: &[serde_json::Value],
+        windows: &mut Vec<CaptureWindow>,
+        focused: &mut Option<String>,
+        connector: Option<&str>,
+    ) {
+        let kind = node["type"].as_str().unwrap_or("");
+        let connector = if kind == "output" {
+            node["name"].as_str()
+        } else {
+            connector
+        };
+        let visible = visible
+            && node.get("visible") != Some(&serde_json::Value::Bool(false))
+            && if kind == "workspace" {
+                inventory.iter().any(|o| {
+                    o["name"].as_str() == connector && o["current_workspace"] == node["name"]
+                })
+            } else {
+                true
+            };
+        if visible && node["focused"] == true {
+            *focused = connector.map(str::to_owned);
+        }
+        if visible
+            && (node["app_id"].is_string() || node["window"].is_number())
+            && let (Some(id), Ok(bounds)) = (
+                node["id"].as_u64(),
+                serde_json::from_value::<Rect>(node["rect"].clone()),
+            )
+        {
+            windows.push(CaptureWindow {
+                id,
+                title: node["name"].as_str().unwrap_or("Untitled window").into(),
+                bounds,
+                focused: node["focused"] == true,
+            });
+        }
+        for key in ["nodes", "floating_nodes"] {
+            if let Some(children) = node[key].as_array() {
+                for child in children {
+                    visit(child, visible, inventory, windows, focused, connector);
+                }
+            }
+        }
+    }
+    let mut windows = Vec::new();
+    let mut focused_output = None;
+    visit(
+        tree,
+        true,
+        inventory,
+        &mut windows,
+        &mut focused_output,
+        None,
+    );
+    if focused_output.is_none() {
+        focused_output = inventory
+            .iter()
+            .find(|o| o["focused"] == true)
+            .and_then(|o| o["name"].as_str())
+            .map(str::to_owned);
+    }
+    CaptureLayout {
+        outputs: displays,
+        windows,
+        focused_output,
+    }
+    .validate()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

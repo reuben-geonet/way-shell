@@ -9,7 +9,7 @@
     {
       devShells.default = pkgs.mkShell {
         inputsFrom = [ config.packages.way-shell ];
-        packages = with pkgs; [ gdb rustc cargo rustfmt clippy rust-analyzer dbus pipewire wireplumber ];
+        packages = with pkgs; [ gdb rustc cargo rustfmt clippy rust-analyzer dbus pipewire wireplumber grim ];
         nativeBuildInputs = [ pkgs.rustPlatform.bindgenHook ];
         shellHook = ''
             export GSETTINGS_SCHEMA_DIR="$PWD/.cache/nix/schemas"

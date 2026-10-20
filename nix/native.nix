@@ -14,6 +14,9 @@
           // {
             pname = "way-shell";
             nativeBuildInputs = config.wayShell.rustBuildArgs.nativeBuildInputs ++ [ pkgs.wrapGAppsHook4 ];
+            preFixup = ''
+              gappsWrapperArgs+=(--prefix PATH : ${lib.makeBinPath [ pkgs.grim ]})
+            '';
             # Keep the artifact path used by the shared installer.
             buildPhase = ''
               runHook preBuild

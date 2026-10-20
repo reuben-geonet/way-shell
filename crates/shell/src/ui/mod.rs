@@ -9,6 +9,7 @@ pub mod panel;
 pub mod panel_popup;
 pub mod quick_settings;
 pub mod rename_switcher;
+pub mod screenshot;
 pub mod shortcuts;
 pub mod switcher;
 pub mod tray_support;

@@ -44,6 +44,7 @@ pub const GROUPS: &[CommandGroup] = &[
         &[("show", 31), ("hide", 32), ("toggle", 33)],
     ),
     ("shortcuts", &[("show", 34), ("hide", 35), ("toggle", 36)]),
+    ("screenshot", &[("show", 37), ("hide", 38), ("toggle", 39)]),
 ];
 
 pub fn parse_volume(text: &str) -> Result<f32, String> {
@@ -111,6 +112,7 @@ pub fn describe(args: &[String]) -> Option<String> {
         "output-switcher" => "Choose an output".into(),
         "rename-switcher" => "Rename workspace".into(),
         "shortcuts" => "Show keyboard shortcuts".into(),
+        "screenshot" => "Take a screenshot".into(),
         _ => return None,
     };
     Some(text)
@@ -132,7 +134,7 @@ mod tests {
                 assert!(describe(&args).is_some());
             }
         }
-        assert_eq!(opcodes.len(), 36);
+        assert_eq!(opcodes.len(), 39);
         assert!(describe(&["activities".into(), "bad".into()]).is_none());
     }
 }

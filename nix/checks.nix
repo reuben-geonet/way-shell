@@ -35,6 +35,7 @@
           mkdir -p "$out"
           env -i HOME="$TMPDIR" ${package}/bin/way-shell --help > "$out/way-shell-help.txt"
           env -i HOME="$TMPDIR" ${package}/bin/way-sh --help > "$out/way-sh-help.txt"
+          grep -Fq '${pkgs.grim}/bin' ${package}/bin/way-shell
           test -s ${package}/share/licenses/way-shell/LICENSE
           grep -Fq 'GNU AFFERO GENERAL PUBLIC LICENSE' ${package}/share/licenses/way-shell/LICENSE
           grep -Fq '13. Remote Network Interaction; Use with the GNU General Public License.' ${package}/share/licenses/way-shell/LICENSE
@@ -42,6 +43,8 @@
           env -i HOME="$TMPDIR" GSETTINGS_BACKEND=memory ${pkgs.glib.bin}/bin/gsettings \
             --schemadir ${package}/share/gsettings-schemas/${package.name}/glib-2.0/schemas \
             list-recursively org.ldelossa.way-shell.system > "$out/settings.txt"
+          grep -Fx 'org.ldelossa.way-shell.system screenshot-copy-to-clipboard true' "$out/settings.txt"
+          grep -E "screenshot-save-directory [[:punct:]]{2}$" "$out/settings.txt"
         '';
       };
     in

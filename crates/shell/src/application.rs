@@ -36,6 +36,7 @@ use crate::{
             controls::SystemServices,
         },
         rename_switcher::RenameSwitcher,
+        screenshot::Screenshot,
         shortcuts::ShortcutsSheet,
         workspace_switcher::{WorkspaceMode, WorkspaceSwitcher},
     },
@@ -636,6 +637,7 @@ struct Desktop {
     osd: Rc<LevelOsd>,
     panels: Panels,
     shortcuts: Rc<ShortcutsSheet>,
+    screenshot: Rc<Screenshot>,
     popup_handlers: RefCell<Vec<(adw::Window, glib::SignalHandlerId)>>,
     events: RefCell<VecDeque<DesktopEvent>>,
     publishing: Cell<bool>,
@@ -701,6 +703,12 @@ impl Desktop {
         let output = OutputSwitcher::new(services.manager.clone())?;
         let rename = RenameSwitcher::new(services.manager.clone())?;
         let shortcuts = ShortcutsSheet::new(services.shortcuts.clone(), services.manager.clone())?;
+        let screenshot = Screenshot::new(
+            services.manager.clone(),
+            configuration.system.clone(),
+            services.notifications.clone(),
+            display,
+        );
         let panels = Panels::new(
             display,
             PanelServices {
@@ -721,6 +729,7 @@ impl Desktop {
             action,
         )?;
         let this = Rc::new(Self {
+            screenshot,
             shortcuts,
             popup_handlers: RefCell::new(Vec::new()),
             activities,
@@ -737,6 +746,31 @@ impl Desktop {
             publishing: Cell::new(false),
             stopped: Cell::new(false),
         });
+        let weak = Rc::downgrade(&this);
+        this.screenshot.on_active(move |active| {
+            if let Some(this) = weak.upgrade() {
+                this.message_tray.notification_osd().set_suppressed(active);
+                if active {
+                    this.hide_for_screenshot();
+                }
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.quick_settings
+            .screenshot_button()
+            .connect_clicked(move |_| {
+                if let Some(this) = weak.upgrade() {
+                    let window = this.quick_settings.window().window();
+                    let connector = window
+                        .surface()
+                        .and_then(|surface| WidgetExt::display(window).monitor_at_surface(&surface))
+                        .and_then(|monitor| monitor.connector())
+                        .map(|s| s.to_string());
+                    if let Err(error) = this.screenshot.show(connector) {
+                        glib::g_message!("way-shell", "Could not open Screenshot: {error}");
+                    }
+                }
+            });
         let weak = Rc::downgrade(&this);
         this.activities.on_event(move |event| {
             if let Some(this) = weak.upgrade() {
@@ -767,12 +801,14 @@ impl Desktop {
             this.rename.switcher().window(),
             this.app_switcher.window(),
             this.dialog.window(),
+            this.osd.window(),
         ] {
             let weak = Rc::downgrade(&this);
             let handler = window.connect_visible_notify(move |window| {
                 if window.is_visible()
                     && let Some(this) = weak.upgrade()
                 {
+                    this.screenshot.cancel();
                     this.shortcuts.hide();
                 }
             });
@@ -797,6 +833,15 @@ impl Desktop {
             };
             if self.stopped.get() {
                 break;
+            }
+            if matches!(
+                event,
+                DesktopEvent::Activities(ActivitiesEvent::WillShow)
+                    | DesktopEvent::QuickSettings(QuickSettingsEvent::WillShow)
+                    | DesktopEvent::MessageTray(MessageTrayEvent::WillShow)
+                    | DesktopEvent::Shortcuts(PopupEvent::Visible)
+            ) {
+                self.screenshot.cancel();
             }
             match event {
                 DesktopEvent::Shortcuts(PopupEvent::Visible) => {
@@ -847,6 +892,32 @@ impl Desktop {
         }
         self.publishing.set(false);
     }
+    fn hide_for_screenshot(&self) {
+        self.shortcuts.hide();
+        self.activities.hide();
+        self.activities.visibility_controller().hide_now();
+        self.quick_settings.window().hide_now();
+        self.message_tray.window().hide_now();
+        self.hide_selectors();
+        self.rename.hide();
+        self.app_switcher.hide();
+        self.dialog.cancel();
+        // Tray menus and tooltips are GTK popovers parented below panels.
+        fn dismiss(widget: &gtk::Widget) {
+            if let Some(popover) = widget.downcast_ref::<gtk::Popover>() {
+                popover.popdown();
+                popover.set_visible(false);
+            }
+            let mut child = widget.first_child();
+            while let Some(current) = child {
+                child = current.next_sibling();
+                dismiss(&current);
+            }
+        }
+        for panel in self.panels.windows() {
+            dismiss(panel.upcast_ref());
+        }
+    }
     fn hide_selectors(&self) {
         self.workspace.hide();
         self.output.hide();
@@ -857,6 +928,9 @@ impl Desktop {
             return Err("Desktop surfaces have closed".into());
         }
         match command {
+            Command::ScreenshotShow => self.screenshot.show(None)?,
+            Command::ScreenshotHide => self.screenshot.cancel(),
+            Command::ScreenshotToggle => self.screenshot.toggle()?,
             Command::ShortcutsShow => {
                 if !self.dialog.window().is_visible() {
                     self.shortcuts.show()?;
@@ -908,6 +982,7 @@ impl Desktop {
         for (window, handler) in self.popup_handlers.take() {
             window.disconnect(handler);
         }
+        self.screenshot.close();
         self.shortcuts.close();
         self.panels.stop();
         self.osd.close();

@@ -1,0 +1,43 @@
+[
+  {
+    "name": "DP-1",
+    "active": true,
+    "power": true,
+    "rect": {
+      "x": -160,
+      "y": 0,
+      "width": 160,
+      "height": 100
+    },
+    "scale": 1.25,
+    "transform": "normal",
+    "current_mode": {
+      "width": 200,
+      "height": 125
+    },
+    "current_workspace": "left"
+  },
+  {
+    "name": "DP-2",
+    "active": true,
+    "power": true,
+    "focused": true,
+    "rect": {
+      "x": 0,
+      "y": -160,
+      "width": 100,
+      "height": 160
+    },
+    "scale": 1.5,
+    "transform": "90",
+    "current_mode": {
+      "width": 240,
+      "height": 150
+    },
+    "current_workspace": "top"
+  },
+  {
+    "name": "off",
+    "active": false
+  }
+]

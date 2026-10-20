@@ -702,10 +702,10 @@ impl WiredMenu {
                 .heading
                 .update_property(&[gtk::accessible::Property::Label(&description)]);
             section.heading.set_tooltip_text(Some(&description));
-            if device.state == 100 {
-                if let Some(active) = active {
-                    active_names.push(active.name.clone());
-                }
+            if device.state == 100
+                && let Some(active) = active
+            {
+                active_names.push(active.name.clone());
             }
             if (40..=90).contains(&device.state) || section.busy() {
                 progressing = true;
