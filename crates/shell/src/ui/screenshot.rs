@@ -66,16 +66,47 @@ struct Drag {
     edges: (bool, bool, bool, bool),
     moving: bool,
 }
+impl Drag {
+    fn new(area: Rect, x: f64, y: f64) -> Self {
+        let near = 10.0;
+        let horizontal = y >= area.y - near && y <= area.bottom() + near;
+        let vertical = x >= area.x - near && x <= area.right() + near;
+        let edges = (
+            (x - area.x).abs() <= near && horizontal,
+            (x - area.right()).abs() <= near && horizontal,
+            (y - area.y).abs() <= near && vertical,
+            (y - area.bottom()).abs() <= near && vertical,
+        );
+        Self {
+            start: (x, y),
+            area,
+            edges,
+            moving: !(edges.0 || edges.1 || edges.2 || edges.3) && area.contains(x, y),
+        }
+    }
+    fn cursor(self, dragging: bool) -> &'static str {
+        match self.edges {
+            (true, _, true, _) | (_, true, _, true) => "nwse-resize",
+            (true, _, _, true) | (_, true, true, _) => "nesw-resize",
+            (true, _, _, _) | (_, true, _, _) => "ew-resize",
+            (_, _, true, _) | (_, _, _, true) => "ns-resize",
+            _ if self.moving && dragging => "grabbing",
+            _ if self.moving => "grab",
+            _ => "crosshair",
+        }
+    }
+}
 struct Surface {
     layer: LayerWindow,
     canvas: gtk::DrawingArea,
+    pointer: Cell<Option<(f64, f64)>>,
 }
 struct Controls {
     label: gtk::Label,
     status: gtk::Label,
     capture: gtk::Button,
     modes: Vec<(Mode, gtk::ToggleButton)>,
-    root: gtk::Box,
+    root: gtk::Overlay,
 }
 type ActiveCallback = Box<dyn Fn(bool)>;
 pub struct Screenshot {
@@ -356,7 +387,11 @@ impl Screenshot {
                     this.fail("Screenshot display was closed; reopen Screenshot");
                 }
             });
-            surfaces.push(Surface { layer, canvas });
+            surfaces.push(Surface {
+                layer,
+                canvas,
+                pointer: Cell::new(None),
+            });
         }
         let launch = preview.launch;
         drop(preview_guard);
@@ -372,27 +407,41 @@ impl Screenshot {
         Ok(())
     }
     fn build_controls(self: &Rc<Self>, no_windows: bool) -> Controls {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        root.add_css_class("screenshot-toolbar");
+        let root = gtk::Overlay::new();
         root.set_halign(gtk::Align::Center);
         root.set_valign(gtk::Align::End);
         root.set_margin_bottom(32);
         root.set_margin_start(16);
         root.set_margin_end(16);
+        let panel = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        panel.add_css_class("screenshot-toolbar");
+        panel.set_margin_top(12);
+        panel.set_margin_end(12);
+        root.set_child(Some(&panel));
         let modes_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        modes_box.add_css_class("linked");
+        modes_box.set_homogeneous(true);
         let mut modes = Vec::new();
         for (mode, label, icon, key) in [
-            (Mode::Area, "Area", "edit-select-all-symbolic", "S"),
-            (Mode::Window, "Window", "focus-windows-symbolic", "W"),
+            (Mode::Area, "Selection", "edit-select-all-symbolic", "S"),
             (Mode::Screen, "Screen", "video-display-symbolic", "C"),
-            (Mode::All, "All screens", "view-grid-symbolic", "A"),
+            (Mode::Window, "Window", "focus-windows-symbolic", "W"),
+            (
+                Mode::All,
+                "All screens",
+                "video-joined-displays-symbolic",
+                "A",
+            ),
         ] {
             let button = gtk::ToggleButton::new();
-            let content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-            content.append(&gtk::Image::from_icon_name(icon));
+            button.add_css_class("screenshot-mode");
+            let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
+            content.set_halign(gtk::Align::Center);
+            let image = gtk::Image::from_icon_name(icon);
+            image.set_pixel_size(28);
+            content.append(&image);
             content.append(&gtk::Label::new(Some(label)));
             button.set_child(Some(&content));
+            button.update_property(&[gtk::accessible::Property::Label(label)]);
             button.set_tooltip_text(Some(&format!("{label} ({key})")));
             if mode == Mode::Window && no_windows {
                 button.set_sensitive(false);
@@ -407,21 +456,31 @@ impl Screenshot {
             modes_box.append(&button);
             modes.push((mode, button));
         }
-        root.append(&modes_box);
+        panel.append(&modes_box);
         let label = gtk::Label::new(None);
+        label.add_css_class("screenshot-details");
         label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        label.set_max_width_chars(60);
-        root.append(&label);
+        label.set_max_width_chars(38);
+        panel.append(&label);
         let status = gtk::Label::new(None);
         status.set_wrap(true);
-        status.set_max_width_chars(60);
+        status.set_max_width_chars(38);
         status.add_css_class("screenshot-status");
-        root.append(&status);
-        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        actions.set_halign(gtk::Align::Center);
-        let cancel = gtk::Button::with_label("Cancel");
-        let capture = gtk::Button::with_label("Capture");
-        capture.add_css_class("suggested-action");
+        status.set_visible(false);
+        let cancel = gtk::Button::from_icon_name("window-close-symbolic");
+        cancel.add_css_class("screenshot-cancel");
+        cancel.set_halign(gtk::Align::End);
+        cancel.set_valign(gtk::Align::Start);
+        cancel.set_tooltip_text(Some("Cancel (Esc)"));
+        cancel.update_property(&[gtk::accessible::Property::Label("Cancel screenshot")]);
+        let capture = gtk::Button::new();
+        capture.add_css_class("screenshot-capture");
+        capture.set_halign(gtk::Align::Center);
+        capture.set_tooltip_text(Some("Capture (Enter)"));
+        capture.update_property(&[gtk::accessible::Property::Label("Capture screenshot")]);
+        let shutter = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        shutter.add_css_class("screenshot-shutter");
+        capture.set_child(Some(&shutter));
         let weak = Rc::downgrade(self);
         cancel.connect_clicked(move |_| {
             if let Some(this) = weak.upgrade() {
@@ -434,12 +493,9 @@ impl Screenshot {
                 this.capture();
             }
         });
-        actions.append(&cancel);
-        actions.append(&capture);
-        root.append(&actions);
-        let help = gtk::Label::new(Some("S/W/C/A: mode · Enter: capture · Esc: cancel"));
-        help.add_css_class("dim-label");
-        root.append(&help);
+        panel.append(&capture);
+        panel.append(&status);
+        root.add_overlay(&cancel);
         Controls {
             root,
             label,
@@ -492,6 +548,33 @@ impl Screenshot {
         }
         for surface in self.surfaces.borrow().iter() {
             surface.canvas.queue_draw();
+        }
+        self.update_cursors();
+    }
+    fn update_cursors(&self) {
+        let preview = self.preview.borrow();
+        let Some(p) = preview.as_ref() else {
+            return;
+        };
+        for (index, surface) in self.surfaces.borrow().iter().enumerate() {
+            let cursor = if self.lifecycle.borrow().phase == Some(Phase::Exporting) {
+                "wait"
+            } else {
+                match p.selection.mode {
+                    Mode::Area => {
+                        let hit = p.drag.or_else(|| {
+                            surface.pointer.get().map(|(x, y)| {
+                                let b = p.layout.outputs[index].bounds;
+                                Drag::new(p.selection.area, b.x + x, b.y + y)
+                            })
+                        });
+                        hit.map_or("crosshair", |hit| hit.cursor(p.drag.is_some()))
+                    }
+                    Mode::Window | Mode::Screen => "pointer",
+                    Mode::All => "default",
+                }
+            };
+            surface.canvas.set_cursor_from_name(Some(cursor));
         }
     }
     fn draw(
@@ -547,14 +630,12 @@ impl Screenshot {
             }
         }
         if let Some(bounds) = p.selection.bounds(&p.layout) {
-            cr.set_source_rgb(0.35, 0.72, 1.0);
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.35);
+            cr.set_line_width(4.0);
+            cr.rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
+            let _ = cr.stroke_preserve();
+            cr.set_source_rgb(1.0, 1.0, 1.0);
             cr.set_line_width(2.0);
-            cr.rectangle(
-                bounds.x + 1.0,
-                bounds.y + 1.0,
-                bounds.width - 2.0,
-                bounds.height - 2.0,
-            );
             let _ = cr.stroke();
             if p.selection.mode == Mode::Area {
                 for x in [bounds.x, bounds.x + bounds.width / 2.0, bounds.right()] {
@@ -563,7 +644,18 @@ impl Screenshot {
                         {
                             continue;
                         }
-                        cr.rectangle(x - 4.0, y - 4.0, 8.0, 8.0);
+                        let corner = (x == bounds.x || x == bounds.right())
+                            && (y == bounds.y || y == bounds.bottom());
+                        cr.arc(
+                            x,
+                            y,
+                            if corner { 8.0 } else { 4.0 },
+                            0.0,
+                            std::f64::consts::TAU,
+                        );
+                        cr.set_source_rgba(0.0, 0.0, 0.0, 0.35);
+                        let _ = cr.stroke_preserve();
+                        cr.set_source_rgb(1.0, 1.0, 1.0);
                         let _ = cr.fill();
                     }
                 }
@@ -620,6 +712,28 @@ impl Screenshot {
         window.add_controller(keys);
     }
     fn install_gestures(self: &Rc<Self>, index: usize, canvas: &gtk::DrawingArea) {
+        let motion = gtk::EventControllerMotion::new();
+        let weak = Rc::downgrade(self);
+        let track_pointer = move |_: &gtk::EventControllerMotion, x, y| {
+            if let Some(this) = weak.upgrade() {
+                if let Some(surface) = this.surfaces.borrow().get(index) {
+                    surface.pointer.set(Some((x, y)));
+                }
+                this.update_cursors();
+            }
+        };
+        motion.connect_enter(track_pointer.clone());
+        motion.connect_motion(track_pointer);
+        let weak = Rc::downgrade(self);
+        motion.connect_leave(move |_| {
+            if let Some(this) = weak.upgrade() {
+                if let Some(surface) = this.surfaces.borrow().get(index) {
+                    surface.pointer.set(None);
+                }
+                this.update_cursors();
+            }
+        });
+        canvas.add_controller(motion);
         let gesture = gtk::GestureDrag::new();
         gesture.set_button(1);
         let weak = Rc::downgrade(self);
@@ -638,25 +752,10 @@ impl Screenshot {
             let x = b.x + x;
             let y = b.y + y;
             if p.selection.mode == Mode::Area {
-                let area = p.selection.area;
-                let near = 8.0;
-                let horizontal = y >= area.y - near && y <= area.bottom() + near;
-                let vertical = x >= area.x - near && x <= area.right() + near;
-                let edges = (
-                    (x - area.x).abs() <= near && horizontal,
-                    (x - area.right()).abs() <= near && horizontal,
-                    (y - area.y).abs() <= near && vertical,
-                    (y - area.bottom()).abs() <= near && vertical,
-                );
-                let resizing = edges.0 || edges.1 || edges.2 || edges.3;
-                let moving = !resizing && area.contains(x, y);
-                p.drag = Some(Drag {
-                    start: (x, y),
-                    area,
-                    edges,
-                    moving,
-                });
-                if !resizing && !moving {
+                let drag = Drag::new(p.selection.area, x, y);
+                let (left, right, top, bottom) = drag.edges;
+                p.drag = Some(drag);
+                if !(left || right || top || bottom || drag.moving) {
                     p.selection.area =
                         Rect::from_points(x, y, x + 1.0, y + 1.0).clamped(p.layout.bounds());
                 }
@@ -684,6 +783,16 @@ impl Screenshot {
                 if let Some(p) = this.preview.borrow_mut().as_mut() {
                     p.drag = None;
                 }
+                this.refresh();
+            }
+        });
+        let weak = Rc::downgrade(self);
+        gesture.connect_cancel(move |_, _| {
+            if let Some(this) = weak.upgrade() {
+                if let Some(p) = this.preview.borrow_mut().as_mut() {
+                    p.drag = None;
+                }
+                this.refresh();
             }
         });
         canvas.add_controller(gesture);
@@ -836,6 +945,7 @@ impl Screenshot {
     fn status(&self, message: &str) {
         if let Some(c) = self.controls.borrow().as_ref() {
             c.status.set_text(message);
+            c.status.set_visible(!message.is_empty());
         }
     }
     fn export_failed(&self, id: u64, error: &str) {
@@ -860,6 +970,30 @@ impl Drop for Screenshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn area_cursor_matches_draw_move_and_resize_targets() {
+        let area = Rect {
+            x: -100.0,
+            y: 50.0,
+            width: 300.0,
+            height: 200.0,
+        };
+        for (x, y, cursor) in [
+            (-120.0, 150.0, "crosshair"),
+            (50.0, 150.0, "grab"),
+            (-108.0, 150.0, "ew-resize"),
+            (208.0, 150.0, "ew-resize"),
+            (50.0, 42.0, "ns-resize"),
+            (50.0, 258.0, "ns-resize"),
+            (-100.0, 50.0, "nwse-resize"),
+            (200.0, 250.0, "nwse-resize"),
+            (-100.0, 250.0, "nesw-resize"),
+            (200.0, 50.0, "nesw-resize"),
+        ] {
+            assert_eq!(Drag::new(area, x, y).cursor(false), cursor);
+        }
+        assert_eq!(Drag::new(area, 50.0, 150.0).cursor(true), "grabbing");
+    }
     #[test]
     fn cancellation_repeated_requests_and_stale_completions() {
         let mut state = Lifecycle::default();

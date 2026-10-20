@@ -1167,9 +1167,80 @@ statuspage {
 .panel-shortcuts:hover { background: @panel-button-hover; }
 
 /* Frozen screenshot surfaces and their launch-monitor controls. */
-window.screenshot-overlay { background: #000000; border-radius: 0; box-shadow: none; }
-.screenshot-toolbar { background: @base-panel-background; color: @text-general; border: 1px solid @base-panel-border; border-radius: 18px; padding: 16px; box-shadow: 0 4px 20px @box-shadow; }
-.screenshot-toolbar button { min-height: 30px; padding: 6px 12px; }
-.screenshot-toolbar button:checked, .screenshot-toolbar button.suggested-action { background: @quick-settings-button; color: @text-general; }
-.screenshot-toolbar button:hover { background: @quick-settings-button-hover; }
-.screenshot-status { font-size: 0.9em; }
+window.screenshot-overlay {
+  background: #000000;
+  border-radius: 0;
+  box-shadow: none;
+}
+.screenshot-toolbar {
+  background: @base-panel-background;
+  color: @text-general;
+  border: 1px solid @base-panel-border;
+  border-radius: 24px;
+  padding: 16px;
+  box-shadow: 0 4px 20px @box-shadow;
+}
+.screenshot-toolbar button.screenshot-mode {
+  background: transparent;
+  color: @text-general;
+  border: none;
+  border-radius: 14px;
+  box-shadow: none;
+  min-width: 60px;
+  min-height: 60px;
+  padding: 8px 4px;
+  font-size: 0.85em;
+  font-weight: normal;
+}
+.screenshot-toolbar button.screenshot-mode:hover {
+  background: @panel-button-hover;
+}
+.screenshot-toolbar button.screenshot-mode:checked {
+  background: @panel-button-active;
+}
+.screenshot-toolbar button.screenshot-mode:disabled {
+  opacity: 0.4;
+}
+.screenshot-details {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+.screenshot-toolbar button.screenshot-capture {
+  background: transparent;
+  color: @text-general;
+  border: 3px solid @text-general;
+  border-radius: 50%;
+  box-shadow: none;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 4px;
+}
+.screenshot-shutter {
+  background: @text-general;
+  border-radius: 50%;
+}
+.screenshot-toolbar button.screenshot-capture:hover {
+  background: @panel-button-hover;
+}
+.screenshot-toolbar button.screenshot-capture:active .screenshot-shutter {
+  opacity: 0.65;
+}
+.screenshot-toolbar button.screenshot-capture:disabled {
+  opacity: 0.4;
+}
+button.screenshot-cancel {
+  background: @base-panel-background;
+  color: @text-general;
+  border: 1px solid @base-panel-border;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px @box-shadow;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+button.screenshot-cancel:hover {
+  background: @panel-button-hover2;
+}
+.screenshot-status {
+  font-size: 0.85em;
+}

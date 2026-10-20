@@ -138,6 +138,47 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
             p.layout.outputs[p.launch].bounds.width / 2.0
         );
     }
+    // Exercise hover updates through GTK, including a mode change without motion.
+    let launch = screenshot.preview.borrow().as_ref().unwrap().launch;
+    let canvas = screenshot.surfaces.borrow()[launch].canvas.clone();
+    let controllers = canvas.observe_controllers();
+    let motion = (0..controllers.n_items())
+        .find_map(|i| {
+            controllers
+                .item(i)
+                .and_downcast::<gtk::EventControllerMotion>()
+        })
+        .unwrap();
+    let (area, output) = {
+        let p = screenshot.preview.borrow();
+        let p = p.as_ref().unwrap();
+        (p.selection.area, p.layout.outputs[launch].bounds)
+    };
+    for (x, y, cursor) in [
+        (area.x - 25.0, area.y - 25.0, "crosshair"),
+        (area.x, area.y, "nwse-resize"),
+        (area.x + area.width / 2.0, area.y, "ns-resize"),
+        (
+            area.x + area.width / 2.0,
+            area.y + area.height / 2.0,
+            "grab",
+        ),
+    ] {
+        motion.emit_by_name::<()>("motion", &[&(x - output.x), &(y - output.y)]);
+        assert_eq!(canvas.cursor().unwrap().name().as_deref(), Some(cursor));
+    }
+    screenshot.set_mode(Mode::Screen);
+    assert_eq!(canvas.cursor().unwrap().name().as_deref(), Some("pointer"));
+    screenshot.set_mode(Mode::Area);
+    assert_eq!(canvas.cursor().unwrap().name().as_deref(), Some("grab"));
+    context.block_on(glib::timeout_future(Duration::from_millis(200)));
+    let layout = screenshot.preview.borrow().as_ref().unwrap().layout.clone();
+    let rendered = context.block_on(capture::acquire(&layout)).unwrap();
+    std::fs::write(
+        format!("/tmp/way-shell-screenshot-{name}-area-preview.png"),
+        capture::encode_png(&rendered[launch]).unwrap(),
+    )
+    .unwrap();
     let has_windows = !screenshot
         .preview
         .borrow()
