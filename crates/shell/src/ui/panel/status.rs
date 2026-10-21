@@ -7,6 +7,7 @@ use crate::services::{
     power::{PowerDevice, PowerService},
     wayland::WaylandService,
 };
+use crate::ui::progress::Progress;
 use gtk::prelude::*;
 use std::{
     cell::{Cell, RefCell},
@@ -54,6 +55,9 @@ struct Inner {
     airplane: gtk::Image,
     vpn: gtk::Image,
     network: gtk::Image,
+    network_progress: Progress,
+    stable_network_icon: Cell<&'static str>,
+    acquiring_network_icon: Cell<&'static str>,
     microphone: gtk::Image,
     speaker: gtk::Image,
     power: gtk::Image,
@@ -88,7 +92,7 @@ impl StatusBar {
         icons.append(&power);
         button.set_child(Some(&icons));
         container.append(&button);
-        let inner = Rc::new(Inner {
+        let inner = Rc::new_cyclic(|weak: &std::rc::Weak<Inner>| Inner {
             subscriptions: RefCell::new(Vec::new()),
             services,
             container,
@@ -98,6 +102,16 @@ impl StatusBar {
             airplane,
             vpn,
             network,
+            network_progress: Progress::new({
+                let weak = weak.clone();
+                move |_| {
+                    if let Some(inner) = weak.upgrade() {
+                        inner.refresh();
+                    }
+                }
+            }),
+            stable_network_icon: Cell::new("network-wired-offline-symbolic"),
+            acquiring_network_icon: Cell::new("network-wired-acquiring-symbolic"),
             microphone,
             speaker,
             power,
@@ -183,11 +197,30 @@ impl Inner {
     }
 
     fn refresh_network(&self) {
-        let state = network_view(&self.services.network.state());
+        let snapshot = self.services.network.state();
+        let state = network_view(&snapshot);
+        let acquiring = snapshot.state == 40;
+        if acquiring {
+            self.acquiring_network_icon.set(state.icon);
+        } else {
+            self.stable_network_icon.set(state.icon);
+        }
+        if !state.visible || snapshot.devices.iter().any(|device| device.state == 120) {
+            self.network_progress.clear();
+        } else {
+            self.network_progress.set_busy(acquiring);
+        }
         self.airplane.set_visible(state.airplane);
         self.vpn.set_visible(state.vpn);
         self.network.set_visible(state.visible);
-        set_icon(&self.network, state.icon);
+        set_icon(
+            &self.network,
+            if self.network_progress.visible() {
+                self.acquiring_network_icon.get()
+            } else {
+                self.stable_network_icon.get()
+            },
+        );
     }
 
     fn refresh_audio(&self) {
