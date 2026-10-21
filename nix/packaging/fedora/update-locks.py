@@ -28,6 +28,42 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
 
 
+def repository(base_url, metadata):
+    ns = {
+        "repo": "http://linux.duke.edu/metadata/repo",
+        "rpm": "http://linux.duke.edu/metadata/common",
+    }
+    repomd_url = base_url + "/repodata/repomd.xml"
+    repomd = prefetch(repomd_url)
+    xml = ET.parse(repomd["storePath"])
+    primary = xml.find("repo:data[@type='primary']", ns)
+    checksum = primary.find("repo:checksum", ns)
+    if checksum.attrib["type"] != "sha256":
+        raise ValueError("repository primary metadata must use SHA-256")
+    repo = {
+        "baseUrl": base_url,
+        "repomd": {"url": repomd_url, "hash": repomd["hash"]},
+        "primary": {
+            "url": base_url + "/" + primary.find("repo:location", ns).attrib["href"],
+            "sha256": checksum.text,
+            "timestamp": primary.findtext("repo:timestamp", namespaces=ns),
+        },
+    }
+    # Read checksums from repository metadata, not from a second package list.
+    primary_path = prefetch(repo["primary"]["url"], checksum.text)["storePath"]
+    subprocess.run(["zstd", "-dq", primary_path, "-o", metadata], check=True)
+    hashes = {}
+    for _, package in ET.iterparse(metadata, events=("end",)):
+        if package.tag == "{" + ns["rpm"] + "}package":
+            digest = package.find("rpm:checksum", ns)
+            if digest.attrib["type"] != "sha256":
+                raise ValueError("RPM metadata must use SHA-256")
+            url = base_url + "/" + package.find("rpm:location", ns).attrib["href"]
+            hashes[Path(url).name] = {"url": url, "sha256": digest.text}
+            package.clear()
+    return repo, hashes
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", required=True, type=Path)
@@ -42,10 +78,6 @@ def main():
     lockdir = root / "nix/packaging/fedora/locks"
     lockdir.mkdir(exist_ok=True)
     config = json.loads(args.config.read_text())
-    ns = {
-        "repo": "http://linux.duke.edu/metadata/repo",
-        "rpm": "http://linux.duke.edu/metadata/common",
-    }
     # Keep staging on the same filesystem so os.replace is atomic per file.
     with tempfile.TemporaryDirectory(prefix=".update-", dir=lockdir) as temporary:
         stage = Path(temporary)
@@ -55,35 +87,10 @@ def main():
             workspace = stage / release
             (workspace / "root").mkdir(parents=True)
             base_url = settings["baseUrl"]
-            repomd_url = base_url + "/repodata/repomd.xml"
-            repomd = prefetch(repomd_url)
-            xml = ET.parse(repomd["storePath"])
-            primary = xml.find("repo:data[@type='primary']", ns)
-            checksum = primary.find("repo:checksum", ns)
-            if checksum.attrib["type"] != "sha256":
-                raise ValueError("repository primary metadata must use SHA-256")
-            repo = {
-                "baseUrl": base_url,
-                "repomd": {"url": repomd_url, "hash": repomd["hash"]},
-                "primary": {
-                    "url": base_url + "/" + primary.find("repo:location", ns).attrib["href"],
-                    "sha256": checksum.text,
-                    "timestamp": primary.findtext("repo:timestamp", namespaces=ns),
-                },
-            }
-            # Read checksums from Fedora metadata, not from a second package list.
-            primary_path = prefetch(repo["primary"]["url"], checksum.text)["storePath"]
-            metadata = workspace / "primary.xml"
-            subprocess.run(["zstd", "-dq", primary_path, "-o", metadata], check=True)
-            hashes = {}
-            for _, package in ET.iterparse(metadata, events=("end",)):
-                if package.tag == "{" + ns["rpm"] + "}package":
-                    digest = package.find("rpm:checksum", ns)
-                    if digest.attrib["type"] != "sha256":
-                        raise ValueError("RPM metadata must use SHA-256")
-                    url = base_url + "/" + package.find("rpm:location", ns).attrib["href"]
-                    hashes[Path(url).name] = {"url": url, "sha256": digest.text}
-                    package.clear()
+            repo, hashes = repository(base_url, workspace / "primary.xml")
+            codec_repo, codec_hashes = repository(
+                settings["openh264BaseUrl"], workspace / "openh264-primary.xml"
+            )
             # An empty root and explicit configuration keep the host out of resolution.
             dnf = [
                 "dnf5", "--config=/dev/null", f"--installroot={workspace}/root",
@@ -103,18 +110,25 @@ def main():
             }.items():
                 packages = sorted(set(roots))
                 transaction = workspace / kind
+                repositories = [repo]
+                sources = []
+                package_hashes = hashes
+                if kind == "services":
+                    repositories.append(codec_repo)
+                    sources.append(f"--repofrompath=fedora-cisco-openh264,{settings['openh264BaseUrl']}")
+                    package_hashes = hashes | codec_hashes
                 if packages:
                     # Store a solved transaction without installing anything. A plain
                     # `dnf download --resolve` can include conflicting providers.
-                    subprocess.run(dnf + [
+                    subprocess.run(dnf + sources + [
                         f"--setopt=install_weak_deps={'True' if kind == 'services' else 'False'}",
                         "--assumeyes", "install", f"--store={transaction}", *packages,
                     ], check=True)
-                rpms = [hashes[path.name] for path in sorted((transaction / "packages").glob("*.rpm"))]
+                rpms = [package_hashes[path.name] for path in sorted((transaction / "packages").glob("*.rpm"))]
                 manifest = {
                     "format": 1, "release": release, "arch": config["arch"],
                     "nixpkgsRevision": args.revision, "requestedPackages": packages,
-                    "repositories": [repo], "rpms": sorted(rpms, key=lambda rpm: rpm["url"]),
+                    "repositories": repositories, "rpms": sorted(rpms, key=lambda rpm: rpm["url"]),
                 }
                 lock = stage / f"{release}-{kind}.json"
                 write_json(lock, manifest)

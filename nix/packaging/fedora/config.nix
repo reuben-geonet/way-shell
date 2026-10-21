@@ -5,9 +5,11 @@
   releases = {
     "43" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/43/Everything/x86_64/os";
+      openh264BaseUrl = "https://codecs.fedoraproject.org/openh264/43/x86_64";
     };
     "44" = {
       baseUrl = "https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os";
+      openh264BaseUrl = "https://codecs.fedoraproject.org/openh264/44/x86_64";
     };
   };
   arch = "x86_64";
