@@ -5,8 +5,12 @@ use std::{
     io::{Read, Write},
     os::{
         fd::AsFd,
-        unix::net::{UnixListener, UnixStream},
+        unix::{
+            fs::DirBuilderExt,
+            net::{UnixListener, UnixStream},
+        },
     },
+    path::Path,
     sync::mpsc,
     time::{Duration, Instant},
 };
@@ -206,9 +210,13 @@ fn proxy_versions_snapshots_removal_filters_actions_and_cleanup() {
     let context = glib::MainContext::new();
     context
         .with_thread_default(|| {
-            let directory = std::env::temp_dir()
-                .join(format!("way-shell-wl-test-{}", glib::uuid_string_random()));
-            std::fs::create_dir(&directory).unwrap();
+            // Keep the socket below 108 bytes even with CI's long TMPDIR.
+            let directory =
+                Path::new("/tmp").join(format!("way-shell-wl-test-{}", glib::uuid_string_random()));
+            std::fs::DirBuilder::new()
+                .mode(0o700)
+                .create(&directory)
+                .unwrap();
             let path = directory.join("wayland-test");
             let listener = UnixListener::bind(&path).unwrap();
             // This integration binary has one test; configure before spawning.
