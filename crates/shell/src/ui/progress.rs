@@ -120,7 +120,9 @@ impl Progress {
         if let Some(deadline) = deadline.filter(|deadline| *deadline > now) {
             let weak = Rc::downgrade(&self.0);
             self.0.timer.replace(Some(glib::timeout_add_local_once(
-                deadline - now,
+                // GLib truncates durations to milliseconds; round up so a timer
+                // cannot fire before the monotonic presentation deadline.
+                deadline - now + Duration::from_millis(1),
                 move || {
                     if let Some(inner) = weak.upgrade() {
                         inner.timer.borrow_mut().take();

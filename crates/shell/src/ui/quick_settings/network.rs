@@ -3,6 +3,7 @@ use super::{QuickSettingsWindow, grid::GridButton, menu::Menu};
 use crate::services::network::{
     AccessPoint, ActiveConnection, Device, NetworkService, NetworkState, SavedConnection,
 };
+use crate::ui::progress::Progress;
 use adw::prelude::*;
 use std::{
     cell::{Cell, RefCell},
@@ -124,9 +125,12 @@ struct DeviceTile {
     kind: u32,
     tile: Rc<GridButton>,
     wifi: Option<Rc<WifiMenu>>,
+    progress: Progress,
+    stable_icon: Cell<&'static str>,
 }
 impl DeviceTile {
     fn stop(&self) {
+        self.progress.clear();
         if let Some(menu) = &self.wifi {
             menu.stop();
         }
@@ -326,16 +330,36 @@ impl NetworkControls {
                         .access_points
                         .iter()
                         .find(|point| point.device == device.id && point.active);
-                    tile.tile
-                        .set_subtitle(active.map_or("", |point| point.name.as_str()));
-                    tile.tile.set_icon(if (40..=90).contains(&device.state) {
-                        "network-wireless-acquiring-symbolic"
-                    } else if !state.wireless_enabled || device.state != 100 {
-                        "network-wireless-offline-symbolic"
+                    let acquiring = (40..=90).contains(&device.state);
+                    if !state.available
+                        || !state.networking_enabled
+                        || !state.wireless_enabled
+                        || !state.wireless_hardware_enabled
+                        || device.state == 120
+                        || !tile.tile.widget().is_mapped()
+                    {
+                        tile.progress.clear();
                     } else {
-                        active.map_or("network-wireless-signal-none-symbolic", |point| {
-                            signal_icon(point.strength)
-                        })
+                        tile.progress.set_busy(acquiring);
+                    }
+                    if !acquiring {
+                        tile.tile
+                            .set_subtitle(active.map_or("", |point| point.name.as_str()));
+                    }
+                    if !acquiring || !state.wireless_enabled || !state.networking_enabled {
+                        tile.stable_icon
+                            .set(if !state.wireless_enabled || device.state != 100 {
+                                "network-wireless-offline-symbolic"
+                            } else {
+                                active.map_or("network-wireless-signal-none-symbolic", |point| {
+                                    signal_icon(point.strength)
+                                })
+                            });
+                    }
+                    tile.tile.set_icon(if tile.progress.visible() {
+                        "network-wireless-acquiring-symbolic"
+                    } else {
+                        tile.stable_icon.get()
                     });
                     tile.tile
                         .set_toggled(state.wireless_enabled && device.state == 100);
@@ -398,7 +422,11 @@ impl NetworkControls {
         let tile = GridButton::new(
             if wifi.is_some() { "Wi-Fi" } else { "Wired" },
             Some(""),
-            "network-wired-symbolic",
+            if wifi.is_some() {
+                "network-wireless-offline-symbolic"
+            } else {
+                "network-wired-symbolic"
+            },
             wifi.as_ref().map(|menu| menu.menu.widget().upcast_ref()),
         );
         if let Some(menu) = &wifi {
@@ -407,6 +435,12 @@ impl NetworkControls {
                 .connect_reveal_child_notify(move |revealer| {
                     if let Some(menu) = weak.upgrade() {
                         if revealer.reveals_child() {
+                            let state = menu.service.state();
+                            if let Some(device) =
+                                state.devices.iter().find(|device| device.id == menu.device)
+                            {
+                                menu.refresh(&state, device);
+                            }
                             menu.scan();
                         } else {
                             menu.hide_passwords();
@@ -430,11 +464,36 @@ impl NetworkControls {
                 }
             });
         }
-        Rc::new(DeviceTile {
+        let weak = Rc::downgrade(self);
+        let progress = Progress::new(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh();
+            }
+        });
+        let result = Rc::new(DeviceTile {
             kind: device.kind,
             tile,
             wifi,
-        })
+            progress,
+            stable_icon: Cell::new("network-wireless-offline-symbolic"),
+        });
+        let weak = Rc::downgrade(self);
+        result.tile.widget().connect_map(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh();
+            }
+        });
+        let weak = Rc::downgrade(&result);
+        result.tile.widget().connect_unmap(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.progress.clear();
+                if let Some(menu) = &this.wifi {
+                    menu.cancel_scan();
+                    menu.hide_passwords();
+                }
+            }
+        });
+        result
     }
     fn set_networking(self: &Rc<Self>) {
         if self
@@ -593,6 +652,9 @@ struct WiredMenu {
     sections: RefCell<HashMap<String, Rc<WiredSection>>>,
     preferred: RefCell<Option<(String, String)>>,
     failure: gtk::Button,
+    progress: Progress,
+    stable_subtitle: RefCell<String>,
+    stable_icon: Cell<&'static str>,
     stopped: Cell<bool>,
 }
 impl WiredMenu {
@@ -607,7 +669,7 @@ impl WiredMenu {
             "network-wired-symbolic",
             Some(menu.widget().upcast_ref()),
         );
-        let this = Rc::new(Self {
+        let this = Rc::new_cyclic(|weak: &Weak<Self>| Self {
             service,
             window: Rc::downgrade(window),
             menu,
@@ -615,7 +677,29 @@ impl WiredMenu {
             sections: RefCell::new(HashMap::new()),
             preferred: RefCell::new(None),
             failure,
+            progress: Progress::new({
+                let weak = weak.clone();
+                move |_| {
+                    if let Some(this) = weak.upgrade() {
+                        this.refresh(&this.service.state());
+                    }
+                }
+            }),
+            stable_subtitle: RefCell::new("Disconnected".into()),
+            stable_icon: Cell::new("network-wired-disconnected-symbolic"),
             stopped: Cell::new(false),
+        });
+        let weak = Rc::downgrade(&this);
+        this.tile.widget().connect_unmap(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.progress.clear();
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.tile.widget().connect_map(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh(&this.service.state());
+            }
         });
         let weak = Rc::downgrade(&this);
         this.tile.toggle().connect_clicked(move |_| {
@@ -813,7 +897,17 @@ impl WiredMenu {
             self.menu.options().append(&hint);
         }
         let connected = active_names.len();
-        let (subtitle, icon) = if progressing {
+        if failed
+            || !state.available
+            || !state.networking_enabled
+            || ordered.is_empty()
+            || !self.tile.widget().is_mapped()
+        {
+            self.progress.clear();
+        } else {
+            self.progress.set_busy(progressing);
+        }
+        let (subtitle, icon) = if self.progress.visible() {
             (
                 "Connecting…".to_string(),
                 "network-wired-acquiring-symbolic",
@@ -828,8 +922,20 @@ impl WiredMenu {
                 "network-wired-disconnected-symbolic",
             )
         };
-        self.tile.set_subtitle(&subtitle);
-        self.tile.set_icon(icon);
+        if !progressing && !self.progress.visible() {
+            self.stable_subtitle.replace(subtitle.clone());
+            self.stable_icon.set(icon);
+        }
+        if self.progress.visible() {
+            self.tile.set_subtitle(&subtitle);
+        } else {
+            self.tile.set_subtitle(&self.stable_subtitle.borrow());
+        }
+        self.tile.set_icon(if self.progress.visible() {
+            icon
+        } else {
+            self.stable_icon.get()
+        });
         self.tile.set_toggled(connected > 0);
         self.tile.set_sensitive(state.available);
         self.tile.toggle().set_sensitive(
@@ -965,6 +1071,7 @@ impl WiredMenu {
                 if let Err(error) = &result
                     && !error.matches(gio::IOErrorEnum::Cancelled)
                 {
+                    menu.progress.clear();
                     menu.failure.set_label("Failed to change wired connection");
                     menu.failure.set_tooltip_text(Some(error.message()));
                     menu.menu.banner().set_reveal_child(true);
@@ -987,6 +1094,7 @@ impl WiredMenu {
         if self.stopped.replace(true) {
             return;
         }
+        self.progress.clear();
         for section in self.sections.borrow().values() {
             section.stop();
         }
@@ -1004,7 +1112,7 @@ struct WifiMenu {
     device: String,
     window: Weak<QuickSettingsWindow>,
     menu: Menu,
-    spinner: gtk::Spinner,
+    progress: Progress,
     refresh_button: gtk::Button,
     failure: gtk::Button,
     rows: RefCell<HashMap<AccessPointKey, Rc<WifiRow>>>,
@@ -1022,7 +1130,8 @@ impl WifiMenu {
         failure_box.append(&failure);
         menu.banner().set_child(Some(&failure_box));
         let spinner = gtk::Spinner::new();
-        spinner.set_visible(false);
+        spinner.set_size_request(16, 16);
+        spinner.set_opacity(0.0);
         menu.heading().append(&spinner);
         let refresh_button = gtk::Button::from_icon_name("view-refresh-symbolic");
         refresh_button.set_hexpand(true);
@@ -1033,7 +1142,10 @@ impl WifiMenu {
             device,
             window,
             menu,
-            spinner,
+            progress: Progress::new(move |visible| {
+                spinner.set_spinning(visible);
+                spinner.set_opacity(if visible { 1.0 } else { 0.0 });
+            }),
             refresh_button,
             failure,
             rows: RefCell::new(HashMap::new()),
@@ -1097,7 +1209,7 @@ impl WifiMenu {
                 .remove(&id)
                 .unwrap_or_else(|| WifiRow::new(self, point.clone()));
             row.point.replace(point.clone());
-            row.update(&point, device.state);
+            row.update(&point, device.state, self.menu.widget().is_mapped());
             ordered.push(row.clone());
             next.insert(id, row);
         }
@@ -1149,8 +1261,7 @@ impl WifiMenu {
         }
         let request = Rc::new(Request::default());
         self.scan.replace(Some(request.clone()));
-        self.spinner.set_visible(true);
-        self.spinner.start();
+        self.progress.begin();
         self.refresh_button.set_sensitive(false);
         if self.stopped.get() {
             request.cancel();
@@ -1164,8 +1275,11 @@ impl WifiMenu {
                 return;
             }
             if let Some(this) = weak.upgrade().filter(|this| !this.stopped.get()) {
-                this.spinner.stop();
-                this.spinner.set_visible(false);
+                if result.is_ok() {
+                    this.progress.finish(|| {});
+                } else {
+                    this.progress.clear();
+                }
                 this.refresh_button.set_sensitive(this.enabled.get());
                 if let Err(error) = result
                     && !error.matches(gio::IOErrorEnum::Cancelled)
@@ -1181,12 +1295,12 @@ impl WifiMenu {
         if let Some(request) = request {
             request.cancel();
         }
-        self.spinner.stop();
-        self.spinner.set_visible(false);
+        self.progress.clear();
     }
     fn hide_passwords(&self) {
         let rows = self.rows.borrow().values().cloned().collect::<Vec<_>>();
         for row in rows {
+            row.progress.clear();
             row.password.set_text("");
             row.revealer.set_reveal_child(false);
         }
@@ -1234,7 +1348,7 @@ struct WifiRow {
     icon: gtk::Image,
     security: gtk::Image,
     active: gtk::Image,
-    spinner: gtk::Spinner,
+    progress: Progress,
     revealer: gtk::Revealer,
     password: gtk::PasswordEntry,
     point: RefCell<AccessPoint>,
@@ -1254,6 +1368,8 @@ impl WifiRow {
         label.set_ellipsize(gtk::pango::EllipsizeMode::End);
         let active = gtk::Image::from_icon_name("object-select-symbolic");
         let spinner = gtk::Spinner::new();
+        spinner.set_size_request(16, 16);
+        spinner.set_opacity(0.0);
         row.append(&icon);
         row.append(&security);
         row.append(&label);
@@ -1282,7 +1398,10 @@ impl WifiRow {
             icon,
             security,
             active,
-            spinner,
+            progress: Progress::new(move |visible| {
+                spinner.set_spinning(visible);
+                spinner.set_opacity(if visible { 1.0 } else { 0.0 });
+            }),
             revealer,
             password,
             point: RefCell::new(point),
@@ -1326,7 +1445,7 @@ impl WifiRow {
         });
         this
     }
-    fn update(&self, point: &AccessPoint, state: u32) {
+    fn update(&self, point: &AccessPoint, state: u32, visible: bool) {
         if self.stopped.get() {
             return;
         }
@@ -1334,15 +1453,22 @@ impl WifiRow {
         self.icon.set_icon_name(Some(signal_icon(point.strength)));
         self.security
             .set_visible(point.wpa_flags != 0 || point.rsn_flags != 0);
-        self.active.set_visible(point.active && state == 100);
+        self.active.set_opacity(if point.active && state == 100 {
+            1.0
+        } else {
+            0.0
+        });
         let pending = self
             .request
             .borrow()
             .as_ref()
             .is_some_and(|request| request.active());
         let busy = pending || point.active && (40..=90).contains(&state);
-        self.spinner.set_spinning(busy);
-        self.spinner.set_visible(busy);
+        if state == 120 || !visible {
+            self.progress.clear();
+        } else {
+            self.progress.set_busy(busy);
+        }
         self.button.set_sensitive(!pending);
         if self.stopped.get() {
             self.button.set_sensitive(false);
@@ -1362,8 +1488,7 @@ impl WifiRow {
         let request = Rc::new(Request::default());
         self.request.replace(Some(request.clone()));
         self.button.set_sensitive(false);
-        self.spinner.set_visible(true);
-        self.spinner.start();
+        self.progress.begin();
         if self.stopped.get() || menu.stopped.get() {
             request.cancel();
             return;
@@ -1379,8 +1504,21 @@ impl WifiRow {
                         && !this.stopped.get()
                         && !menu.stopped.get()
                     {
-                        this.spinner.stop();
-                        this.spinner.set_visible(false);
+                        if result.is_err() {
+                            this.progress.clear();
+                        } else {
+                            let state = menu.service.state();
+                            let device_state = state
+                                .devices
+                                .iter()
+                                .find(|device| device.id == menu.device)
+                                .map_or(0, |device| device.state);
+                            this.update(
+                                &this.point.borrow(),
+                                device_state,
+                                menu.menu.widget().is_mapped(),
+                            );
+                        }
                         this.button.set_sensitive(menu.enabled.get());
                         if let Err(error) = result
                             && !error.matches(gio::IOErrorEnum::Cancelled)
@@ -1401,8 +1539,7 @@ impl WifiRow {
         }
         self.password.set_text("");
         self.revealer.set_reveal_child(false);
-        self.spinner.stop();
-        self.spinner.set_visible(false);
+        self.progress.clear();
         self.root.set_sensitive(false);
     }
 }
@@ -1606,6 +1743,48 @@ impl Drop for VpnMenu {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    #[ignore = "requires an isolated Wayland compositor"]
+    fn wifi_progress_timing_dimensions_errors_and_teardown() {
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let pause =
+            |ms| context.block_on(glib::timeout_future(std::time::Duration::from_millis(ms)));
+        let service: NetworkService = glib::Object::new();
+        let menu = WifiMenu::new(service, "wifi".into(), Weak::new());
+        let point = ap("point", b"Useful network name", 80, true);
+        let row = WifiRow::new(&menu, point.clone());
+        row.update(&point, 100, true);
+        let width = row.root.measure(gtk::Orientation::Horizontal, -1);
+        row.update(&point, 40, true);
+        pause(50);
+        row.update(&point, 100, true);
+        pause(300);
+        assert!(!row.progress.visible());
+        row.update(&point, 40, true);
+        pause(320);
+        assert!(row.progress.visible());
+        assert_eq!(row.root.measure(gtk::Orientation::Horizontal, -1), width);
+        row.update(&point, 100, true);
+        pause(100);
+        assert!(row.progress.visible());
+        pause(420);
+        assert!(!row.progress.visible());
+        row.update(&point, 40, true);
+        pause(320);
+        row.update(&point, 120, true);
+        assert!(!row.progress.visible());
+        row.update(&point, 40, true);
+        row.update(&point, 40, false);
+        pause(320);
+        assert!(!row.progress.visible());
+        row.update(&point, 40, true);
+        row.stop();
+        pause(320);
+        assert!(!row.progress.visible());
+        assert!(!row.root.is_sensitive());
+        menu.stop();
+    }
     fn ap(id: &str, bytes: &[u8], strength: u8, active: bool) -> AccessPoint {
         AccessPoint {
             id: id.into(),
