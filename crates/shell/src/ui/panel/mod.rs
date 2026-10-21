@@ -1,19 +1,21 @@
 //! One owned panel for each live GDK monitor.
 pub mod clock;
+mod recording;
 pub mod status;
 pub mod tray;
 pub mod workspaces;
 
 use self::{
     clock::PanelClock,
+    recording::RecordingIndicator,
     status::{StatusAction, StatusBar, StatusServices},
     tray::TrayBar,
     workspaces::WorkspacesBar,
 };
 use crate::{
     services::{
-        clock::ClockService, notifications::NotificationsService, tray::TrayService,
-        wm::WindowManager,
+        clock::ClockService, notifications::NotificationsService, screencast::ScreencastService,
+        tray::TrayService, wm::WindowManager,
     },
     ui::window::{LayerWindow, WindowRole},
 };
@@ -26,6 +28,7 @@ use std::{
 
 #[derive(Clone)]
 pub struct PanelServices {
+    pub recording: ScreencastService,
     pub clock: ClockService,
     pub notifications: NotificationsService,
     pub manager: WindowManager,
@@ -50,6 +53,7 @@ struct Panel {
     help_handler: Option<glib::SignalHandlerId>,
     _workspaces: WorkspacesBar,
     _tray: Option<TrayBar>,
+    _recording: RecordingIndicator,
 }
 impl Panel {
     fn new(monitor: &gtk::gdk::Monitor, owner: &Inner) -> Result<Self, String> {
@@ -94,6 +98,8 @@ impl Panel {
                 action(PanelAction::ToggleShortcuts(output.clone()));
             }
         });
+        let recording = RecordingIndicator::new(owner.services.recording.clone());
+        right.append(recording.widget());
         right.append(&help);
         right.append(status.widget());
         let tray = owner.services.tray.clone().map(TrayBar::new);
@@ -110,6 +116,7 @@ impl Panel {
             help_handler: Some(help_handler),
             _workspaces: workspaces,
             _tray: tray,
+            _recording: recording,
         };
         panel.clock.set_toggled(owner.message_tray_visible.get());
         panel.status.set_toggled(owner.quick_settings_visible.get());

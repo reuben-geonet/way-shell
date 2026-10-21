@@ -133,6 +133,7 @@ fn hook_keeps_path_and_theme_as_separate_arguments() {
 fn screenshot_schema_defaults_and_live_changes() {
     let settings = test_settings();
     assert_eq!(settings.string("screenshot-save-directory"), "");
+    assert_eq!(settings.string("screencast-save-directory"), "");
     assert!(settings.boolean("screenshot-copy-to-clipboard"));
     settings
         .set_string("screenshot-save-directory", "~/shots")

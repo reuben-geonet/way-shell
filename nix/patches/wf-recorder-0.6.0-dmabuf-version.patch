@@ -1,0 +1,21 @@
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -523,7 +523,7 @@
+ };
+ 
+ static void handle_global(void*, struct wl_registry *registry,
+-    uint32_t name, const char *interface, uint32_t) {
++    uint32_t name, const char *interface, uint32_t version) {
+ 
+     if (strcmp(interface, wl_output_interface.name) == 0)
+     {
+@@ -547,7 +547,8 @@
+         xdg_output_manager = (zxdg_output_manager_v1*) wl_registry_bind(registry, name,
+             &zxdg_output_manager_v1_interface, 2); // version 2 for name & description, if available
+     }
+-    else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0)
++    else if (strcmp(interface, zwp_linux_dmabuf_v1_interface.name) == 0 &&
++        version >= 4)
+     {
+         dmabuf = (zwp_linux_dmabuf_v1*) wl_registry_bind(registry, name,
+             &zwp_linux_dmabuf_v1_interface, 4);

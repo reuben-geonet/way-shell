@@ -71,6 +71,7 @@ pub enum Command {
     ScreenshotShow,
     ScreenshotHide,
     ScreenshotToggle,
+    ScreencastStop,
 }
 impl Command {
     fn decode(bytes: &[u8]) -> Option<Self> {
@@ -115,6 +116,7 @@ impl Command {
             37 => Self::ScreenshotShow,
             38 => Self::ScreenshotHide,
             39 => Self::ScreenshotToggle,
+            40 => Self::ScreencastStop,
             // Opcode zero historically decoded but had no successful operation.
             _ => return None,
         })

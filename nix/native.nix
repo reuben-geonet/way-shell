@@ -7,6 +7,14 @@
       ...
     }:
     {
+      # wf-recorder 0.6.0 binds DMA-BUF v4 even when only v3 is advertised,
+      # disconnecting from software-rendered Niri before SHM capture can start.
+      # Remove this override when the pinned upstream version negotiates the
+      # protocol version or skips unsupported DMA-BUF feedback requests.
+      wayShell.recorder = pkgs.wf-recorder.overrideAttrs (old: {
+        patches = (old.patches or [ ]) ++ lib.optional (old.version == "0.6.0")
+          ./patches/wf-recorder-0.6.0-dmabuf-version.patch;
+      });
       packages = rec {
         default = way-shell;
         way-shell = pkgs.rustPlatform.buildRustPackage (
@@ -15,7 +23,7 @@
             pname = "way-shell";
             nativeBuildInputs = config.wayShell.rustBuildArgs.nativeBuildInputs ++ [ pkgs.wrapGAppsHook4 ];
             preFixup = ''
-              gappsWrapperArgs+=(--prefix PATH : ${lib.makeBinPath [ pkgs.grim ]})
+              gappsWrapperArgs+=(--prefix PATH : ${lib.makeBinPath [ pkgs.grim config.wayShell.recorder pkgs.ffmpeg_8 ]})
             '';
             # Keep the artifact path used by the shared installer.
             buildPhase = ''

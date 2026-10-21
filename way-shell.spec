@@ -25,6 +25,9 @@ BuildRequires: pkgconfig(wayland-client)
 BuildRequires: pkgconfig(gtk4-layer-shell-0)
 
 Recommends: grim
+Recommends: wf-recorder >= 0.5.0
+Recommends: ffmpeg-free
+Recommends: openh264
 Recommends: NetworkManager
 Recommends: bluez
 Recommends: pipewire

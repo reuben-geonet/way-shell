@@ -1,6 +1,11 @@
 //! One cancellable frozen desktop session, owned by Desktop.
 use crate::{
-    services::{notifications::NotificationsService, screenshot as capture, wm::WindowManager},
+    services::{
+        notifications::NotificationsService,
+        screencast::{self, Audio, ScreencastService, Target},
+        screenshot as capture,
+        wm::WindowManager,
+    },
     ui::window::{LayerWindow, WindowRole},
 };
 use adw::prelude::*;
@@ -106,6 +111,10 @@ struct Controls {
     status: gtk::Label,
     capture: gtk::Button,
     modes: Vec<(Mode, gtk::ToggleButton)>,
+    photo: gtk::ToggleButton,
+    video: gtk::ToggleButton,
+    audio: gtk::DropDown,
+    audio_row: gtk::Box,
     root: gtk::Overlay,
 }
 type ActiveCallback = Box<dyn Fn(bool)>;
@@ -113,6 +122,9 @@ pub struct Screenshot {
     manager: WindowManager,
     settings: gio::Settings,
     notifications: NotificationsService,
+    recording: ScreencastService,
+    recording_handler: RefCell<Option<glib::SignalHandlerId>>,
+    video: Cell<bool>,
     display: gdk::Display,
     lifecycle: RefCell<Lifecycle>,
     preview: RefCell<Option<Preview>>,
@@ -131,12 +143,16 @@ impl Screenshot {
         manager: WindowManager,
         settings: gio::Settings,
         notifications: NotificationsService,
+        recording: ScreencastService,
         display: &gdk::Display,
     ) -> Rc<Self> {
         let this = Rc::new(Self {
             manager,
             settings,
             notifications,
+            recording,
+            recording_handler: RefCell::new(None),
+            video: Cell::new(false),
             display: display.clone(),
             lifecycle: RefCell::new(Lifecycle::default()),
             preview: RefCell::new(None),
@@ -157,6 +173,14 @@ impl Screenshot {
             }
         });
         this.monitor_handler.replace(Some(handler));
+        let weak = Rc::downgrade(&this);
+        let handler = this.recording.connect_local("changed", false, move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh();
+            }
+            None
+        });
+        this.recording_handler.replace(Some(handler));
         this
     }
     pub fn on_active(&self, callback: impl Fn(bool) + 'static) {
@@ -181,6 +205,7 @@ impl Screenshot {
         let Some(id) = self.lifecycle.borrow_mut().begin() else {
             return Ok(());
         };
+        self.video.set(false);
         if let Some(callback) = self.active.borrow().as_ref() {
             callback(true);
         }
@@ -291,6 +316,9 @@ impl Screenshot {
         self.reset();
         if let Some(handler) = self.monitor_handler.take() {
             self.display.monitors().disconnect(handler);
+        }
+        if let Some(handler) = self.recording_handler.take() {
+            self.recording.disconnect(handler);
         }
         self.active.take();
     }
@@ -501,7 +529,40 @@ impl Screenshot {
                 this.capture();
             }
         });
-        panel.append(&capture);
+        let media = gtk::Box::new(gtk::Orientation::Horizontal, 3);
+        media.add_css_class("screenshot-media");
+        media.set_valign(gtk::Align::Center);
+        let photo = gtk::ToggleButton::new();
+        photo.set_icon_name("camera-photo-symbolic");
+        photo.set_active(true);
+        photo.set_tooltip_text(Some("Take Screenshot (V)"));
+        photo.update_property(&[gtk::accessible::Property::Label("Take Screenshot")]);
+        let video = gtk::ToggleButton::new();
+        video.set_icon_name("camera-web-symbolic");
+        video.set_group(Some(&photo));
+        video.update_property(&[gtk::accessible::Property::Label("Record Screen")]);
+        for (button, recording) in [(&photo, false), (&video, true)] {
+            button.add_css_class("screenshot-media-button");
+            media.append(button);
+            let weak = Rc::downgrade(self);
+            button.connect_clicked(move |_| {
+                if let Some(this) = weak.upgrade() {
+                    this.set_video(recording);
+                }
+            });
+        }
+        let audio_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        audio_row.set_halign(gtk::Align::Center);
+        audio_row.append(&gtk::Label::new(Some("Audio")));
+        let audio = gtk::DropDown::from_strings(&["Off", "Microphone", "Desktop"]);
+        audio.update_property(&[gtk::accessible::Property::Label("Recording audio")]);
+        audio_row.append(&audio);
+        panel.append(&audio_row);
+        let bottom = gtk::CenterBox::new();
+        bottom.set_size_request(264, -1);
+        bottom.set_start_widget(Some(&media));
+        bottom.set_center_widget(Some(&capture));
+        panel.append(&bottom);
         panel.append(&status);
         root.add_overlay(&cancel);
         Controls {
@@ -510,13 +571,38 @@ impl Screenshot {
             status,
             capture,
             modes,
+            photo,
+            video,
+            audio,
+            audio_row,
         }
+    }
+    fn set_video(&self, video: bool) {
+        if self.lifecycle.borrow().phase != Some(Phase::Preview)
+            || (video && (!screencast::available() || self.recording.is_active()))
+        {
+            self.refresh();
+            return;
+        }
+        self.video.set(video);
+        if video
+            && let Some(preview) = self.preview.borrow_mut().as_mut()
+            && matches!(preview.selection.mode, Mode::Window | Mode::All)
+        {
+            preview.selection.mode = Mode::Area;
+            preview.drag = None;
+        }
+        self.status("");
+        self.refresh();
     }
     fn set_mode(&self, mode: Mode) {
         if self.lifecycle.borrow().phase != Some(Phase::Preview) {
             return;
         }
         if let Some(p) = self.preview.borrow_mut().as_mut() {
+            if self.video.get() && matches!(mode, Mode::Window | Mode::All) {
+                return;
+            }
             if mode == Mode::Window && p.layout.windows.is_empty() {
                 return;
             }
@@ -530,14 +616,66 @@ impl Screenshot {
             && let Some(controls) = self.controls.borrow().as_ref()
         {
             let exporting = self.lifecycle.borrow().phase == Some(Phase::Exporting);
+            let video = self.video.get();
+            controls.photo.set_active(!video);
+            controls.video.set_active(video);
+            controls.photo.set_sensitive(!exporting);
+            let available = screencast::available();
+            controls
+                .video
+                .set_sensitive(!exporting && available && !self.recording.is_active());
+            controls.video.set_tooltip_text(Some(if !available {
+                "Install wf-recorder and FFmpeg tools to record video"
+            } else if self.recording.is_active() {
+                "A recording is already running"
+            } else {
+                "Record Screen (V)"
+            }));
+            controls.audio_row.set_visible(video);
+            controls.audio.set_sensitive(!exporting);
+            if video {
+                controls.capture.add_css_class("video");
+            } else {
+                controls.capture.remove_css_class("video");
+            }
+            controls.capture.set_tooltip_text(Some(if video {
+                "Record (Enter)"
+            } else {
+                "Capture (Enter)"
+            }));
+            controls
+                .capture
+                .update_property(&[gtk::accessible::Property::Label(if video {
+                    "Start recording"
+                } else {
+                    "Capture screenshot"
+                })]);
             for (mode, button) in &controls.modes {
+                button.set_visible(!video || matches!(mode, Mode::Area | Mode::Screen));
                 button.set_active(*mode == preview.selection.mode);
                 button.set_sensitive(
                     !exporting && (*mode != Mode::Window || !preview.layout.windows.is_empty()),
                 );
             }
             let size = dimensions(&preview.layout, &preview.selection);
-            controls.capture.set_sensitive(!exporting && size.is_ok());
+            let target = Target::from_selection(&preview.layout, &preview.selection);
+            controls.capture.set_sensitive(
+                !exporting
+                    && if video {
+                        target.is_ok() && !self.recording.is_active()
+                    } else {
+                        size.is_ok()
+                    },
+            );
+            if video {
+                let error = if self.recording.is_active() {
+                    "A recording is already running"
+                } else {
+                    target.as_ref().err().map_or("", String::as_str)
+                };
+                controls.status.set_text(error);
+                controls.status.set_visible(!error.is_empty());
+            }
             if let Ok((width, height, _)) = size {
                 let name = match preview.selection.mode {
                     Mode::Area => "Area",
@@ -685,6 +823,7 @@ impl Screenshot {
                 Key::w | Key::W => this.set_mode(Mode::Window),
                 Key::c | Key::C => this.set_mode(Mode::Screen),
                 Key::a | Key::A => this.set_mode(Mode::All),
+                Key::v | Key::V => this.set_video(!this.video.get()),
                 Key::Return | Key::KP_Enter | Key::space => this.capture(),
                 Key::Left | Key::Right | Key::Up | Key::Down => {
                     let canvas_focused =
@@ -854,6 +993,38 @@ impl Screenshot {
         self.refresh();
     }
     fn capture(self: &Rc<Self>) {
+        if self.video.get() {
+            if self.lifecycle.borrow().phase != Some(Phase::Preview) {
+                return;
+            }
+            let prepared = {
+                let preview = self.preview.borrow();
+                let p = preview.as_ref().unwrap();
+                Target::from_selection(&p.layout, &p.selection)
+            };
+            let target = match prepared {
+                Ok(target) => target,
+                Err(error) => {
+                    self.status(&error);
+                    return;
+                }
+            };
+            let audio = match self.controls.borrow().as_ref().unwrap().audio.selected() {
+                1 => Audio::Microphone,
+                2 => Audio::Desktop,
+                _ => Audio::Off,
+            };
+            if self.recording.is_active() {
+                self.status("A recording is already running");
+                return;
+            }
+            self.reset();
+            self.display.sync();
+            if let Err(error) = self.recording.start(target, audio) {
+                self.notify("Recording unavailable", &error, None);
+            }
+            return;
+        }
         let id = self.lifecycle.borrow().generation;
         if !self
             .lifecycle

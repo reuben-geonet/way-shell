@@ -1250,3 +1250,49 @@ button.screenshot-cancel:hover {
 .screenshot-status {
   font-size: 0.85em;
 }
+
+/* GNOME's icon-only screenshot / screencast pill. */
+.screenshot-media {
+  background: alpha(@text-general, 0.1);
+  border-radius: 999px;
+  padding: 3px;
+}
+.screenshot-toolbar button.screenshot-media-button {
+  background: transparent;
+  color: @text-general;
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  min-width: 16px;
+  min-height: 16px;
+  padding: 6px 12px;
+}
+.screenshot-media-button image { -gtk-icon-size: 16px; }
+.screenshot-toolbar button.screenshot-media-button:hover,
+.screenshot-toolbar button.screenshot-media-button:focus-visible {
+  background: alpha(@text-general, 0.2);
+}
+.screenshot-toolbar button.screenshot-media-button:active {
+  background: alpha(@text-general, 0.5);
+}
+.screenshot-toolbar button.screenshot-media-button:checked {
+  background: @text-general;
+  color: @base-panel-background;
+}
+.screenshot-toolbar button.screenshot-media-button:disabled { opacity: 0.5; }
+.screenshot-shutter { transition: background-color 200ms; }
+.screenshot-capture.video .screenshot-shutter { background: #c01c28; }
+
+/* One direct stop action, visible on every panel while recording. */
+#panel button.panel-recording {
+  background: #ff7800;
+  color: @panel-button-color;
+  border: none;
+  border-radius: 999px;
+  box-shadow: none;
+  min-height: 0;
+  padding: 2px 10px;
+  margin: 3px 6px;
+}
+#panel button.panel-recording:hover { background: #ffa348; }
+#panel button.panel-recording:disabled { opacity: 0.7; }
