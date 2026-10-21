@@ -104,6 +104,7 @@ mod imp {
     pub struct ScreencastService {
         pub phase: Cell<Phase>,
         pub started: Cell<Option<Instant>>,
+        pub frozen_elapsed: Cell<Duration>,
         pub settings: OnceCell<gio::Settings>,
         pub notifications: OnceCell<NotificationsService>,
         pub manager: OnceCell<WindowManager>,
@@ -148,11 +149,7 @@ impl ScreencastService {
         self.phase() != Phase::Idle
     }
     pub fn elapsed(&self) -> String {
-        let seconds = self
-            .imp()
-            .started
-            .get()
-            .map_or(0, |start| start.elapsed().as_secs());
+        let seconds = self.elapsed_duration().as_secs();
         if seconds >= 3600 {
             format!(
                 "{}:{:02}:{:02}",
@@ -162,6 +159,16 @@ impl ScreencastService {
             )
         } else {
             format!("{:02}:{:02}", seconds / 60, seconds % 60)
+        }
+    }
+    fn elapsed_duration(&self) -> Duration {
+        if self.phase() == Phase::Recording {
+            self.imp()
+                .started
+                .get()
+                .map_or(Duration::ZERO, |start| start.elapsed())
+        } else {
+            self.imp().frozen_elapsed.get()
         }
     }
     fn changed(&self, phase: Phase) {
@@ -206,6 +213,8 @@ impl ScreencastService {
             .map_err(|e| format!("Could not start recording worker: {e}"))?;
         self.imp().worker.replace(Some(Worker { stop, thread }));
         self.imp().reason.take();
+        self.imp().started.set(None);
+        self.imp().frozen_elapsed.set(Duration::ZERO);
         self.changed(Phase::Starting);
         if self.imp().stopped.get() {
             return Ok(());
@@ -267,6 +276,7 @@ impl ScreencastService {
             worker.stop.store(true, Ordering::Release);
         }
         if matches!(self.phase(), Phase::Starting | Phase::Recording) {
+            self.imp().frozen_elapsed.set(self.elapsed_duration());
             self.changed(Phase::Stopping);
         }
     }
@@ -279,6 +289,7 @@ impl ScreencastService {
             let _ = worker.thread.join();
         }
         self.imp().started.set(None);
+        self.imp().frozen_elapsed.set(Duration::ZERO);
         let reason = self.imp().reason.take();
         self.changed(Phase::Idle);
         match result {
@@ -327,6 +338,7 @@ impl ScreencastService {
         }
         self.imp().phase.set(Phase::Idle);
         self.imp().started.set(None);
+        self.imp().frozen_elapsed.set(Duration::ZERO);
     }
 }
 
@@ -349,6 +361,31 @@ fn destination(value: &str) -> Result<PathBuf, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn elapsed_is_shared_frozen_when_stopping_and_zero_before_startup() {
+        let service: ScreencastService = glib::Object::new();
+        service.changed(Phase::Starting);
+        assert_eq!(service.elapsed(), "00:00");
+        service.stop();
+        // A late startup event must not start the visible clock after cancellation.
+        service
+            .imp()
+            .started
+            .set(Some(Instant::now() - Duration::from_secs(65)));
+        assert_eq!(service.elapsed(), "00:00");
+        service.changed(Phase::Recording);
+        assert_eq!(service.elapsed(), "01:05");
+        service.stop();
+        let another_panel = service.clone();
+        service
+            .imp()
+            .started
+            .set(Some(Instant::now() - Duration::from_secs(130)));
+        assert_eq!(another_panel.elapsed(), "01:05");
+        service.finish(Err("test failure".into()));
+        assert_eq!(service.elapsed(), "00:00");
+        assert_eq!(service.phase(), Phase::Idle);
+    }
     #[test]
     fn region_is_contained_rounded_inward_and_bound_to_output_geometry() {
         let output = CaptureOutput {

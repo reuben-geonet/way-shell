@@ -62,16 +62,12 @@ fn refresh(service: &ScreencastService, button: &gtk::Button, label: &gtk::Label
     let phase = service.phase();
     button.set_visible(phase != Phase::Idle);
     button.set_sensitive(matches!(phase, Phase::Starting | Phase::Recording));
-    let text = match phase {
-        Phase::Starting => "Starting…".into(),
-        Phase::Stopping => "Saving…".into(),
-        _ => service.elapsed(),
-    };
+    let text = service.elapsed();
     label.set_text(&text);
-    let action = if phase == Phase::Stopping {
-        "Finishing recording"
-    } else {
-        "Stop recording"
+    let action = match phase {
+        Phase::Starting => "Cancel recording startup",
+        Phase::Stopping => "Finishing recording",
+        _ => "Stop recording",
     };
     button.set_tooltip_text(Some(action));
     button.update_property(&[gtk::accessible::Property::Label(&format!(
