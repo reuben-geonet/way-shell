@@ -19,7 +19,8 @@ impl Daemon {
     pub fn new() -> Self {
         // This helper is included by multiple modules in one test executable.
         // A module-local counter would repeat the same process/counter pair.
-        let runtime = std::env::temp_dir().join(format!(
+        // Keep Unix socket paths below 108 bytes even with CI's long TMPDIR.
+        let runtime = Path::new("/tmp").join(format!(
             "way-shell-audio-{}-{}",
             std::process::id(),
             glib::uuid_string_random()
