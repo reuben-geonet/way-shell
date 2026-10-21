@@ -31,11 +31,17 @@ dnf=(dnf5 --assumeyes --setopt=reposdir=/tmp/way-shell-repos)
 gsettings list-recursively org.ldelossa.way-shell.system > "$out/logs/settings.txt"
 grep -Fx 'org.ldelossa.way-shell.system screenshot-copy-to-clipboard true' "$out/logs/settings.txt"
 
-command -v grim
+command -v grim wf-recorder ffmpeg ffprobe
+rpm -q openh264
+ffmpeg -nostdin -hide_banner -loglevel error \
+    -f lavfi -i color=size=16x16:rate=1 -frames:v 1 -c:v libopenh264 \
+    "$out/logs/codec.mp4"
+test "$(ffprobe -v error -select_streams v:0 -show_entries stream=codec_name \
+    -of default=noprint_wrappers=1:nokey=1 "$out/logs/codec.mp4")" = h264
 
 "${dnf[@]}" remove way-shell
 if rpm -q way-shell; then
     echo 'Way-Shell remains installed after removal' >&2
     exit 1
 fi
-echo 'Fedora installation, executable startup, schemas and removal passed.'
+echo 'Fedora installation, executable startup, schemas, recording dependencies and removal passed.'

@@ -23,7 +23,8 @@
             && lock.release == release
             && lock.arch == fedora.arch
             && (packages == null || lock.requestedPackages == lib.sort builtins.lessThan (lib.unique packages))
-            && (map (repo: repo.baseUrl) lock.repositories) == [ value.baseUrl ]
+            && (map (repo: repo.baseUrl) lock.repositories)
+              == [ value.baseUrl ] ++ lib.optional (kind == "services") value.openh264BaseUrl
           ) "Fedora ${release} lock is stale; run nix run .#update-fedora-locks";
           lock
         ) fedora.releases;
