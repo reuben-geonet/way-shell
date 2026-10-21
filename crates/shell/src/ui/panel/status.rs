@@ -349,6 +349,7 @@ mod tests {
                 carrier: false,
                 available_connections: Vec::new(),
                 active_connection: None,
+                last_scan: None,
             }],
             ..NetworkState::default()
         }

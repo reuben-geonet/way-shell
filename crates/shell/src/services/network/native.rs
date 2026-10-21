@@ -184,6 +184,9 @@ impl Client {
                     .map(super::connections::saved_path)
                     .collect(),
                     active_connection: super::connections::device_active(device),
+                    last_scan: (device_kind(device) == 2)
+                        .then(|| device.property::<i64>("last-scan"))
+                        .filter(|timestamp| *timestamp >= 0),
                 })
                 .collect(),
         }

@@ -304,23 +304,7 @@ impl NetworkService {
         device: &str,
         done: impl FnOnce(Result<(), glib::Error>) + 'static,
     ) -> gio::Cancellable {
-        let calls = if self
-            .state()
-            .devices
-            .iter()
-            .any(|known| known.id == device && known.kind == 2)
-        {
-            Ok(vec![Call {
-                path: device.into(),
-                interface: "org.freedesktop.NetworkManager.Device.Wireless",
-                method: "RequestScan",
-                parameters: (HashMap::<String, glib::Variant>::new(),).to_variant(),
-                reply: "()",
-            }])
-        } else {
-            Err(invalid("Wi-Fi device is no longer available"))
-        };
-        self.execute(calls, done)
+        super::scan::request(self, device, done)
     }
 }
 fn deactivate(active: &str) -> Result<Call, glib::Error> {
