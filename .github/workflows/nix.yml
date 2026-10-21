@@ -33,6 +33,9 @@ jobs:
       - name: Check flake
         run: nix flake check --print-build-logs
 
+      - name: Run Rust tests
+        run: nix develop --command cargo test --workspace --locked
+
   build-matrix:
     runs-on: ubuntu-24.04
     outputs:
