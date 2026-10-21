@@ -7,6 +7,7 @@ pub mod osd;
 pub mod output_switcher;
 pub mod panel;
 pub mod panel_popup;
+mod progress;
 pub mod quick_settings;
 pub mod rename_switcher;
 pub mod screenshot;
