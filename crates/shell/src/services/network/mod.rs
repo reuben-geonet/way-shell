@@ -2,6 +2,7 @@
 mod actions;
 mod connections;
 mod native;
+mod scan;
 use gio::prelude::*;
 use glib::subclass::prelude::*;
 use std::{
@@ -21,6 +22,7 @@ pub struct Device {
     pub carrier: bool,
     pub available_connections: Vec<String>,
     pub active_connection: Option<String>,
+    pub last_scan: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AccessPoint {

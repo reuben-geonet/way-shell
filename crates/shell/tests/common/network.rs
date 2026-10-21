@@ -143,6 +143,7 @@ pub fn inventory() -> Managed {
                 (
                     format!("{DEVICE_IFACE}.Wireless"),
                     HashMap::from([
+                        ("LastScan".into(), (-1_i64).to_variant()),
                         ("AccessPoints".into(), Vec::<ObjectPath>::new().to_variant()),
                         ("ActiveAccessPoint".into(), path("/").to_variant()),
                     ]),

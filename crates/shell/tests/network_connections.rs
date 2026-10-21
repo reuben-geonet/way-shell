@@ -290,12 +290,19 @@ fn exercise(context: &glib::MainContext, address: &str) {
     );
     let scan_node = gio::DBusNodeInfo::for_xml("<node><interface name='org.freedesktop.NetworkManager.Device.Wireless'><method name='RequestScan'><arg type='a{sv}' direction='in'/></method></interface></node>").unwrap();
     let recorded = calls.clone();
+    let scan_daemon = daemon.clone();
     registrations.push(
         daemon
             .register_object(DEVICE, &scan_node.interfaces()[0])
             .method_call(move |_, _, _, _, method, args, call| {
                 recorded.borrow_mut().push((method.into(), args));
                 call.return_value(None);
+                properties(
+                    &scan_daemon,
+                    DEVICE,
+                    &format!("{DEVICE_IFACE}.Wireless"),
+                    HashMap::from([("LastScan".into(), 1000_i64.to_variant())]),
+                );
             })
             .build()
             .unwrap(),
