@@ -194,16 +194,26 @@ pub struct Selection {
     pub output: usize,
 }
 impl Selection {
-    pub fn new(layout: &CaptureLayout, launching: usize) -> Self {
+    pub fn new(layout: &CaptureLayout, launching: usize, previous_area: Option<Rect>) -> Self {
         let b = layout.outputs[launching].bounds;
-        Self {
-            mode: Mode::Area,
-            area: Rect {
+        let area = previous_area
+            .filter(|area| area.valid())
+            .map(|area| area.clamped(layout.bounds()))
+            .filter(|area| {
+                layout
+                    .outputs
+                    .iter()
+                    .any(|output| area.intersection(output.bounds).is_some())
+            })
+            .unwrap_or(Rect {
                 x: b.x + b.width / 4.0,
                 y: b.y + b.height / 4.0,
                 width: b.width / 2.0,
                 height: b.height / 2.0,
-            },
+            });
+        Self {
+            mode: Mode::Area,
+            area,
             window: layout.windows.iter().position(|w| w.focused).unwrap_or(0),
             output: launching,
         }
@@ -455,6 +465,68 @@ mod tests {
         }
     }
     #[test]
+    fn remembered_area_survives_relaunch_and_adapts_to_layout_changes() {
+        let left = Rect {
+            x: -200.0,
+            y: 0.0,
+            width: 200.0,
+            height: 100.0,
+        };
+        let layout = CaptureLayout {
+            outputs: vec![
+                output("A", left, 1.0),
+                output("B", Rect { x: 200.0, ..left }, 1.5),
+            ],
+            windows: vec![],
+            focused_output: None,
+        }
+        .validate()
+        .unwrap();
+        let area = Rect {
+            x: -50.0,
+            y: 10.0,
+            width: 300.0,
+            height: 60.0,
+        };
+        let restored = Selection::new(&layout, 1, Some(area));
+        assert_eq!(restored.area, area);
+        assert_eq!(restored.mode, Mode::Area);
+        assert_eq!(restored.output, 1);
+
+        let smaller = CaptureLayout {
+            outputs: vec![output("A", left, 1.0)],
+            ..layout.clone()
+        };
+        assert_eq!(
+            Selection::new(&smaller, 0, Some(area)).area,
+            Rect {
+                x: -200.0,
+                width: 200.0,
+                ..area
+            }
+        );
+        let default = Selection::new(&layout, 1, None).area;
+        let gap = Rect {
+            x: 50.0,
+            y: 20.0,
+            width: 60.0,
+            height: 40.0,
+        };
+        assert_eq!(Selection::new(&layout, 1, Some(gap)).area, default);
+        assert_eq!(
+            Selection::new(
+                &layout,
+                1,
+                Some(Rect {
+                    x: f64::NAN,
+                    ..area
+                })
+            )
+            .area,
+            default
+        );
+    }
+    #[test]
     fn negative_stacked_portrait_fractional_and_black_gaps() {
         let layout = CaptureLayout {
             outputs: vec![
@@ -484,7 +556,7 @@ mod tests {
         }
         .validate()
         .unwrap();
-        let mut selection = Selection::new(&layout, 0);
+        let mut selection = Selection::new(&layout, 0, None);
         selection.mode = Mode::All;
         let result = compose(&layout, &[image(3, 3, 10), image(1, 3, 20)], &selection).unwrap();
         assert_eq!((result.width, result.height), (5, 9));
@@ -531,7 +603,7 @@ mod tests {
             image(3, 3, 10),
             RgbaImage::new(3, 3, (0..9).flat_map(|v| [v, 1, 2, 255]).collect()).unwrap(),
         ];
-        let mut selection = Selection::new(&layout, layout.launching_output(None));
+        let mut selection = Selection::new(&layout, layout.launching_output(None), None);
         selection.mode = Mode::All;
         let result = compose(&layout, &images, &selection).unwrap();
         assert_eq!((result.width, result.height), (6, 3));
@@ -582,7 +654,7 @@ mod tests {
         .validate()
         .unwrap();
         assert_eq!(layout.windows[0].bounds.width, 40.0);
-        let mut s = Selection::new(&layout, 0);
+        let mut s = Selection::new(&layout, 0, None);
         s.mode = Mode::Window;
         s.click(&layout, 5.0, 5.0);
         assert_eq!(s.window, 1);

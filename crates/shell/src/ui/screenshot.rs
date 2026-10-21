@@ -116,6 +116,7 @@ pub struct Screenshot {
     display: gdk::Display,
     lifecycle: RefCell<Lifecycle>,
     preview: RefCell<Option<Preview>>,
+    last_area: Cell<Option<Rect>>,
     surfaces: RefCell<Vec<Surface>>,
     controls: RefCell<Option<Controls>>,
     task: RefCell<Option<glib::JoinHandle<()>>>,
@@ -139,6 +140,7 @@ impl Screenshot {
             display: display.clone(),
             lifecycle: RefCell::new(Lifecycle::default()),
             preview: RefCell::new(None),
+            last_area: Cell::new(None),
             surfaces: RefCell::new(Vec::new()),
             controls: RefCell::new(None),
             task: RefCell::new(None),
@@ -205,7 +207,7 @@ impl Screenshot {
                 match prepared {
                     Ok((layout, images)) => {
                         let launch = layout.launching_output(connector.as_deref());
-                        let selection = Selection::new(&layout, launch);
+                        let selection = Selection::new(&layout, launch, this.last_area.get());
                         this.preview.replace(Some(Preview {
                             layout,
                             images,
@@ -247,7 +249,7 @@ impl Screenshot {
             if !self.dismissed.replace(true) {
                 self.controls.take();
                 self.surfaces.take();
-                self.preview.take();
+                self.clear_preview();
                 if let Some(task) = self.watcher.take() {
                     task.abort();
                 }
@@ -271,9 +273,15 @@ impl Screenshot {
         self.controls.take();
         let surfaces = self.surfaces.take();
         drop(surfaces);
-        self.preview.take();
+        self.clear_preview();
         if active && let Some(callback) = self.active.borrow().as_ref() {
             callback(false);
+        }
+    }
+    fn clear_preview(&self) {
+        // Keep only the logical rectangle between sessions, never desktop images.
+        if let Some(preview) = self.preview.take() {
+            self.last_area.set(Some(preview.selection.area));
         }
     }
     pub fn close(&self) {
