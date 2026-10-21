@@ -49,7 +49,9 @@
       };
     in
     {
-      checks = coreChecks;
+      checks = coreChecks // {
+        clippy-rs = config.packages.clippy-rs;
+      };
       packages = coreChecks // {
         clippy-rs = pkgs.rustPlatform.buildRustPackage (
           config.wayShell.rustBuildArgs
