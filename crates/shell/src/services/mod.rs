@@ -10,6 +10,7 @@ pub mod network;
 pub mod notifications;
 pub mod power;
 pub mod power_profiles;
+pub mod screencast;
 pub mod screenshot;
 pub mod settings;
 pub mod shortcuts;

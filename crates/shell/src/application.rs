@@ -14,6 +14,7 @@ use crate::{
         notifications::NotificationsService,
         power::PowerService,
         power_profiles::PowerProfilesService,
+        screencast::ScreencastService,
         settings,
         shortcuts::ShortcutsService,
         theme::{Theme, ThemeService},
@@ -204,6 +205,7 @@ impl Configuration {
 }
 
 struct Services {
+    recording: ScreencastService,
     wayland: WaylandService,
     manager: WindowManager,
     theme: ThemeService,
@@ -271,7 +273,14 @@ impl Services {
             settings::open("org.ldelossa.way-shell.window-manager")
                 .map_err(|error| error.to_string())?,
         );
+        let notifications = NotificationsService::new();
+        let recording = ScreencastService::new(
+            configuration.system.clone(),
+            notifications.clone(),
+            manager.clone(),
+        );
         Ok(Self {
+            recording,
             shortcuts,
             wayland,
             manager,
@@ -287,7 +296,7 @@ impl Services {
             brightness,
             brightness_handler: Some(brightness_handler),
             media: MediaService::new(),
-            notifications: NotificationsService::new(),
+            notifications,
             tray: configuration
                 .panel
                 .boolean("enable-tray-icons")
@@ -298,6 +307,7 @@ impl Services {
 }
 impl Drop for Services {
     fn drop(&mut self) {
+        self.recording.shutdown();
         if let Some(handler) = self.brightness_handler.take() {
             self.logind.disconnect(handler);
         }
@@ -561,6 +571,10 @@ impl Runtime {
             return ready(Err("Services have stopped".into()));
         };
         match command {
+            Command::ScreencastStop => {
+                services.recording.stop();
+                ready(Ok(()))
+            }
             Command::BrightnessUp
             | Command::BrightnessDown
             | Command::KeyboardBrightnessUp
@@ -707,11 +721,13 @@ impl Desktop {
             services.manager.clone(),
             configuration.system.clone(),
             services.notifications.clone(),
+            services.recording.clone(),
             display,
         );
         let panels = Panels::new(
             display,
             PanelServices {
+                recording: services.recording.clone(),
                 clock: services.clock.clone(),
                 notifications: services.notifications.clone(),
                 manager: services.manager.clone(),

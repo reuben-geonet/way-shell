@@ -2,6 +2,8 @@
 use super::*;
 use crate::{resources, services::wm::Backend, ui::quick_settings::QuickSettingsWindow};
 use std::{path::PathBuf, time::Instant};
+#[path = "../../../tests/common/audio_policy.rs"]
+mod recording_policy;
 #[track_caller]
 fn wait(context: &glib::MainContext, condition: impl Fn() -> bool) {
     let deadline = Instant::now() + Duration::from_secs(12);
@@ -19,6 +21,9 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     adw::init().unwrap();
     resources::get();
     let context = glib::MainContext::default();
+    let audio_test = std::env::var_os("WAY_SHELL_RECORDING_AUDIO_TEST").is_some();
+    let _policy = audio_test
+        .then(|| recording_policy::Policy::new(&std::env::var("PIPEWIRE_REMOTE").unwrap()));
     let display = gdk::Display::default().unwrap();
     let provider = gtk::CssProvider::new();
     provider.load_from_path(
@@ -100,10 +105,12 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     context.block_on(glib::timeout_future(Duration::from_millis(500)));
     let quick = QuickSettingsWindow::new().unwrap();
     quick.show();
+    let recording = ScreencastService::new(system.clone(), notifications.clone(), manager.clone());
     let screenshot = Screenshot::new(
         manager.clone(),
         system.clone(),
         notifications.clone(),
+        recording.clone(),
         &display,
     );
     let quick_weak = Rc::downgrade(&quick);
@@ -356,6 +363,162 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         pasted.extend_from_slice(&bytes);
     }
     assert!(pasted.starts_with(b"\x89PNG\r\n\x1a\n"));
+    // Exercise real wf-recorder output, not a mock capture pipeline. The
+    // surrounding compositor and audio server must belong to this test run.
+    assert!(screencast::available());
+    let videos = directory.join("videos");
+    system
+        .set_string("screencast-save-directory", videos.to_str().unwrap())
+        .unwrap();
+    let mut cases = vec![(Mode::Screen, 0), (Mode::Area, 0)];
+    if audio_test {
+        cases.extend([(Mode::Screen, 1), (Mode::Screen, 2)]);
+    }
+    for (index, (mode, audio)) in cases.into_iter().enumerate() {
+        screenshot.show(None).unwrap();
+        wait(&context, || {
+            screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+        });
+        screenshot.set_mode(Mode::All);
+        screenshot
+            .controls
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .video
+            .emit_clicked();
+        assert!(screenshot.video.get());
+        assert_eq!(
+            screenshot.preview.borrow().as_ref().unwrap().selection.mode,
+            Mode::Area
+        );
+        if expected_outputs > 1 && index == 0 {
+            assert!(
+                !screenshot
+                    .controls
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .capture
+                    .is_sensitive()
+            );
+        }
+        screenshot.set_mode(mode);
+        if mode == Mode::Area {
+            let mut preview = screenshot.preview.borrow_mut();
+            let p = preview.as_mut().unwrap();
+            let bounds = p.layout.outputs[p.launch].bounds;
+            p.selection.area = Rect {
+                x: bounds.x + 21.2,
+                y: bounds.y + 21.2,
+                width: 81.7,
+                height: 51.7,
+            };
+        }
+        screenshot.refresh();
+        {
+            let controls = screenshot.controls.borrow();
+            let controls = controls.as_ref().unwrap();
+            assert!(controls.video.is_active());
+            assert!(!controls.photo.is_active());
+            assert!(controls.capture.has_css_class("video"));
+            assert!(controls.capture.is_sensitive());
+            assert_eq!(controls.audio.selected(), 0);
+            controls.audio.set_selected(audio);
+            assert!(
+                controls
+                    .modes
+                    .iter()
+                    .filter(|(mode, _)| matches!(mode, Mode::Window | Mode::All))
+                    .all(|(_, button)| !button.is_visible())
+            );
+        }
+        context.block_on(glib::timeout_future(Duration::from_millis(250)));
+        let layout = screenshot.preview.borrow().as_ref().unwrap().layout.clone();
+        let rendered = context.block_on(capture::acquire(&layout)).unwrap();
+        std::fs::write(
+            format!("/tmp/way-shell-video-{name}-{index}-preview.png"),
+            capture::encode_png(&rendered[launch]).unwrap(),
+        )
+        .unwrap();
+        screenshot.capture();
+        assert!(!screenshot.is_active());
+        assert!(screenshot.surfaces.borrow().is_empty());
+        wait(&context, || {
+            recording.phase() == screencast::Phase::Recording
+        });
+        quick.show();
+        context.block_on(glib::timeout_future(Duration::from_millis(1100)));
+        assert_eq!(recording.phase(), screencast::Phase::Recording);
+        assert_ne!(recording.elapsed(), "00:00");
+        quick.hide_now();
+        screenshot.show(None).unwrap();
+        wait(&context, || {
+            screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+        });
+        assert!(!screenshot.video.get());
+        assert!(
+            !screenshot
+                .controls
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .video
+                .is_sensitive()
+        );
+        screenshot.set_video(true);
+        assert!(!screenshot.video.get());
+        screenshot.cancel();
+        recording.stop();
+        recording.stop();
+        assert_eq!(recording.phase(), screencast::Phase::Stopping);
+        wait(&context, || !recording.is_active());
+        let files: Vec<_> = std::fs::read_dir(&videos)
+            .unwrap()
+            .flatten()
+            .filter(|entry| entry.path().extension().is_some_and(|e| e == "mp4"))
+            .collect();
+        assert_eq!(files.len(), index + 1);
+        let path = files.iter().map(|e| e.path()).max().unwrap();
+        let state = notifications.state();
+        assert!(
+            state.notifications.iter().any(|notification| {
+                notification.request.summary == "Recording saved"
+                    && notification.request.body.contains(path.to_str().unwrap())
+            }),
+            "Recording did not finish successfully: {state:?}"
+        );
+        let output = std::process::Command::new("ffprobe")
+            .args([
+                "-v",
+                "error",
+                "-show_entries",
+                "stream=codec_name,codec_type,width,height",
+                "-of",
+                "json",
+            ])
+            .arg(&path)
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let info: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        let video = &info["streams"][0];
+        assert_eq!(video["codec_name"], "h264");
+        assert_eq!(video["width"].as_u64().unwrap() % 2, 0);
+        assert_eq!(video["height"].as_u64().unwrap() % 2, 0);
+        if audio != 0 {
+            assert!(
+                info["streams"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|stream| stream["codec_type"] == "audio" && stream["codec_name"] == "aac")
+            );
+        }
+        std::fs::copy(path, format!("/tmp/way-shell-recording-{name}-{index}.mp4")).unwrap();
+    }
+    // Keep the remembered screenshot-area check independent of video edits.
+    screenshot.last_area.set(Some(selected));
     screenshot.show(None).unwrap();
     wait(&context, || {
         screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
@@ -383,6 +546,7 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     screenshot.cancel();
     assert!(screenshot.surfaces.borrow().is_empty());
     screenshot.close();
+    recording.shutdown();
     quick.close();
     sample.destroy();
     manager.stop();

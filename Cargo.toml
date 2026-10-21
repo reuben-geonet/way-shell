@@ -23,6 +23,7 @@ gtk4-layer-shell = "=0.7.1"
 clap = { version = "=4.6.7", features = ["derive"] }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
+libc = "=0.2.189"
 wayland-client = "=0.31.15"
 wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
 wireplumber = { git = "https://github.com/saivert/wireplumber.rs", rev = "04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc", default-features = false, features = ["v0_5", "futures"] }

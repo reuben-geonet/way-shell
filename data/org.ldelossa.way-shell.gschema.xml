@@ -8,6 +8,11 @@
 
     <!--system related settings-->
     <schema path="/org/ldelossa/way-shell/system/" id="org.ldelossa.way-shell.system">
+        <key name="screencast-save-directory" type="s">
+            <default>''</default>
+            <summary>Screen recording destination directory</summary>
+            <description>Empty uses Videos/Screencasts, or Home/Screencasts when Videos is undefined. Otherwise use an absolute directory or ~/ path.</description>
+        </key>
         <key name="screenshot-save-directory" type="s">
             <default>''</default>
             <summary>Screenshot destination directory</summary>

@@ -235,3 +235,11 @@ fn screenshot_commands_append_opcodes() {
         assert!(output.status.success());
     }
 }
+
+#[test]
+fn screencast_stop_appends_opcode() {
+    let server = Server::new();
+    let (bytes, output) = server.exchange(&["screencast", "stop"], &[1, 0, 0, 0]);
+    assert_eq!(bytes, 40u32.to_le_bytes());
+    assert!(output.status.success());
+}
