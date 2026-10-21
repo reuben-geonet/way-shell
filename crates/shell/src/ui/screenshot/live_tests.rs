@@ -210,6 +210,29 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         assert!(!button.is_sensitive());
         assert!(button.tooltip_text().unwrap().contains("geometry"));
     }
+    // Remember edits even when closing in another mode or cancelling preparation.
+    let remembered = {
+        let mut preview = screenshot.preview.borrow_mut();
+        let p = preview.as_mut().unwrap();
+        p.selection.mode = Mode::Area;
+        p.selection.adjust(&p.layout, 17.0, 23.0, false);
+        p.selection.adjust(&p.layout, -19.0, -29.0, true);
+        p.selection.area
+    };
+    screenshot.set_mode(Mode::Screen);
+    screenshot.cancel();
+    screenshot.show(None).unwrap();
+    screenshot.cancel();
+    screenshot.show(None).unwrap();
+    wait(&context, || {
+        screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+    });
+    {
+        let preview = screenshot.preview.borrow();
+        let p = preview.as_ref().unwrap();
+        assert_eq!(p.selection.mode, Mode::Area);
+        assert_eq!(p.selection.area, remembered);
+    }
     screenshot.set_mode(Mode::Screen);
     context.block_on(glib::timeout_future(Duration::from_millis(200)));
     // Retain a real compositor-rendered preview for visual inspection.
@@ -261,6 +284,10 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     wait(&context, || {
         screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
     });
+    assert_eq!(
+        screenshot.preview.borrow().as_ref().unwrap().selection.area,
+        remembered
+    );
     screenshot.set_mode(Mode::Area);
     {
         let mut preview = screenshot.preview.borrow_mut();
@@ -329,12 +356,16 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         pasted.extend_from_slice(&bytes);
     }
     assert!(pasted.starts_with(b"\x89PNG\r\n\x1a\n"));
+    screenshot.show(None).unwrap();
+    wait(&context, || {
+        screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+    });
+    assert_eq!(
+        screenshot.preview.borrow().as_ref().unwrap().selection.area,
+        selected
+    );
     if backend == Backend::Sway {
         use std::io::{Read, Write};
-        screenshot.show(None).unwrap();
-        wait(&context, || {
-            screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
-        });
         let mut peer = std::os::unix::net::UnixStream::connect(manager.socket_path()).unwrap();
         peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
         peer.write_all(&way_shell_core::sway::encode(0, b"output HEADLESS-1 scale 1.25").unwrap())
