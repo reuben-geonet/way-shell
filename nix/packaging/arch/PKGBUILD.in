@@ -4,9 +4,11 @@ pkgrel=1
 pkgdesc='GNOME-like desktop shell for Sway and Niri'
 arch=('x86_64')
 url='https://github.com/ldelossa/way-shell'
-license=('AGPL-3.0-only AND Apache-2.0 AND MIT')
-options=('!debug')
-depends=('gtk4' 'libadwaita' 'gtk4-layer-shell' 'wireplumber' 'libpulse' 'libnm' 'pipewire' 'systemd-libs')
+license=('AGPL-3.0-only AND GPL-3.0-or-later AND Apache-2.0 AND MIT')
+# Rust 1.90+ uses LLD, which cannot link GCC LTO objects from bundled SQLite.
+# Re-enable makepkg LTO when the C compiler and Rust linker use compatible formats.
+options=('!debug' '!lto')
+depends=('libcanberra' 'gtk4' 'libadwaita' 'gtk4-layer-shell' 'wireplumber' 'libpulse' 'libnm' 'pipewire' 'systemd-libs')
 makedepends=('rust' 'clang' 'pkgconf')
 optdepends=('grim: screenshot capture' 'wf-recorder: video capture' 'ffmpeg: recording encoder detection and validation' 'networkmanager: network controls' 'bluez: Bluetooth controls' 'upower: battery status' 'pipewire-pulse: PulseAudio service' 'power-profiles-daemon: power profiles')
 source=("way-shell-${pkgver}.tar.gz")

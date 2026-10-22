@@ -2,6 +2,7 @@ pub mod apps;
 pub mod audio;
 pub mod bluetooth;
 pub mod brightness;
+pub mod clipboard;
 pub mod clock;
 pub mod ipc;
 pub mod logind;

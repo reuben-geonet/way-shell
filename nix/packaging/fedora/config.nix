@@ -40,6 +40,7 @@
         "cargo2rpm"
         "clang-devel"
         "libadwaita-devel"
+        "libcanberra-devel"
         "gtk4-layer-shell-devel"
         "wireplumber-devel"
         "NetworkManager-libnm-devel"

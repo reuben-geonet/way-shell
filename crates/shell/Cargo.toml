@@ -6,6 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+futures-channel.workspace = true
+glob.workspace = true
+regress.workspace = true
+way-shell-clipboard.workspace = true
+serde.workspace = true
+qrcode.workspace = true
+ureq.workspace = true
+scraper.workspace = true
+url.workspace = true
+wayland-protocols.workspace = true
+wayland-protocols-misc.workspace = true
 way-shell-core.workspace = true
 way-shell-shortcuts.workspace = true
 shlex.workspace = true

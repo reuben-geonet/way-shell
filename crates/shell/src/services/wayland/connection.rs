@@ -240,6 +240,46 @@ impl Driver {
     pub fn outputs(&self) -> Vec<Output> {
         self.protocol.borrow().state.outputs()
     }
+    pub fn focused_toplevel(&self) -> Option<Toplevel> {
+        self.protocol.borrow().state.focused_toplevel()
+    }
+    pub fn has_clipboard(&self) -> bool {
+        !self.stopped.get() && self.protocol.borrow().state.has_clipboard()
+    }
+    pub fn clipboard_offers(&self) -> Vec<super::ClipboardOffer> {
+        self.protocol.borrow().state.clipboard_offers()
+    }
+    pub fn read_clipboard(
+        self: &Rc<Self>,
+        id: u64,
+        mime: &str,
+    ) -> Result<std::os::fd::OwnedFd, String> {
+        let fd = self.protocol.borrow().state.read_clipboard(id, mime)?;
+        self.flush();
+        Ok(fd)
+    }
+    pub fn set_clipboard(
+        self: &Rc<Self>,
+        formats: Vec<(String, Vec<u8>)>,
+        primary: bool,
+    ) -> Result<(), String> {
+        {
+            let mut protocol = self.protocol.borrow_mut();
+            let qh = protocol.queue.handle();
+            protocol.state.set_clipboard(formats, primary, &qh)?;
+        }
+        self.flush();
+        Ok(())
+    }
+    pub fn paste(self: &Rc<Self>, terminal: bool) -> Result<(), String> {
+        {
+            let mut protocol = self.protocol.borrow_mut();
+            let qh = protocol.queue.handle();
+            protocol.state.paste(terminal, &qh)?;
+        }
+        self.flush();
+        Ok(())
+    }
     pub fn seats(&self) -> Vec<Seat> {
         self.protocol.borrow().state.seats()
     }
