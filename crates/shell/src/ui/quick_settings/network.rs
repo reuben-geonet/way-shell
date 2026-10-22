@@ -1165,6 +1165,22 @@ impl WifiMenu {
                 this.menu.banner().set_reveal_child(false);
             }
         });
+        let weak = Rc::downgrade(&this);
+        this.menu.widget().connect_map(move |_| {
+            if let Some(this) = weak.upgrade() {
+                let state = this.service.state();
+                if let Some(device) = state.devices.iter().find(|device| device.id == this.device) {
+                    this.refresh(&state, device);
+                }
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.menu.widget().connect_unmap(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.cancel_scan();
+                this.hide_passwords();
+            }
+        });
         this
     }
     fn refresh(self: &Rc<Self>, state: &NetworkState, device: &Device) {
@@ -1746,7 +1762,7 @@ mod tests {
     #[test]
     #[ignore = "requires an isolated Wayland compositor"]
     fn wifi_progress_timing_dimensions_errors_and_teardown() {
-        adw::init().unwrap();
+        crate::ui::init_test_display();
         let context = glib::MainContext::default();
         let pause =
             |ms| context.block_on(glib::timeout_future(std::time::Duration::from_millis(ms)));

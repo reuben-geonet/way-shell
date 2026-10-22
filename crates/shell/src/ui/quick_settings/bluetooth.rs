@@ -453,7 +453,7 @@ mod tests {
     #[test]
     #[ignore = "requires an isolated Wayland compositor"]
     fn bluetooth_progress_timing_dimensions_errors_and_teardown() {
-        adw::init().unwrap();
+        crate::ui::init_test_display();
         let context = glib::MainContext::default();
         let pause =
             |ms| context.block_on(glib::timeout_future(std::time::Duration::from_millis(ms)));

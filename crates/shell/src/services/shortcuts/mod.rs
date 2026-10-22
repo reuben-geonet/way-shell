@@ -348,8 +348,7 @@ mod tests {
     fn shortcut_loading_navigation_minimum_errors_and_reopening() {
         use crate::ui::shortcuts::ShortcutsSheet;
         use gtk::prelude::*;
-        adw::init().unwrap();
-        crate::resources::get();
+        crate::ui::init_test_display();
         let context = glib::MainContext::default();
         let pause = |ms| context.block_on(glib::timeout_future(Duration::from_millis(ms)));
         let manager: WindowManager = glib::Object::new();
