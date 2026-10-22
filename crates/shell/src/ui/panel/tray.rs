@@ -127,6 +127,7 @@ struct Indicator {
     menu_revision: Cell<u64>,
     icon_revision: Cell<u64>,
     icon_task: RefCell<Option<glib::JoinHandle<()>>>,
+    displayed: Cell<bool>,
 }
 impl Indicator {
     fn new(service: TrayService, item: TrayItem) -> Rc<Self> {
@@ -134,7 +135,9 @@ impl Indicator {
         widget.set_widget_name("panel-indicator-bar-widget");
         let inner = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         inner.add_css_class("panel-indicator-bar-widget-box");
-        let icon = gtk::Image::from_icon_name("image-missing");
+        let icon = gtk::Image::new();
+        icon.set_pixel_size(16);
+        icon.set_size_request(16, 16);
         let button = gtk::Button::new();
         button.set_child(Some(&icon));
         inner.append(&button);
@@ -153,6 +156,7 @@ impl Indicator {
             menu_revision: Cell::new(0),
             icon_revision: Cell::new(0),
             icon_task: RefCell::new(None),
+            displayed: Cell::new(false),
         });
         let weak = Rc::downgrade(&row);
         let handler = row.button.connect_clicked(move |_| {
@@ -210,15 +214,17 @@ impl Indicator {
             return;
         }
         let item = self.item.borrow().clone();
-        if !item.icon.name.is_empty() {
-            self.icon.set_icon_name(Some(&item.icon.name));
-        } else if let Some(image) = item.icon.pixmap.as_ref().and_then(rgba_pixbuf) {
-            self.icon
-                .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image)));
-        } else {
-            self.icon.set_icon_name(Some("image-missing"));
+        let asynchronous = !item.icon.name.is_empty() && !item.icon_theme_path.is_empty();
+        if !asynchronous {
+            if !self.show_supplied_icon(&item) {
+                self.missing_icon();
+            }
+            return;
         }
-        if !self.active.get() || item.icon.name.is_empty() || item.icon_theme_path.is_empty() {
+        if !self.displayed.get() {
+            self.show_supplied_icon(&item);
+        }
+        if !self.active.get() {
             return;
         }
         let revision = self.icon_revision.get();
@@ -229,30 +235,61 @@ impl Indicator {
                 load_theme_icon(&item.icon_theme_path, &item.icon.name),
             )
             .await;
-            let Some(row) = weak
-                .upgrade()
-                .filter(|row| row.active.get() && row.icon_revision.get() == revision)
-            else {
-                return;
-            };
-            row.icon_task.borrow_mut().take();
-            match result {
-                Ok(Ok(image)) => row
-                    .icon
-                    .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image))),
-                Ok(Err(error)) => glib::g_message!(
-                    "way-shell",
-                    "Tray icon {} could not be loaded: {error}",
-                    item.icon.name
-                ),
-                Err(_) => glib::g_message!(
-                    "way-shell",
-                    "Tray icon {} loading timed out",
-                    item.icon.name
-                ),
+            if let Some(row) = weak.upgrade() {
+                row.finish_icon(
+                    revision,
+                    result.unwrap_or_else(|_| {
+                        Err(glib::Error::new(
+                            gio::IOErrorEnum::TimedOut,
+                            "Tray icon loading timed out",
+                        ))
+                    }),
+                );
             }
         });
         self.icon_task.replace(Some(task));
+    }
+    fn show_supplied_icon(&self, item: &TrayItem) -> bool {
+        if let Some(image) = item.icon.pixmap.as_ref().and_then(rgba_pixbuf) {
+            self.icon
+                .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image)));
+        } else if !item.icon.name.is_empty()
+            && gtk::IconTheme::for_display(&self.icon.display()).has_icon(&item.icon.name)
+        {
+            self.icon.set_icon_name(Some(&item.icon.name));
+        } else {
+            return false;
+        }
+        self.displayed.set(true);
+        true
+    }
+    fn missing_icon(&self) {
+        self.icon.set_icon_name(Some("image-missing"));
+        self.displayed.set(false);
+    }
+    fn finish_icon(&self, revision: u64, result: Result<gtk::gdk_pixbuf::Pixbuf, glib::Error>) {
+        if !self.active.get() || self.icon_revision.get() != revision {
+            return;
+        }
+        self.icon_task.borrow_mut().take();
+        match result {
+            Ok(image) => {
+                self.icon
+                    .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image)));
+                self.displayed.set(true);
+            }
+            Err(error) => {
+                let item = self.item.borrow().clone();
+                glib::g_message!(
+                    "way-shell",
+                    "Tray icon {} could not be loaded: {error}",
+                    item.icon.name
+                );
+                if !self.show_supplied_icon(&item) && !self.displayed.get() {
+                    self.missing_icon();
+                }
+            }
+        }
     }
     fn cancel_icon(&self) {
         self.icon_revision
@@ -427,5 +464,126 @@ fn report_reply(result: Result<(), glib::Error>) {
 fn report_menu_reply(result: Result<bool, glib::Error>) {
     if let Err(error) = result {
         glib::g_message!("way-shell", "Tray menu operation failed: {error}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::services::tray::{Icon, RgbaImage, Tooltip};
+    fn item(name: &str, directory: &str, pixmap: Option<RgbaImage>) -> TrayItem {
+        TrayItem {
+            key: ItemKey {
+                owner: ":1.2".into(),
+                path: "/Item".into(),
+            },
+            category: "ApplicationStatus".into(),
+            id: "fixture".into(),
+            title: "Fixture".into(),
+            status: "Active".into(),
+            window_id: 0,
+            icon_theme_path: directory.into(),
+            icon: Icon {
+                name: name.into(),
+                pixmap,
+            },
+            overlay: Icon::default(),
+            attention: Icon::default(),
+            attention_movie_name: String::new(),
+            tooltip: Tooltip::default(),
+            item_is_menu: false,
+            menu_path: None,
+            label: String::new(),
+        }
+    }
+    #[test]
+    #[ignore = "requires an isolated Wayland compositor"]
+    fn tray_icons_reserve_space_retain_replacements_and_reject_stale_results() {
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let directory = std::env::temp_dir().join(format!(
+            "way-shell-tray-presentation-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::write(
+            directory.join("fixture.png"),
+            include_bytes!("../../../../../tests/fixtures/tray-icon.png"),
+        )
+        .unwrap();
+        let directory_name = directory.to_str().unwrap();
+        let service: TrayService = glib::Object::new();
+        let row = Indicator::new(service.clone(), item("fixture.png", directory_name, None));
+        row.update_icon();
+        assert!(row.icon.paintable().is_none());
+        assert!(row.icon.icon_name().is_none());
+        let width = row.icon.measure(gtk::Orientation::Horizontal, -1);
+        let wait = |row: &Rc<Indicator>| {
+            let deadline = std::time::Instant::now() + Duration::from_secs(3);
+            while row.icon_task.borrow().is_some() {
+                assert!(std::time::Instant::now() < deadline);
+                context.block_on(glib::timeout_future(Duration::from_millis(5)));
+            }
+        };
+        wait(&row);
+        assert!(row.displayed.get());
+        let displayed = row.icon.paintable();
+        assert_eq!(row.icon.measure(gtk::Orientation::Horizontal, -1), width);
+        row.item.replace(item("missing.png", directory_name, None));
+        row.update_icon();
+        let old_revision = row.icon_revision.get();
+        assert_eq!(row.icon.paintable(), displayed);
+        row.item.replace(item("fixture.png", directory_name, None));
+        row.update_icon();
+        let pixel = RgbaImage {
+            width: 1,
+            height: 1,
+            pixels: vec![1, 2, 3, 255],
+        };
+        let decoded = rgba_pixbuf(&pixel).unwrap();
+        row.finish_icon(old_revision, Ok(decoded));
+        assert_eq!(row.icon.paintable(), displayed);
+        wait(&row);
+        assert!(row.displayed.get());
+        assert_ne!(row.icon.paintable(), displayed);
+        let displayed = row.icon.paintable();
+        row.item.replace(item("missing.png", directory_name, None));
+        row.update_icon();
+        assert_eq!(row.icon.paintable(), displayed);
+        wait(&row);
+        assert_eq!(row.icon.paintable(), displayed);
+        let first = Indicator::new(service.clone(), item("missing.png", directory_name, None));
+        first.update_icon();
+        assert!(first.icon.icon_name().is_none());
+        wait(&first);
+        assert_eq!(first.icon.icon_name().as_deref(), Some("image-missing"));
+        let immediate = Indicator::new(
+            service.clone(),
+            item("fixture.png", directory_name, Some(pixel)),
+        );
+        immediate.update_icon();
+        assert!(immediate.icon.paintable().is_some());
+        immediate.stop();
+        let themed = Indicator::new(service.clone(), item("folder-symbolic", "", None));
+        themed.update_icon();
+        assert!(themed.displayed.get());
+        assert_eq!(themed.icon.icon_name().as_deref(), Some("folder-symbolic"));
+        let timeout = Indicator::new(service, item("fixture.png", directory_name, None));
+        timeout.update_icon();
+        assert!(timeout.icon.icon_name().is_none());
+        timeout.cancel_icon();
+        timeout.finish_icon(
+            timeout.icon_revision.get(),
+            Err(glib::Error::new(
+                gio::IOErrorEnum::TimedOut,
+                "fixture timeout",
+            )),
+        );
+        assert_eq!(timeout.icon.icon_name().as_deref(), Some("image-missing"));
+        row.stop();
+        first.stop();
+        themed.stop();
+        timeout.stop();
+        std::fs::remove_dir_all(directory).unwrap();
     }
 }
