@@ -1,5 +1,5 @@
 Name: way-shell
-Version: 1.0.0
+Version: 1.1.0
 Release: 1%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
 License: AGPL-3.0-only AND Apache-2.0 AND MIT
@@ -86,6 +86,9 @@ install -m644 cargo-vendor.txt cargo-licenses.txt %{buildroot}%{_datadir}/licens
 %{_userunitdir}/way-shell.service
 
 %changelog
+* Thu Oct 22 2026 Way Shell contributors - 1.1.0-1
+- Release 1.1.0.
+
 * Fri Sep 25 2026 Way Shell contributors - 1.0.0-1
 - Release 1.0.0.
 
