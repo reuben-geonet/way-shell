@@ -1,6 +1,6 @@
 //! One owned panel for each live GDK monitor.
 pub mod clock;
-mod recording;
+pub(super) mod recording;
 pub mod status;
 pub mod tray;
 pub mod workspaces;
