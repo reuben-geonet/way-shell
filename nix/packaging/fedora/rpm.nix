@@ -17,7 +17,7 @@
           src = archive;
           diskImage = cfg.images.${release};
           diskImageFormat = "qcow2";
-          memSize = 3072;
+          memSize = 6144;
           enableParallelBuilding = false;
           preBuild = ''
             mkdir -p "$out/logs"

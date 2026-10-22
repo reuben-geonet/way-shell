@@ -7,11 +7,11 @@
   "databases": {
     "core": {
       "sha256": "sha256-KwrwjjYdv1QRrwLmZZ5HKRmbgYBCafA31p5CU6W1Xuw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/core.db"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/core.db"
     },
     "extra": {
-      "sha256": "sha256-fpCkolnA6Xw8OQmxzPGrdMo3hryuJiNd4CDY4KVo6E8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/extra.db"
+      "sha256": "sha256-ODm5o5BLbUwE2t7vlGTGG8MvPRSRzts3YrCXg0rBVK0=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/extra.db"
     }
   },
   "format": 1,
@@ -19,1007 +19,1027 @@
   "packages": [
     {
       "sha256": "sha256-3KnsUM9RJDuGpnNnpV54sYUdMSQLHtr5wBH4URdl2Zk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/acl-2.4.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/acl-2.4.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-DbMrQh9nAAlQ97VbUxKRzowTmFxUREJbItzpTUhdrtE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/attr-2.6.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/attr-2.6.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ay9+QAM20Fv5pLG2UBXkp6w6OEL7xneQkT+XSFE7lk4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/audit-4.2.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/audit-4.2.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-c6Z9xQntSm3WTkx+yiiVZD9ICDlA9JQxeCznjE1GGeE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/bash-5.3.20-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/bash-5.3.20-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-2VCK2Ej9bDFHOsCSXPjD7A0qcbu7XH45J0GGM4ooVmA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/binutils-2.47-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/binutils-2.47-4-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-3/gIGAV9p26TyQBF99nu8EacNcqgOxU8rgK6R708TbI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/brotli-1.2.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/brotli-1.2.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-h3kAPWWcRBuVIJXBmQdgOnOME2byXMUb4/0Tn6TpV0g=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/bzip2-1.0.8-6-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/bzip2-1.0.8-6-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-mCAFvV7MmYwF9WG1e7WLRFdAd3lyfjw9Wekm00qLBxI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/ca-certificates-20240618-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/ca-certificates-20240618-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-0jBe2MFCbgGK1hHLbn+jh8PKwPLnBAQB2uLx944IZ6s=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/ca-certificates-mozilla-3.132-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/ca-certificates-mozilla-3.132-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-qr1bK3AwcWzN1GXWB+c06FH+SgGt+Ck6OWj+IuuJzps=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/ca-certificates-utils-20240618-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/ca-certificates-utils-20240618-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kZaUf4YBRLW/Tb5Qeeih046jCA/bg8rpYpTR6DaBxus=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/coreutils-9.12-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/coreutils-9.12-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Mi8OeafWWdXmRelsrT0wlm991UdvmE+WtQpPTOonRkA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/cryptsetup-2.8.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/cryptsetup-2.8.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-7T5OJSBzE37msSZ/NHahNoD/az29x93GqNFJf6YM1tA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/curl-8.23.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/curl-8.23.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-dzv7cCBJG19E5MuhHQlqxXC5segcbLHkN6Xnpoto+XQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/dbus-1.16.2-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/dbus-1.16.2-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-w6kVu1cYjmpDud8lwL8R+HUovCCsUHGLF3LOkXxtYRc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/dbus-broker-37-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/dbus-broker-37-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-8/c+fIFp9U4+VEfSZpF650VL2YT8Dt4PheLKYOIdl98=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/dbus-broker-units-37-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/dbus-broker-units-37-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-s8Te4ZORckiTmT7Zk1IoRjaLs4JX2q5Bgt6YAlWplcw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/dbus-units-37-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/dbus-units-37-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-hkQtQDrobTWKoHDuMkOQi7uRv1pMODioCxCxPd6wwUw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/device-mapper-2.03.43-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/device-mapper-2.03.43-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-p4lxu74K6J0VoMu8lS5kRi7cWm+ZHBu5zv0FOcpUi9Q=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/e2fsprogs-1.47.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/e2fsprogs-1.47.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IPgYcKjSjHu98QY53AysKOvgQlzGUmiCws2X+XLDgUM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/expat-2.9.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/expat-2.9.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-t3/oTh3aLzL80RoAQ0fAoMa7mAY3ZTPHir14tOp3mvI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/file-5.48-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/file-5.48-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-a2w/7nQyIEhA07avybwaaMKPWRpH+yIAcXFcQMypVt8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/filesystem-2025.10.12-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/filesystem-2025.10.12-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-dqxWp/AwOdFjMGcB5cAnd7m3FwrVOI5m5Gw2PdJ5Lt8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/findutils-4.11.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/findutils-4.11.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-h1dhIpuAspB4zR+vw1oHrdmsTC27mkKb0Lct3MFKMb0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gawk-5.4.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gawk-5.4.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-2+ynxIROMRLemLqV98KyYY9N0rnGk8NAdre6Ud30YR4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gcc-libs-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gcc-libs-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-e7h2j8f2F8WArkx5Aq7VQTmEqDdJFdpCvu7LsIXCop4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gdbm-1.26-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gdbm-1.26-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-vxvZ0vCW8URqZFqJomZjNxq273io7UscPwBrYFaaLig=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gettext-1.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gettext-1.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-t9kw2uG5Jt2N+pN1GDGC68eiZolCj9EJ/q6s467PmaA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/glib2-2.90.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/glib2-2.90.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-6OTVDUXLK9Icn36rrMagG9Xrk9vUdvP0TUQDj8HrpBc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/glibc-2.44+r50+g1848099f063e-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/glibc-2.44+r50+g1848099f063e-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-KWkGHhF9KowZ2JQnsLiOHJVqYmm8BgIIfUGuzRUJcGQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gmp-6.3.0-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gmp-6.3.0-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-hubqgYyzMRcQGL725EhsEXYGRlXg1Fm87MnMnCu3Siw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gnulib-l10n-20241231-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gnulib-l10n-20241231-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-x1jM8tCdhbAzswgogAhEYJ9HAW7pPNeQMV3qOBipXMU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gnupg-2.4.9-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gnupg-2.4.9-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ph1dkIqoOtLtbd/9pwri3bWoGFLd3L9o7ELBdE6Kjuk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gnutls-3.8.13-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gnutls-3.8.13-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-1yDLl3NhKpk1geBHhySsAkkIcjaz6JnX2txQ7hQ7J5s=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gpgme-2.2.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gpgme-2.2.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ndil2tmejTiLH7FAaRneIY0wx+SZJPYVoS0/Lequz+I=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/grep-3.12-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/grep-3.12-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Si0f2QRYv5dRuaykGPjorm1XDLSkBr19xkatcWKnIPo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/gzip-1.15-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/gzip-1.15-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-zOSAm3+gFGRk9B9da9ZD4RYkMRAH956JJ4GLQ416YJI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/hwdata-0.412-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/hwdata-0.412-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-9FHaGd5G53F32VkjngO27oN8k5ZqxyyguAoemjKr62c=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/iana-etc-20260617-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/iana-etc-20260617-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-EY/kHvpsVQ8/5niTlG3OosbLtScimabd9BYPsX8+S7A=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/icu-78.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/icu-78.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-/x/52p7AUgswzErdYWC6WhcdmkeECIY6LZm2H1u5hms=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/jansson-2.15.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/jansson-2.15.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ouu5OVv8GKKavSG23XVlGRFOTmJB1jIViK2ihd7U1j8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/json-c-0.19-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/json-c-0.19-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kyKl+3T0M0GDXSLT6gzx2I2R60yYq5/LgWlV4hWbS0E=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/kbd-2.10.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/kbd-2.10.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-4+XUImu30hOmut25l79nmisRBtlbXChFt5v43xw+9f4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/keyutils-1.6.3-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/keyutils-1.6.3-4-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-jM4bTf0qHzVKJTu2CjbIMCQELu9dR8sCFOxdT0fyAH4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/kmod-34.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/kmod-34.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ONyvhlElWcR+mwhM549Be16LBjT+uMuAte3qssQLcE8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/krb5-1.22.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/krb5-1.22.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BJS3J3Uoerip+H27mlec3eHjn7uFXpBAz3uueT8EM58=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/leancrypto-1.9.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/leancrypto-1.9.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kUImK7JlCfjB6uOFTD8VEHTI5L5dB3eOKryuYQHKqFQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libarchive-3.8.10-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libarchive-3.8.10-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-f2xgLql8AbZ8+CYbh6+hpHwes4Pe12mq73FHXngd79w=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-GEPWdbMkydVJ80E9y+ZT7IaHasKJj8lEI5Ju0w6rJaE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libassuan-3.0.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libassuan-3.0.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kgz+o9ysguPXyOu/ZN/jQYIcERgnfVW2welgNc2UNlY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libatomic-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libatomic-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-PphP4dMjscWl/GD+8AV3akiC+8qRPW/jxBrRESiSntE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libcap-2.78-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libcap-2.78-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BbCoNW+JjiUYRbLl/6WWa+IcqF8+qvWuuKno30FIulw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libcap-ng-0.9.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libcap-ng-0.9.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-cMtzbk/e4zDNDfq0WHX26jeK6BmVjdFXSMMAuNcoW0I=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libedit-20260512_3.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libedit-20260512_3.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-+DQaHigf/SlNgYkcld/NfLz5tVJ7Fg1LVISOx5oZq8E=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libelf-0.197-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libelf-0.197-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-n9hWPjqhxk2AJXt7T2DTfPhYkmC6PrAV+CV+LP0RiwQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libevent-2.1.13-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libevent-2.1.13-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-XSEifyodENtg0M9bsCs2oYAa5h3H2ujDvBr6VIr9hgE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libffi-3.8.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libffi-3.8.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-c2fa1J/DIpvegEgW1BKrdzBtQzsfkuQSa4s7o1AsZ9Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libgcc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libgcc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Jcon9T4IYucGsyXQWJPkNYW+K7CgpKdQuPqm4OJT4TY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libgcrypt-1.12.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libgcrypt-1.12.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-C0A4fId5Pte3L8MTjGh3Yw7WbYtfhB5Db0NypkBWY+Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libgfortran-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libgfortran-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-/62AftLqNqKf5tpw3XemxHbxodU1fL7AskgdvITzA/Q=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libgomp-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libgomp-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-fVpbOfWIsnVVj14TvXkr/4TPiau21I4+SU1sMOjqnKQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libgpg-error-1.61-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libgpg-error-1.61-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-KZrQL5VGQ8iw+5GbDVReu6NIFvD6zGczmfeSUrM+wBg=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libhwasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libhwasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-F0m91MOVkT3xjFf91Cgg096Ic4txY7eqJU0T49p7HZ0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libidn2-2.3.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libidn2-2.3.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-aqiNpzFLYgrzmuYZYltv+sVfNHwal3zsPEoOS8b2p50=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libksba-1.8.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libksba-1.8.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-oRJVsGfZtrhfXY1MqKFF7vzEluT5rATk1sN4BCgVJms=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libldap-2.7.2-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libldap-2.7.2-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-EbafVEpvPRxY1WEuvDNoN+dlZ/JBO5aQCm6zPV3gbiE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/liblsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/liblsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-eMTjLTFA0R0v19G6xrz9vdNNO1m1ZiD5h/0o/UM0ZI4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libmakepkg-dropins-20-2-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libmakepkg-dropins-20-2-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-My4sstlT2rMm+XoyV1lPgDHsD85jBeK81dZNmDLIR3g=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libnghttp2-1.70.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libnghttp2-1.70.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-SkdKbIwpcL6tE8vfSrR2YgOdQ9zEiqgR7li+zXeM+JA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libnghttp3-1.18.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libnghttp3-1.18.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-5Kco2fZH88UqOu3WfFib5fQ+fdMeveaGetU1uinslRE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libngtcp2-1.25.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libngtcp2-1.25.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-S6e4W0L72lofB+Fbj5HGD6pMX5FozCfUn80g46O+i9g=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libnsl-2.0.1-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libnsl-2.0.1-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-tWdw+9AWftFBWXROPxjiIGhPWs9lJBtREICOxJvb/9Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libobjc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libobjc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-jdwFWzBKmMJDT6XSVVDJTAu82yI4j3UuBeYZsu6YAnw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libp11-kit-0.26.5-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libp11-kit-0.26.5-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-4Hklwkh7197/3VeAixlWHoCkyyWjPlHb2U77ZzvIGUQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libpsl-0.21.5-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libpsl-0.21.5-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-xtuPbHh2AfF/qBLyJw9OU/rRQm+p43KrLhqIHBNozuM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libquadmath-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libquadmath-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ET4WdjcVROUUKkbuBGpheaziAcTwoNVrYYqYS1x2RGM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libsasl-2.1.28-5-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libsasl-2.1.28-5-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-PT7/sjiYF30Prs4ZasZkhZ0pAntkze7joJosOWe4QB0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libseccomp-2.6.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libseccomp-2.6.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-MRqYKhCaOBTryPRnIV+ckmYLhYM+HGW22ha6Idb0Bq0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libsecret-0.21.8.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libsecret-0.21.8.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-RizKkb/zlMJxm36NGVHwwKLbl51xUhrJPbpra2l09rk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libssh2-1.11.1-7-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libssh2-1.11.1-7-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Fdxr0vOi7hf815oUMl6eADdyKlkrK9xV4WZdkhEuqlE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libstdc++-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libstdc++-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-AOUEidPACVE4DVeM+J69fXo42XJp58qczJzeFG8eIdo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libtasn1-4.21.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libtasn1-4.21.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-SGHqxg5tr/3wI2agn8VZ/+RW6YdBA2J5PNf6+RviKzA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libtirpc-1.3.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libtirpc-1.3.8-1-x86_64.pkg.tar.zst"
+    },
+    {
+      "sha256": "sha256-ddo7H/VBgroYBhcUmWlDywTVm1IGrfx2JB67M5NJhMw=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libtool-2.6.2-5-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-jdSDNrsR3Q0VufXQVgFmg4gCsh49J52yXW2pbfGeBDc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libtsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libtsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-66hTFv32MmUoViS6oick+7k+FZAWlvmdLCy94hYq1x0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libubsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libubsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-WCYlvALnELWH9O0xnlx60p/V1NQktjhPEl/AlPB85ZA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libunistring-1.4.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libunistring-1.4.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-i3WBavuzFtySEQ2axULfPiDZVQ/pSaGhQCslNmwKLG0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libusb-1.0.30-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libusb-1.0.30-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-0JZbGyVuMw4wDCvDxpmvok8tgA3EdlQQOdRStgYwlJY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libverto-0.3.2-6-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libverto-0.3.2-6-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-fTJLiJY3hkkTkUaCA3Ae/SyBJ5ipw/vMT/ik3bLZ8nY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libxcrypt-4.5.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libxcrypt-4.5.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-prXDD1GnynyFNI3o6DKA5oJajz4ZPMaRbs2OaV1KJLs=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/libxml2-2.15.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/libxml2-2.15.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-pab1/Iki70VMVOZeMhkGGD5mBqyq2vQWiW3LxE8hlO0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/linux-api-headers-7.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/linux-api-headers-7.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-xiAMd2RAZ4/owmra5sEEGUtCXZOTqeP8Cfk0Nj8MOaY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/lz4-1:1.10.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/lz4-1:1.10.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-3V7Ica6l3f041KJVOelm3AXnXWlp68MZF8jSW5fM1p4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/lzo-2.10-5-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/lzo-2.10-5-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-52UIKywyYFUIh8zzT28NJCifxcqMCUnrXC6ZNycuqA8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/mpfr-4.2.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/mpfr-4.2.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-m4A5D9aBEhRDpFpRt04uKt4kXOIq+HaZFdYxZbcn4nw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/ncurses-6.6-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/ncurses-6.6-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Z5E4qEBco4Orp4NtVP3CgtuTlLfcI8CXuJZfcBGa3xM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/nettle-4.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/nettle-4.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-LwRe2rn3/SwEZnxbp/cMR9p7b8/oepmoV6t+9aEvObQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/npth-1.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/npth-1.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-AMJ2xx10jlIgdX8md29K00Cxy0d+uDXeDQiPmzYnetc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/nspr-4.40-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/nspr-4.40-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IvuadZpYtoMxyvUyx0jepJ3ZA3gXF/quAXs8qe99YCo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/nss-3.132-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/nss-3.132-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-vgoH7z2P+oeHMrE46Y3uJlWVJyEsuUH8X2woJUXHh8w=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/openssl-3.6.5-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/openssl-3.6.5-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-lK1T526urKwVhKzl2ndR2Of7eu+/072Z2cNNNGHWMK0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/p11-kit-0.26.5-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/p11-kit-0.26.5-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-utAA97SCx/XmyOaVHZGM6KkgfA+cB4arK0n+dek13ig=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pacman-7.1.0.r9.g54d9411-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pacman-7.1.0.r9.g54d9411-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-9gCLM9lQpOTrWTD+OFLM6w/h+l/a/zYSVYMgFTH+Suk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pacman-mirrorlist-20260610-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pacman-mirrorlist-20260610-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-eO3Zh2VmcbGZVBK2CsGhrpL3EQoU6jciwu86geko1/s=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pam-1.7.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pam-1.7.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-MGJltIbj99KFTVgyAkCc3ZDxMTaMkqpW+EWCKl0rv2U=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pambase-20260616-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pambase-20260616-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-439BUv+GmmugUK0IMH17a0dPTUjL4MbMwBzpEYp3Tb8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pcre2-10.49-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pcre2-10.49-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Ft/MGPxg+MZUaHlwqbclPOF6mHxEEZ/i7jfHYEYPxVc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/pinentry-1.3.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/pinentry-1.3.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-h3Y1litgTvp5QJw9Qj9P3/xIaHdq8+DoBMyUoLV8oVE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/popt-1.19-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/popt-1.19-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-AWsq7r++nfuJKDxSu0lIfZXqI6h11HfaQtAAp5NhMCA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/readline-8.3.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/readline-8.3.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kHM/NP5XkbVUuTWZjfhYNQvOpTBhJX26BoKc41M/jgE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/sed-4.10-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/sed-4.10-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-YVyBnrLT4iFYKJ88wkR/ga6YGm0Rs0GNowtghTBrPnc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/shadow-4.20.0.arch1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/shadow-4.20.0.arch1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-xeQKRsXd7H5E+MrUdeOTRP7cfwH8Kyu4fAx4YvS5QvM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/sqlite-3.54.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/sqlite-3.54.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-/W0uFPorQseTrlxSBUQUpbdJMrFSAjRT+s0ofyaLNiI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/systemd-262.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/systemd-262.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-+/bXcFO7IQyP0/Rz+GFZhw7OAJUGgo49SnuMQlpQmV4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/systemd-libs-262.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/systemd-libs-262.1-1-x86_64.pkg.tar.zst"
+    },
+    {
+      "sha256": "sha256-6KO6obS9dURC+SwcJXlLkiVwD5MeHSwXW7Ln2aKHJec=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/tar-1.35-5-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-eqKpY/mbzVHk87JYf6jzdKfPoJ7GV0nMmnL6bzrTT9w=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/tpm2-tss-4.2.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/tpm2-tss-4.2.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kh11s724EL5KkXAT/SVpkS0Mwj3HGMWRdk9k7YPeJuo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/tzdata-2026e-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/tzdata-2026e-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-lbcJa/S0UnRkX2u5b1tVCK9uqA5fzLopJEq6pTo0GWI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/util-linux-2.42.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/util-linux-2.42.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Vgdbx9qb5EcNo2oEAZX5iqwK+8HtzH5PJ+bSZ9yvnzc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/util-linux-libs-2.42.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/util-linux-libs-2.42.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ibjnd8j3o5QT4bIj1MISyuxt3ZRws9HqHVFhvMYhXAQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/xz-5.8.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/xz-5.8.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-geGD60xnbIbrFwnRh4967B3xDVnOCYC1qwckVgMo0BU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/zlib-1:1.3.2-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/zlib-1:1.3.2-4-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-1M8ASRNxJMigJe7frSZ6PooCMQye+50a5KYaodAnifw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/core/os/x86_64/zstd-1.5.7-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/core/os/x86_64/zstd-1.5.7-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-froQTqGnoE4wWL9fyBCOw3u9OLSWa8NnIrI7+v8uWvQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/adwaita-cursors-51.0-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/adwaita-cursors-51.0-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-8n3TtHAO9hvtEXphBgE7cYHuk0i6A4eEzP5Qke8XLk0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/adwaita-fonts-51.0-2-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/adwaita-fonts-51.0-2-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-5kq6ZhSaCs7XpE8I4VwedM7rGKbH+G++3ojtzKtX5oU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/adwaita-icon-theme-51.0-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/adwaita-icon-theme-51.0-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-wUaQ0U4dimfmtVcKKyii2m3k6+tZKmKbKnDkFBG6/Fo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/adwaita-icon-theme-legacy-46.2-3-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/adwaita-icon-theme-legacy-46.2-3-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-LS8rOWbOvW7HWru9tHCaEJOEkgetpmJM3+NvOND1yBE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/alsa-lib-1.2.16.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/alsa-lib-1.2.16.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-p2sjfiSXMJmzzunTyJ9Pi0bZEzQR8Jkr1GpRMeRCegw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/alsa-topology-conf-1.2.5.1-4-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/alsa-topology-conf-1.2.5.1-4-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-c+Omz4Gd/O34hGFsGNIgbep36YMRcX3KgTUlb6vlX7w=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/alsa-ucm-conf-1.2.16.1-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/alsa-ucm-conf-1.2.16.1-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-LnfqVafBjP6vAJKkjzuHPWf4TyCOWT5JdqNORfa3F+Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/at-spi2-core-2.62.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/at-spi2-core-2.62.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-vlWvfPIHAebpeG0VzCCzbmdktdBiJhyteVTbNOndlAg=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/avahi-1:0.9rc5-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/avahi-1:0.9rc5-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-8O/E4CE4sbHwcZ83AI2liwMhMSLUiBz+lJaB/L1ys24=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/bubblewrap-0.13.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/bubblewrap-0.13.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-DfgG4O3wZ9YrQXx32XinV3xNbhGnJNs8Eq3qGkJWZqE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/cairo-1.18.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/cairo-1.18.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-z5kcY9wonL5h9/XQ/Tlb4t1169or0qTohrLNEbjyeV0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/dav1d-1.5.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/dav1d-1.5.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-7EkyPxc0k3ble5tR3A/oF/taYe4hdIB4D0Brf6Vztmc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/dconf-51.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/dconf-51.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-rlICg3LDsvZlR7qrQfFhSyVHJInZJ7GlC1lruN98BW4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/default-cursors-3-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/default-cursors-3-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-zFJaabaQExjzYPriSZhuYvIzwDIMYSdPK61ERJ4MjkQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/desktop-file-utils-0.28-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/desktop-file-utils-0.28-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-kkUpeejMbzRVjuTZw/NPi34Neo6/+UKWtox5JvAIlc0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/duktape-2.7.0-7-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/duktape-2.7.0-7-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-fI3Oa95AK50kP9JAhHcipXuU3x2/U+DKvJEZIZ3QRzU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/flac-1.5.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/flac-1.5.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-w9lhVo4Q0LwDW1JVQzNTXTGFMxC5t5Nu7fXQJkJdOt8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/fontconfig-2:2.18.3-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/fontconfig-2:2.18.3-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-UaxCpwJjTw/Y63imxhEOGrszxPYEW0MvRqkVr903DMU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/freetype2-2.15.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/freetype2-2.15.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-fgM6pzu2LuN4LU1JQ8r79FXwd8CrYEQsKzat1Tw1iNU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/fribidi-1.0.17-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/fribidi-1.0.17-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-aUiXaQbqgwqyEEAUAquEnotSEd00lS6CqS4oqds6c4k=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/fuse-common-3.18.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/fuse-common-3.18.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-cXEom61biLAbKic37MKksKM0ovwEW210ya9XqoY8lUc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/fuse3-3.18.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/fuse3-3.18.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-SN4KqMOE1sxAkoUcRiu/F8sydZZ/ES97MeGUQ/+Gt48=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gdk-pixbuf2-2.44.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gdk-pixbuf2-2.44.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-iMBQmCNRlkKvCjQY21Kdw+gTDR0gTcZMBxxQb9x+btc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/giflib-6.1.3-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/giflib-6.1.3-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-a5RSIXu0vf8Zkps/yd63rqM4PP50zd1tCne+zCgDyqs=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/glib-networking-1:2.90.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/glib-networking-1:2.90.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-/C5/HgsnsnkmUJHmESS4ykyiFxPexrLCsIBaPzI2+SY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/glycin-2.2.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/glycin-2.2.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-5OZlwbAu2VfTBe97l1oLneiINAkfcZXfRszGOXY5O6g=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gperftools-2.19.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gperftools-2.19.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-aWUSNRSpDGLC/yAHfIAAAHW09C9pdZothPzwmBtUCiE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/graphene-1.10.8-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/graphene-1.10.8-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-s72bMLBxXDa1z9mXyjWtqcVZsfifPDhsrnhHcUx6XqI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/graphite-1:1.3.15-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/graphite-1:1.3.15-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-pkP7CvFvd5Xo2MjqCWJZl3SfLMSYRzsaPDfMnhXFSVo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gsettings-desktop-schemas-51.0-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gsettings-desktop-schemas-51.0-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-qK7Bb5Ek5rP9OLX1AwWrinrHk/Kerb3fZm6SzwH4M/o=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gsettings-system-schemas-51.0-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gsettings-system-schemas-51.0-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-GwP/8vmPOelz+RwGdz4r8MmtIjFraL8T+h6c2AQfOdQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gssdp-1.6.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gssdp-1.6.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-g8opPXZqt0hLBAu8Zzzts7OuzftS0VDhJFcWi/hQ61M=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gst-plugins-bad-libs-1.28.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gst-plugins-bad-libs-1.28.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-NPK82F6zyvmX/CObP6FQ191rFGoFOmTlysHwNDC5hlg=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gst-plugins-base-libs-1.28.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gst-plugins-base-libs-1.28.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-7g2zusjgsNiFz3Eo/u1MSC116koe0AGgyMclRrHoncI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gstreamer-1.28.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gstreamer-1.28.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-oFYokkCuv3Q4EMaancOoUD7fmumLW+Fn/d1mWYI26+U=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gtest-1.18.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gtest-1.18.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-2qK0yC6MlOBbIBrTkylPVJ/abjcX37Ksp1nucFV93fo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gtk-update-icon-cache-1:4.24.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gtk-update-icon-cache-1:4.24.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-iYllq767N/bvFV4IxoKS8ct17/Etwlr3NsVWWnZTYaE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gtk3-1:3.24.52-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gtk3-1:3.24.52-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Xod5VFH4g7x2cg0sfrCMowYwgJVZCHJwmWfrOD9ADzM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gtk4-1:4.24.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gtk4-1:4.24.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-/fzFqLIfWDgKjBCBlKo/y1dMA4AmBdC2Jzf4seTidsQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gtk4-layer-shell-1.3.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gtk4-layer-shell-1.3.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-N+V9ttVzHGLpMFsLWvTzLFHgPIVNuQ6IS4YDraaN2BI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gupnp-1:1.6.10-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gupnp-1:1.6.10-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-YO/EnVmV/bE9bONz5sOU8vh/wqlWi0DrrsFJZhaqKv0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/gupnp-igd-1.6.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/gupnp-igd-1.6.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-skrji6u2mfKruLBQOANiGQVgb1hshmI8tDHUUlZygdY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/harfbuzz-14.6.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/harfbuzz-14.6.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IuxpASuaVeJ2tYkfkWNm9pJUHc43k7/z6FoooQuRmQo=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/hicolor-icon-theme-0.18-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/hicolor-icon-theme-0.18-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-FpWv/l1hdDgFBKQrCAixymOOlbJl+hW8gObW6YdbqZM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/highway-1.4.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/highway-1.4.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-wtvLIRdv8qFc6gBy6hPymYvNQ1/UlMmdCo8G6esCkZI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/iso-codes-4.20.1-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/iso-codes-4.20.1-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IgJf5yEs6PFJLAg05+D3+c6Z2X9iseVvd7jbInXU2aA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/jbigkit-2.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/jbigkit-2.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-PC7BtR1F98LQzufShSCwdyzG0B+gm4CFNuCNyn3WOOs=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/json-glib-1.10.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/json-glib-1.10.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-LHv3FQ5BoSt7LvYv7Gq1oHHiC1N6xzRJCSL6ZMIEr3c=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/lame-4.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/lame-4.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-jNvR7CAPz0Glg9D9b7xvEX+WQqOWjHMmPFsMo1pMRmM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/lcms2-2.19.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/lcms2-2.19.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-nbAIJIEXPxCdvkr2pS/Dyh2YOyQOpnpatxqJT02xZM8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libadwaita-1:1.10.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libadwaita-1:1.10.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-3mXmATkazlwSboY61nJFsDz+h/RsErUJZo89okGbvxU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libasyncns-1:0.8+r3+g68cd5af-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libasyncns-1:0.8+r3+g68cd5af-3-x86_64.pkg.tar.zst"
+    },
+    {
+      "sha256": "sha256-GspiILdsQAnb/K1DL871KfqPyyyxh7A6UGoicNUBELE=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libcanberra-1:0.30+r2+gc0620e4-6-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-QRjKbhsUIC5dCNjmATy0cVLXuEM6lKHWegwCWp8vaJY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libcloudproviders-0.4.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libcloudproviders-0.4.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-bnA+cZcNc1d5pNvs/2A6v3W0KJ7TS9v1ZFFG26KK5q0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libcolord-1.4.8-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libcolord-1.4.8-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-qDsA41eMM7EeHQcTWZaJ5sYByLVppV+75lYWSYV5m+I=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libcups-2:2.4.20-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libcups-2:2.4.20-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-7OgwBqRo1SBepF0d6OnNs6hkcA+dkE/Et9UtadzhsLY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libdaemon-0.14-6-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libdaemon-0.14-6-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-9a1lHtma+inUTGYtpPLG6Tdk6KHUdIf0GDe+HJTd044=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libdatrie-0.2.14-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libdatrie-0.2.14-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-O9OxypozOrl+u1X3YJY/ZIF7bEwNVHR7Nxh/Nqtg3qs=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libdeflate-1.26-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libdeflate-1.26-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-KdEB8T0hnQHuSq4l6PhAJuB0DXR9VsN+pVc8Rhjn3wQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libdrm-2.4.134-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libdrm-2.4.134-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-bj9OAmuU1FsET4wV7wzAR3Lq+okt2LC/A3sfhl8KqjM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libepoxy-1.5.10-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libepoxy-1.5.10-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Yzwuldd5jQzn7ht/6XCiIyX39tNbn5I7thsiOoCTRDc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libglvnd-1.7.0-3-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libglvnd-1.7.0-3-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-mnivxY2/Qd0q8z6cimz7fcidC1FQWTx+jKa+2ijRElk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libgudev-238-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libgudev-238-4-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-FOdD5Yu6s1Zl0+WepxvUEfgaAdmV4BAUQvX0yCyd4Ks=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libjpeg-turbo-3.2.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libjpeg-turbo-3.2.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-pOD2Xoujotocw0iq1Pf4ruG1BLgkpkg4+z2bL3XMlEk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libjxl-0.12.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libjxl-0.12.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-eIg6rNxOGg5O/0LLG/ydN0a9PknWRLAYOsShiWuO/io=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libnice-0.1.24-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libnice-0.1.24-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IbL2ftb72c0JBM3dZhsHEUWuhUJc7ty6mzmvpRiK+Kw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libnm-1.58.1-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libnm-1.58.1-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ttRyTB7Ra0gG+lls2COikw7+7d65X32KhpZEtmWpujc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libogg-1.3.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libogg-1.3.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-71M4ledojaYXSb7hhRA0NdvmNdl3PQkvsFFuEygX458=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libpciaccess-0.19-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libpciaccess-0.19-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-CBgPx2dDq5+/hzBiqhWK+ZFJkfbjl3ROmkUlwqk5lEc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libpipewire-1:1.6.10-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libpipewire-1:1.6.10-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-wl4/A5qlmOZdAe5EBMtKg7ODtTtIOnuGJ+ORzCwDbeE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libpng-1.6.59-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libpng-1.6.59-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-2MlF8KzIUQd7TcaKZTR4EApuUBM9ySfsmoZ5bGkWq+o=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libproxy-0.5.12-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libproxy-0.5.12-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-wko7XrrNrkJMiFyBdwI29/fSagF899/KhAQOc1S+okI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libpulse-17.0+r134+g77d25a1e6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libpulse-17.0+r134+g77d25a1e6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BiNSsKVeNOYQ8tF3CZOXD+w+oK5ed/gF8GTa7C802kw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/librsvg-2:2.63.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/librsvg-2:2.63.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-m1gKJaTTj2iMNWG6zdHYwtNFHu5lfzFyIKOM/+QfpRI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libsndfile-1.2.2-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libsndfile-1.2.2-4-x86_64.pkg.tar.zst"
     },
     {
-      "sha256": "sha256-HqPoALmhimfhjSm29OLvkFS37LENyRQ9GXc0yW1fbcI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libsoup3-3.8.0-1-x86_64.pkg.tar.zst"
+      "sha256": "sha256-qMY3c2yUjgG5CWt+klHcWUBNUUl/6ntoNJVG7xrrm5M=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libsoup3-3.8.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-1fmUdkJzXk8CbPDjgvvse7RfPu07ALi6KVYs1FV0bug=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libstemmer-3.1.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libstemmer-3.1.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-QHYVim20E3YVwkGnAZMJ+L486rnl+RKROFxPtBp8KSE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libsysprof-capture-51.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libsysprof-capture-51.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-iQeY8wrHLQyjtZ3F/o7r6Pkjvwm9sbwux1vCANeqcKI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libthai-0.1.30-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libthai-0.1.30-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-0IRAWZ2AiBMFeFGzLb/9aZHYQfXU77TBt1gi4rB8fqk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libtiff-4.7.2-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libtiff-4.7.2-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ejEGoexVHTBHv61SSzpweAWCNARykqj9+MtctIG9pa8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libunwind-1.8.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libunwind-1.8.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-zq+eQbzVywbvz/vJCjlii3pcrlSQxebbgQp5JFAHCtI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/liburing-2.15-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/liburing-2.15-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-WbCoXG7biVO3y7B3oweMDlieTksGy/hxQX5A0MA1d0c=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libva-2.24.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libva-2.24.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-OuoqMSEv56qfPYki6PccJgjWJg6K8LfBtdp5B4Z2MIk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libvorbis-1.3.7-4-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libvorbis-1.3.7-4-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-qA5+3T3dJ8b9jNg9C9mNRrPwJ5t+4B9brt7Q1vJviXU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libwebp-1.6.0-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libwebp-1.6.0-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BHXZ+0Sot/004473xv9GM0FjwnOd2xR+SNU/XKvAi2A=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libwireplumber-0.5.18-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libwireplumber-0.5.18-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-R//1u+ravjC1+xrT82CcIOYGTvACugN339hWTsgT2ns=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libx11-1.8.14-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libx11-1.8.14-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-YFyLBZw2eS9ODMI1rK3znQdi32x4eIJaG+AaAK5+oh4=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxau-1.0.12-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxau-1.0.12-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Ky56xksdVsCKInwQvKsXlgXydz8x2wqMifSfTlsvEpI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxcb-1.17.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxcb-1.17.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-XRHmSMzMvXzxmISmd0QVKNhUbriaT9pX/rsIRG5hmRc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxcomposite-0.4.7-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxcomposite-0.4.7-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-KpAmeHfC9f/mxBqO+R5t7zt3IN57SyYosyk3POIMG5k=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxcursor-1.2.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxcursor-1.2.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Nr5SNy2n8vSflJ/IoPPG5Orub7A3YdZ+FzVb0V6mzuY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxdamage-1.1.7-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxdamage-1.1.7-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-YjyVfC/UtCeg9aUx2kSTH59mUhOR7gvQ5jVHmUcDa2U=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxdmcp-1.1.5-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxdmcp-1.1.5-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-rFaQXcUbtlLspfcG/X57t+qB1OBXojYTn8dpzl6hDPE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxext-1.3.7-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxext-1.3.7-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-1Yqy2/Mm42z4R5L+DcEsNCOeoErDQVkAalZhAyA9snI=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxfixes-6.0.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxfixes-6.0.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-p4Qe2OZ9w/lOykZyyJYTKd/da2eDb4rHIKJG06qwLss=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxft-2.3.9-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxft-2.3.9-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-JkvMVzLxRHdJImVMKXVQRYNFFQQEQWh5j+LxHLKwpbw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxi-1.8.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxi-1.8.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-epHi5knZsklGsrgIjD1/cPoGc6ltO66ASX9APlf7dlQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxinerama-1.1.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxinerama-1.1.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-GNjckJWO2i7aq5tnHulsLB8rGjImGOypfHwEYF1zhYE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxkbcommon-1.13.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxkbcommon-1.13.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-NQwfNnyu2Sq9scXSMLV89G3XW3fSfBPqexUpR/2mJQg=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxkbcommon-x11-1.13.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxkbcommon-x11-1.13.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-SdOjWWMRR3+K0uFzXa5hIBMRiAKCLyHOIohvZRA92Jk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxrandr-1.5.5-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxrandr-1.5.5-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-iTVxqeEB+veo0/vbE6dlEyNubO/9fCIpchvMU+lXuaQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxrender-0.9.13-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxrender-0.9.13-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-OdDxKOTvw5P807QvIARuwOhUNBtgHxS0V9Z63YYDbRM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxshmfence-1.3.3-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxshmfence-1.3.3-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-wqXbWKpbSvPeL5hWRLZXO0w0aSp0R48L35E6WGWWYmU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxtst-1.2.6-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxtst-1.2.6-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-nK4jEeUJRf1RRFdaoBDaYAnKhdaKSS8lOSCsFsk24pA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxv-1.0.13-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxv-1.0.13-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-uSFbRHNKAUn26bPJv8u1q+8rbzKydn7WKLr8PwzDiTQ=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/libxxf86vm-1.1.7-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/libxxf86vm-1.1.7-1-x86_64.pkg.tar.zst"
     },
     {
-      "sha256": "sha256-h1Gk2p7ThPPvlpviBnWF9ZLt0p9BALs5MrEgrsIXN3Q=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/llvm-libs-23.1.3-4-x86_64.pkg.tar.zst"
+      "sha256": "sha256-AzpMm3Boby3KFCCHlhrdfbga6BbYXrBgvukdBUYexb0=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/llvm-libs-23.1.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-U2MwQlWlBs9x4e1PBGQWbl8qrW8K5ET+CMr9jIO/Ef8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/lm_sensors-1:3.6.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/lm_sensors-1:3.6.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-UK6Ag4YOH/rfT6s8FzoEP9l75B9c7afS53xSjNhNI4Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/lmdb-0.9.35-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/lmdb-0.9.35-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-LNNgq0WQlQtAra4TbdRaIqULBiHGfbVpHgZnUfbyQW8=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/lua-5.5.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/lua-5.5.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-g2L1RWXTtxVX5qTrzyCPUa8y4gXycfjROZGWIDATm9E=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/mesa-1:26.2.5-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/mesa-1:26.2.5-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-IrUCX+X2GbHIeKpUfjzhzkHwAmli8Uv4T6mR+Uqq0mE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/ministream-0.99.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/ministream-0.99.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-r5u+pPfAA/LEtgRDBYLVi3sjLFrc2mc9FUAcP68ZQ/I=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/mpg123-1.33.7-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/mpg123-1.33.7-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-aZvOdNruEfpJ3pOZm6TgI/EyvFGndo3shFspedVPNn0=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/numactl-2.0.19-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/numactl-2.0.19-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-GRsfMDlQ4YS9vhIQXYywbmnnJ+j5Fgz9zzMQX3DQW0Y=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/opus-1.6.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/opus-1.6.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-h79oqSrxKB/qzczQT546hJTh2hmtx28v07cIDDFvjbU=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/orc-0.4.44-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/orc-0.4.44-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-m3THMFbOayrKg78WR/efCmv1PyBMUnOwNTDgNEctsTw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/pango-1:1.58.2-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/pango-1:1.58.2-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-Siig8Y+i1rc1Y3gpiMNXK8p//IxW8QTuqlM5Zny8rDA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/pipewire-1:1.6.10-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/pipewire-1:1.6.10-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-6H5mXSWiIwoXjYSQIC4dZ3/eWQj2jr7ffZhzCPwm/LY=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/pixman-0.46.4-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/pixman-0.46.4-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-5x8HiPu1Jnm5p181WO+KK1w8n2kfE2t1dMrvwCQEYcE=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/shared-mime-info-2.5.1-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/shared-mime-info-2.5.1-2-x86_64.pkg.tar.zst"
+    },
+    {
+      "sha256": "sha256-Jm1RmO017SZffmTLAUtIvR5antod78zoF8ziAP+qbBk=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/sound-theme-freedesktop-0.8-6-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BLg/Lp+/OM00kDGxBaSda69FH3EW6EQo/Av+VaOWgBA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/spirv-tools-1:1.4.363.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/spirv-tools-1:1.4.363.0-1-x86_64.pkg.tar.zst"
+    },
+    {
+      "sha256": "sha256-+O27hi3A7rvo9f9EjBUw22WHRZnPqupMNOYkf+cy4jk=",
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/tdb-1.4.15-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-8vdb5j09nXamgnX003ScxCnJJMzZAgPhrmDIkA1RhJg=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/tinysparql-3.12.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/tinysparql-3.12.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-yZmD90HPVnm9RO7s9spTkxB399B1Y0gDdvwrAlZUiRA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/vmaf-3.2.1-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/vmaf-3.2.1-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-yE4cl1Lu68x9mqXnVcj9UpHBLo1OOherg0Ne5RcV3Nw=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/vulkan-icd-loader-1.4.363.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/vulkan-icd-loader-1.4.363.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-C/g+yd1bnkA35/19Xe1wg4u1D4KqQ+goDIwAJckoBKk=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/wayland-1.26.0-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/wayland-1.26.0-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ghvnsGLLq1RV3ZsxXUgjzOuie6dhIOKZHmjmWDoJBBs=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/wireplumber-0.5.18-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/wireplumber-0.5.18-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-mPZh73x+Bet6aH6FnPEjqSgGzu2PVcDXDduseZmII5o=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xcb-proto-1.17.0-4-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xcb-proto-1.17.0-4-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-ffIe5WXNb1tC3DdLd82KGasx+0vF92SB8GcTtb1A2Ik=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xdg-desktop-portal-1.22.1-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xdg-desktop-portal-1.22.1-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-nUL1je9LNmKfGCaGJ/I+r1YfrNLbwRQ3nHgtap+Wq0k=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xdg-desktop-portal-gtk-1.15.3-2-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xdg-desktop-portal-gtk-1.15.3-2-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-f3+GVtvQs34206l/bhiPxcbLzMTB5dNP818denmxzHM=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xkeyboard-config-2.48-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xkeyboard-config-2.48-1-any.pkg.tar.zst"
     },
     {
       "sha256": "sha256-BdzFsdZhb9dWb2YWvAhotywQKMARuVcy9EXbdiF/hRA=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xorg-xprop-1.2.8-1-x86_64.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xorg-xprop-1.2.8-1-x86_64.pkg.tar.zst"
     },
     {
       "sha256": "sha256-H8osWlLIys+YJfx2UxpCht5EEJnY1uuRJyWxNr5w6uc=",
-      "url": "https://archive.archlinux.org/repos/2026/10/25/extra/os/x86_64/xorgproto-2026.1-1-any.pkg.tar.zst"
+      "url": "https://archive.archlinux.org/repos/2026/10/26/extra/os/x86_64/xorgproto-2026.1-1-any.pkg.tar.zst"
     }
   ],
   "requestedPackages": [
@@ -1027,6 +1047,7 @@
     "gtk4",
     "gtk4-layer-shell",
     "libadwaita",
+    "libcanberra",
     "libnm",
     "libpulse",
     "pacman",
@@ -1034,5 +1055,5 @@
     "systemd-libs",
     "wireplumber"
   ],
-  "snapshot": "2026/10/25"
+  "snapshot": "2026/10/26"
 }

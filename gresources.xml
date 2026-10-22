@@ -3,5 +3,24 @@
     <gresource prefix="/org/ldelossa/way-shell">
         <file>data/theme/way-shell-dark.css</file>
         <file>data/theme/way-shell-light.css</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-text-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-tag-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-settings-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-search-clipboard-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-pin-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-link-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-keyboard-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-incognito-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-incognito-disabled-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-image-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-folder-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-folder-code-legacy-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-file-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-duration-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-color-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-clipboard-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-clipboard-disabled-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-check-round-outline-symbolic.svg</file>
+        <file>data/clipboard/icons/scalable/actions/way-shell-character-symbolic.svg</file>
     </gresource>
 </gresources>

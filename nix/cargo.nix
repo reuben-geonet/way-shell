@@ -23,6 +23,7 @@
         gtk4
         gtk4-layer-shell
         libadwaita
+        libcanberra
         libpulseaudio
         networkmanager
         pipewire
@@ -46,7 +47,7 @@
         mkdir -p "$destination"
         cp "$crate/Cargo.toml" "$destination/Cargo.toml"
         (cd "$crate" && find . -type f \( -iname 'license*' -o -iname 'copying*' -o -iname 'copyright*' \) \
-          -exec cp --parents '{}' "$destination/" \;)
+          -exec cp --parents --no-preserve=mode '{}' "$destination/" \;)
       done
     '';
     packages.cargo-vendor = config.wayShell.cargoVendor;

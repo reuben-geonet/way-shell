@@ -1163,8 +1163,18 @@ statuspage {
 .shortcut-key { font-weight: bold; }
 .shortcuts-details { font-size: 0.9em; opacity: 0.8; }
 .shortcuts-status { padding: 8px; }
-.panel-shortcuts { color: @panel-button-color; background: transparent; border: none; }
-.panel-shortcuts:hover { background: @panel-button-hover; }
+#panel .panel-shortcuts,
+#panel .clipboard-indicator {
+  min-width: 24px;
+  min-height: 24px;
+  padding: 5px;
+  color: @panel-button-color;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+#panel .panel-shortcuts:hover,
+#panel .clipboard-indicator:hover { background: @panel-button-hover; }
 
 /* Frozen screenshot surfaces and their launch-monitor controls. */
 window.screenshot-overlay {
@@ -1290,3 +1300,110 @@ button.screenshot-cancel:hover {
 }
 #panel button.panel-recording:hover { background: #ffa348; }
 #panel button.panel-recording:disabled { opacity: 0.7; }
+
+/* Layout based on Copyous v2.1.2, Copyright Copyous contributors, GPL-3.0-or-later. */
+window.clipboard-surface, window.clipboard-surface > contents { background: transparent; }
+.clipboard-dialog { background:#36363a; color:#fff; border:1px solid alpha(#fff,.12); border-radius:18px; box-shadow:0 2px 4px alpha(#000,.35); }
+.clipboard-header { padding:15px 15px 0; }
+.clipboard-header > button { margin-left:12px; }
+.clipboard-header > button,.clipboard-footer > button { min-height:18px; padding:10px 24px; border:0; border-radius:999px; box-shadow:none; }
+.clipboard-header button.circular,.clipboard-footer button.circular { min-width:16px; min-height:16px; padding:11px; border:0; border-radius:999px; background:alpha(currentColor,.08); box-shadow:none; }
+.clipboard-header button.circular:hover,.clipboard-footer button.circular:hover { background:alpha(currentColor,.16); }
+.clipboard-header button.circular:active,.clipboard-footer button.circular:active { background:alpha(currentColor,.22); }
+.clipboard-header button.circular:checked,.clipboard-footer button.circular:checked { background:@accent_bg_color; color:@accent_fg_color; }
+.clipboard-header button.circular:checked:hover,.clipboard-footer button.circular:checked:hover { background:shade(@accent_bg_color,1.12); }
+.clipboard-search { background:#47474c; border-radius:999px; padding:2px; }
+.clipboard-search entry.search { background:transparent; border:0; box-shadow:none; min-height:24px; }
+.clipboard-search entry.search > image:first-child { opacity:0; min-width:0; -gtk-icon-size:1px; margin:0; }
+.clipboard-search entry.search text { background:transparent; border:0; box-shadow:none; }
+.clipboard-search > button,.clipboard-search > menubutton > button { background:transparent; color:inherit; border:0; box-shadow:none; }
+.clipboard-search > menubutton > button:hover { background:alpha(currentColor,.12); }
+.clipboard-search .clipboard-pinned { min-width:16px; min-height:16px; padding:6px; border-radius:99px; background:transparent; }
+.clipboard-search .clipboard-pinned:hover { background:alpha(currentColor,.16); }
+.clipboard-search .clipboard-pinned:checked { background:@accent_bg_color; color:@accent_fg_color; }
+.clipboard-search .clipboard-pinned:checked:hover { background:shade(@accent_bg_color,1.12); }
+.clipboard-items { background:transparent; padding:15px; }
+.clipboard-empty { opacity:.25; padding:24px; }
+.clipboard-empty-title { font-size:16pt; font-weight:bold; }
+.clipboard-items row { background:transparent; margin:0 12px 0 0; padding:0; border:0; outline:0; }
+.clipboard-items.horizontal row { margin-right:12px; }
+.clipboard-items.vertical row { margin:0 0 12px; }
+.clipboard-items row:last-child { margin:0; }
+.clipboard-items row:selected .clipboard-card { outline:2px solid #78aeed; outline-offset:-2px; }
+.clipboard-card { background:#47474c; border-radius:18px; padding:7px 10px 10px; color:#fff; }
+.clipboard-card:hover { background:mix(#47474c,#fff,.05); }
+.clipboard-card-header { min-height:24px; }
+.clipboard-card-header > button,.clipboard-card-header > menubutton > button { padding:6px; min-height:12px; min-width:12px; border:0; border-radius:99px; background:alpha(currentColor,.12); box-shadow:none; }
+.clipboard-card-header > menubutton > button { background:transparent; }
+.clipboard-card-header > button:hover,.clipboard-card-header > menubutton > button:hover { background:alpha(currentColor,.24); }
+.clipboard-card-header > button:active,.clipboard-card-header > menubutton > button:active,.clipboard-card-header > button:checked,.clipboard-card-header > menubutton > button:checked { background:@accent_bg_color; color:@accent_fg_color; }
+.clipboard-card-header > button:checked:hover,.clipboard-card-header > menubutton > button:checked:hover { background:shade(@accent_bg_color,1.12); }
+.clipboard-card-header > image { -gtk-icon-size:16px; }
+.clipboard-card-header > button image,.clipboard-card-header > menubutton > button image { -gtk-icon-size:12px; }
+.clipboard-kind { font-weight:bold; font-size:10pt; opacity:.6; }
+.clipboard-time { font-size:9pt; opacity:.55; }
+.clipboard-content { font-size:11pt; }
+.clipboard-content .monospace { font-family:monospace; font-size:10pt; }
+.clipboard-character { font-size:58pt; }
+.clipboard-footer { padding:9px; }
+.clipboard-tag-blue { color:#3584e4; }.clipboard-tag-teal { color:#2190a4; }.clipboard-tag-green { color:#3a944a; }.clipboard-tag-yellow { color:#c88800; }.clipboard-tag-orange { color:#ed5b00; }.clipboard-tag-red { color:#e62d42; }.clipboard-tag-pink { color:#d56199; }.clipboard-tag-purple { color:#9c3cbe; }.clipboard-tag-slate { color:#6f8396; }
+
+.clipboard-dialog {background:#fafafb;color:#222226;}.clipboard-card,.clipboard-search {background:#fff;color:#222226;}.clipboard-time {color:#777;}
+
+.clipboard-popover > contents { background:#36363a; color:#fff; border:1px solid alpha(currentColor,.12); border-radius:12px; padding:6px; box-shadow:0 2px 4px alpha(#000,.35); }
+.clipboard-filter-types { background:transparent; }
+.clipboard-filter-types row { padding:6px 8px; border-radius:8px; background:transparent; }
+.clipboard-filter-types row:hover { background:alpha(currentColor,.12); }
+.clipboard-filter-types row:selected { background:alpha(currentColor,.08); }
+.clipboard-filter-types row image { opacity:0; -gtk-icon-size:16px; }
+.clipboard-filter-types row:selected image { opacity:1; }
+.clipboard-tags > button { min-width:16px; min-height:16px; padding:4px; border:0; border-radius:999px; background:transparent; box-shadow:none; }
+.clipboard-tags > button:hover { background:alpha(currentColor,.12); }
+.clipboard-tag-button { min-width:18px; min-height:18px; padding:6px; border:2px solid transparent; border-radius:999px; background:transparent; box-shadow:none; }
+.clipboard-tag-button:hover { background:alpha(currentColor,.12); }
+.clipboard-tag-button:checked { border-color:currentColor; }
+.clipboard-tag-swatch { min-width:18px; min-height:18px; background:currentColor; border-radius:999px; }
+.clipboard-menu-action { font-weight:normal; padding:6px 12px; border:0; border-radius:8px; background:transparent; box-shadow:none; }
+.clipboard-menu-action:hover { background:alpha(currentColor,.12); }
+.clipboard-menu-action:active { background:alpha(currentColor,.18); }
+
+.clipboard-popover > contents {background:#fafafb;color:#222226;}
+
+.clipboard-wiggle-left {-gtk-icon-transform: rotate(-12deg);}
+.clipboard-wiggle-right {-gtk-icon-transform: rotate(12deg);}
+
+.clipboard-file-path {font-style:italic;}
+.clipboard-files-list {border-radius:8px; background:alpha(#000,.11);}
+.clipboard-files-list label {font-style:italic; padding:3px 9px; border-top:1px solid alpha(currentColor,.11);}
+.clipboard-files-list label:first-child {border-top:0;}
+
+.clipboard-status button {min-width:16px; min-height:16px; padding:0; margin:0;}
+
+.clipboard-image-preview,.clipboard-color-preview { border-radius:9px; background:alpha(#000,.11); }
+.clipboard-color-label { font-size:13pt; font-weight:800; padding:6px 12px; }
+.clipboard-link-caption { font-size:9pt; padding-top:3px; }
+.clipboard-text-preview { font-family:monospace; font-size:8pt; padding:5px 9px; border-radius:9px; background:alpha(#000,.11); }
+.clipboard-full-bleed { padding:0; }
+.clipboard-full-bleed .clipboard-card-header { margin:5px 7px; }
+.clipboard-full-bleed .clipboard-image-preview,.clipboard-full-bleed .clipboard-color-preview { border-radius:17px; }
+.clipboard-qr-preview { padding:12px; border-radius:12px; background:#fff; border:1px solid alpha(#000,.12); box-shadow:0 1px 2px alpha(#000,.15); }
+.clipboard-edit-dialog textview { padding:6px; }
+
+.clipboard-files-list,.clipboard-image-preview,.clipboard-color-preview,.clipboard-text-preview {background:alpha(#000,.05);}
+
+.clipboard-dialog scrollbar { background:transparent; border:0; padding:0; opacity:1; }
+.clipboard-dialog scrollbar range,.clipboard-dialog scrollbar trough { background:transparent; border:0; padding:0; margin:0; }
+.clipboard-dialog scrollbar slider { min-width:8px; min-height:8px; margin:0; padding:0; border:0; border-radius:8px; background:alpha(currentColor,.3); box-shadow:none; transition:none; }
+.clipboard-dialog scrollbar slider:hover { background:alpha(currentColor,.5); }
+.clipboard-dialog scrollbar slider:active { background:alpha(currentColor,.4); }
+.clipboard-items.horizontal.clipboard-scrollbars { padding-bottom:1px; }
+.clipboard-items.vertical.clipboard-scrollbars { padding-right:1px; }
+.clipboard-dialog scrollbar.horizontal { min-height:8px; margin:3px 18px; }
+.clipboard-dialog scrollbar.vertical { min-width:8px; margin:18px 3px 3px; }
+.clipboard-dialog.clipboard-show-header scrollbar.vertical { margin-top:3px; }
+.clipboard-dialog scrollbar.horizontal range,.clipboard-dialog scrollbar.horizontal trough { min-height:8px; }
+.clipboard-dialog scrollbar.vertical range,.clipboard-dialog scrollbar.vertical trough { min-width:8px; }
+
+.clipboard-card:hover {background:#f2f2f4;}
+
+.clipboard-search:focus-within { outline:2px solid alpha(@accent_bg_color,.5); outline-offset:-2px; }

@@ -27,6 +27,7 @@ install -m 644 "$source_dir/data/org.ldelossa.way-shell.gschema.xml" \
 install -m 644 "$source_dir/contrib/systemd/way-shell.service" \
     "$destination$unit_dir/way-shell.service"
 install -m 644 "$source_dir/LICENSE" "$destination$license_dir/LICENSE"
+install -m 644 "$source_dir/data/licenses/copyous.txt" "$destination$license_dir/copyous.txt"
 if [ -n "${DEPENDENCY_LICENSES:-}" ]; then
     install -d "$destination$license_dir/dependencies"
     cp -RL "$DEPENDENCY_LICENSES/." "$destination$license_dir/dependencies/"

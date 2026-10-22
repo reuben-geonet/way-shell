@@ -1,5 +1,7 @@
 //! All proxies belong to this queue and its separate Wayland connection.
+mod clipboard;
 use super::model::{Output, Seat, Toplevel, ignored, version};
+pub use clipboard::ClipboardOffer;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs::OpenOptions,
@@ -21,6 +23,8 @@ use wayland_protocols_wlr::{
 
 #[derive(Clone, Debug)]
 pub(super) enum Change {
+    Clipboard(ClipboardOffer),
+    ClipboardWrite(std::rc::Rc<std::os::fd::OwnedFd>, std::sync::Arc<Vec<u8>>),
     Ready,
     Output(Output),
     OutputRemoved(Output),
@@ -50,6 +54,7 @@ struct GammaEntry {
 
 #[derive(Default)]
 pub(super) struct State {
+    clipboard: clipboard::ClipboardState,
     outputs: BTreeMap<u32, OutputEntry>,
     seats: BTreeMap<u32, SeatEntry>,
     toplevels: BTreeMap<u64, TopEntry>,
@@ -67,6 +72,32 @@ pub(super) struct State {
 }
 
 impl State {
+    pub fn focused_toplevel(&self) -> Option<Toplevel> {
+        self.toplevels
+            .values()
+            .find(|entry| entry.pending.active)
+            .map(|entry| entry.pending.clone())
+    }
+    pub fn has_clipboard(&self) -> bool {
+        self.clipboard.available()
+    }
+    pub fn clipboard_offers(&self) -> Vec<ClipboardOffer> {
+        self.clipboard.current_offers()
+    }
+    pub fn read_clipboard(&self, id: u64, mime: &str) -> Result<std::os::fd::OwnedFd, String> {
+        self.clipboard.read(id, mime)
+    }
+    pub fn set_clipboard(
+        &mut self,
+        formats: Vec<(String, Vec<u8>)>,
+        primary: bool,
+        qh: &QueueHandle<Self>,
+    ) -> Result<(), String> {
+        self.clipboard.set(formats, primary, qh)
+    }
+    pub fn paste(&mut self, terminal: bool, qh: &QueueHandle<Self>) -> Result<(), String> {
+        self.clipboard.paste(terminal, qh)
+    }
     pub fn outputs(&self) -> Vec<Output> {
         self.outputs
             .values()
@@ -272,6 +303,14 @@ impl Dispatch<wl_registry::WlRegistry, ()> for State {
                 interface,
                 version: advertised,
             } => {
+                if state
+                    .clipboard
+                    .global(name, &interface, advertised, registry, qh)
+                {
+                    state.clipboard.seats(&state.seats, qh);
+                    state.changes.push(Change::Capabilities);
+                    return;
+                }
                 let maximum = match interface.as_str() {
                     "wl_output" => 4,
                     "wl_seat" => 7,
@@ -327,9 +366,11 @@ impl Dispatch<wl_registry::WlRegistry, ()> for State {
                     }
                     _ => {}
                 }
+                state.clipboard.seats(&state.seats, qh);
                 state.changes.push(Change::Capabilities);
             }
             wl_registry::Event::GlobalRemove { name } => {
+                state.clipboard.remove(name);
                 if let Some(entry) = state.outputs.remove(&name) {
                     state.failed_gamma_outputs.remove(&name);
                     let was_enabled = state.gamma_enabled();

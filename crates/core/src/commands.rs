@@ -46,6 +46,21 @@ pub const GROUPS: &[CommandGroup] = &[
     ("shortcuts", &[("show", 34), ("hide", 35), ("toggle", 36)]),
     ("screenshot", &[("show", 37), ("hide", 38), ("toggle", 39)]),
     ("screencast", &[("stop", 40)]),
+    (
+        "clipboard",
+        &[
+            ("show", 41),
+            ("hide", 42),
+            ("toggle", 43),
+            ("open", 44),
+            ("clear", 45),
+            ("clear-all", 46),
+            ("incognito-enable", 47),
+            ("incognito-disable", 48),
+            ("incognito-toggle", 49),
+            ("settings", 50),
+        ],
+    ),
 ];
 
 pub fn parse_volume(text: &str) -> Result<f32, String> {
@@ -113,6 +128,16 @@ pub fn describe(args: &[String]) -> Option<String> {
         "output-switcher" => "Choose an output".into(),
         "rename-switcher" => "Rename workspace".into(),
         "shortcuts" => "Show keyboard shortcuts".into(),
+        "clipboard" => match *action {
+            "clear" => "Clear unpinned and untagged clipboard history",
+            "clear-all" => "Clear all clipboard history",
+            "incognito-enable" => "Pause clipboard history",
+            "incognito-disable" => "Resume clipboard history",
+            "incognito-toggle" => "Toggle clipboard incognito mode",
+            "settings" => "Open clipboard preferences",
+            _ => "Open clipboard history",
+        }
+        .into(),
         "screenshot" => "Take a screenshot".into(),
         "screencast" => "Stop screen recording".into(),
         _ => return None,
@@ -136,7 +161,7 @@ mod tests {
                 assert!(describe(&args).is_some());
             }
         }
-        assert_eq!(opcodes.len(), 40);
+        assert_eq!(opcodes.len(), 50);
         assert!(describe(&["activities".into(), "bad".into()]).is_none());
     }
 }

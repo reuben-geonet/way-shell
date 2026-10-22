@@ -8,6 +8,7 @@ use gio::prelude::*;
 use glib::subclass::prelude::*;
 use gtk::prelude::*;
 pub use model::{Output, Seat, Toplevel};
+pub use protocol::ClipboardOffer;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -42,6 +43,9 @@ mod imp {
             static SIGNALS: OnceLock<Vec<glib::subclass::Signal>> = OnceLock::new();
             SIGNALS.get_or_init(|| {
                 vec![
+                    glib::subclass::Signal::builder("clipboard-offer")
+                        .param_types([ClipboardOffer::static_type()])
+                        .build(),
                     glib::subclass::Signal::builder("ready").build(),
                     glib::subclass::Signal::builder("output-changed")
                         .param_types([Output::static_type()])
@@ -127,6 +131,24 @@ impl WaylandService {
                 break;
             }
             match change {
+                protocol::Change::Clipboard(offer) => {
+                    self.emit_by_name::<()>("clipboard-offer", &[&offer])
+                }
+                protocol::Change::ClipboardWrite(fd, bytes) => {
+                    if let Ok(fd) = fd.try_clone() {
+                        let stream = gio::UnixOutputStream::take_fd(fd);
+                        glib::spawn_future_local(async move {
+                            let _ = glib::future_with_timeout(
+                                std::time::Duration::from_secs(10),
+                                stream.write_all_future(
+                                    bytes.as_ref().clone(),
+                                    glib::Priority::DEFAULT,
+                                ),
+                            )
+                            .await;
+                        });
+                    }
+                }
                 protocol::Change::Ready => {
                     self.imp().ready.set(true);
                     self.emit_by_name::<()>("ready", &[]);
@@ -194,6 +216,56 @@ impl WaylandService {
             .borrow()
             .as_ref()
             .map_or_else(Vec::new, |driver| driver.outputs())
+    }
+    pub fn focused_toplevel(&self) -> Option<Toplevel> {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .and_then(|driver| driver.focused_toplevel())
+    }
+    pub fn has_clipboard(&self) -> bool {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .is_some_and(|driver| driver.has_clipboard())
+    }
+    pub fn read_clipboard(&self, id: u64, mime: &str) -> Result<std::os::fd::OwnedFd, String> {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .ok_or("Wayland service has stopped")?
+            .read_clipboard(id, mime)
+    }
+    pub fn clipboard_offers(&self) -> Vec<ClipboardOffer> {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .map(|driver| driver.clipboard_offers())
+            .unwrap_or_default()
+    }
+    pub fn set_clipboard(
+        &self,
+        formats: Vec<(String, Vec<u8>)>,
+        primary: bool,
+    ) -> Result<(), String> {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .ok_or("Wayland service has stopped")?
+            .set_clipboard(formats, primary)
+    }
+    pub fn paste(&self, terminal: bool) -> Result<(), String> {
+        self.imp()
+            .driver
+            .borrow()
+            .as_ref()
+            .ok_or("Wayland service has stopped")?
+            .paste(terminal)
     }
     pub fn seats(&self) -> Vec<Seat> {
         self.imp()

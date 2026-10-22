@@ -11,6 +11,7 @@ fn main() {
         "gresources.xml",
         "data/theme/way-shell-dark.css",
         "data/theme/way-shell-light.css",
+        "data/clipboard/icons",
         "data/org.ldelossa.way-shell.gschema.xml",
     ] {
         println!("cargo:rerun-if-changed={}", root.join(path).display());

@@ -28,7 +28,7 @@ def main():
     replace_one(cargo, r'^(version = ")[^"]+("\n)', rf'\g<1>{version}\g<2>')
     lock = root / "Cargo.lock"
     data = lock.read_text()
-    for name in ("way-sh", "way-shell", "way-shell-core", "way-shell-shortcuts"):
+    for name in ("way-sh", "way-shell", "way-shell-core", "way-shell-shortcuts", "way-shell-clipboard"):
         pattern = rf'(\[\[package\]\]\nname = "{re.escape(name)}"\nversion = ")[^"]+("\n)'
         data, count = re.subn(pattern, rf'\g<1>{version}\g<2>', data)
         if count != 1:

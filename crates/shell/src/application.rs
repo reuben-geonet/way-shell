@@ -6,6 +6,7 @@ use crate::{
         audio::AudioService,
         bluetooth::BluetoothService,
         brightness::{BrightnessService, ControlKind},
+        clipboard::ClipboardService,
         clock::ClockService,
         ipc::{Command, DispatchFuture, IpcService},
         logind::LogindService,
@@ -25,6 +26,7 @@ use crate::{
     ui::{
         activities::{Activities, ActivitiesEvent},
         app_switcher::AppSwitcher,
+        clipboard::ClipboardDialog,
         dialog::Dialog,
         message_tray::{MessageTray, MessageTrayServices, window::MessageTrayEvent},
         osd::LevelOsd,
@@ -205,6 +207,7 @@ impl Configuration {
 }
 
 struct Services {
+    clipboard: Rc<ClipboardService>,
     recording: ScreencastService,
     wayland: WaylandService,
     manager: WindowManager,
@@ -279,7 +282,9 @@ impl Services {
             notifications.clone(),
             manager.clone(),
         );
+        let clipboard = ClipboardService::new(wayland.clone(), notifications.clone())?;
         Ok(Self {
+            clipboard,
             recording,
             shortcuts,
             wayland,
@@ -307,6 +312,7 @@ impl Services {
 }
 impl Drop for Services {
     fn drop(&mut self) {
+        self.clipboard.stop();
         self.recording.shutdown();
         if let Some(handler) = self.brightness_handler.take() {
             self.logind.disconnect(handler);
@@ -531,6 +537,12 @@ impl Runtime {
                     let desktop = this.ui.borrow().clone();
                     if let Some(desktop) = desktop {
                         match action {
+                            PanelAction::ToggleClipboard(monitor) => {
+                                if let Err(error) = desktop.clipboard.toggle(Some(&monitor)) {
+                                    desktop.clipboard.service.report(error);
+                                }
+                            }
+                            PanelAction::ClipboardSettings => desktop.clipboard.preferences(),
                             PanelAction::ToggleMessageTray => {
                                 desktop.message_tray.window().toggle()
                             }
@@ -571,6 +583,21 @@ impl Runtime {
             return ready(Err("Services have stopped".into()));
         };
         match command {
+            Command::ClipboardClear | Command::ClipboardClearAll => {
+                services
+                    .clipboard
+                    .clear(command == Command::ClipboardClearAll);
+                ready(Ok(()))
+            }
+            Command::ClipboardIncognitoEnable
+            | Command::ClipboardIncognitoDisable
+            | Command::ClipboardIncognitoToggle => {
+                ready(services.clipboard.incognito(match command {
+                    Command::ClipboardIncognitoEnable => true,
+                    Command::ClipboardIncognitoDisable => false,
+                    _ => !services.clipboard.settings.boolean("incognito"),
+                }))
+            }
             Command::ScreencastStop => {
                 services.recording.stop();
                 ready(Ok(()))
@@ -638,8 +665,10 @@ enum DesktopEvent {
     QuickSettings(QuickSettingsEvent),
     MessageTray(MessageTrayEvent),
     Shortcuts(PopupEvent),
+    Clipboard(bool),
 }
 struct Desktop {
+    clipboard: Rc<ClipboardDialog>,
     activities: Activities,
     app_switcher: Rc<AppSwitcher>,
     workspace: Rc<WorkspaceSwitcher>,
@@ -724,9 +753,15 @@ impl Desktop {
             services.recording.clone(),
             display,
         );
+        let clipboard = ClipboardDialog::new(
+            services.clipboard.clone(),
+            services.manager.clone(),
+            services.shortcuts.clone(),
+        )?;
         let panels = Panels::new(
             display,
             PanelServices {
+                clipboard: services.clipboard.clone(),
                 recording: services.recording.clone(),
                 clock: services.clock.clone(),
                 notifications: services.notifications.clone(),
@@ -745,6 +780,7 @@ impl Desktop {
             action,
         )?;
         let this = Rc::new(Self {
+            clipboard,
             screenshot,
             shortcuts,
             popup_handlers: RefCell::new(Vec::new()),
@@ -761,6 +797,12 @@ impl Desktop {
             events: RefCell::new(VecDeque::new()),
             publishing: Cell::new(false),
             stopped: Cell::new(false),
+        });
+        let weak = Rc::downgrade(&this);
+        this.clipboard.on_visible(move |visible| {
+            if let Some(this) = weak.upgrade() {
+                this.publish(DesktopEvent::Clipboard(visible));
+            }
         });
         let weak = Rc::downgrade(&this);
         this.screenshot.on_active(move |active| {
@@ -824,6 +866,7 @@ impl Desktop {
                 if window.is_visible()
                     && let Some(this) = weak.upgrade()
                 {
+                    this.clipboard.hide();
                     this.screenshot.cancel();
                     this.shortcuts.hide();
                 }
@@ -859,7 +902,31 @@ impl Desktop {
             ) {
                 self.screenshot.cancel();
             }
+            if matches!(
+                event,
+                DesktopEvent::Activities(ActivitiesEvent::WillShow)
+                    | DesktopEvent::QuickSettings(QuickSettingsEvent::WillShow)
+                    | DesktopEvent::MessageTray(MessageTrayEvent::WillShow)
+                    | DesktopEvent::Shortcuts(PopupEvent::Visible)
+            ) {
+                self.clipboard.hide();
+            }
             match event {
+                DesktopEvent::Clipboard(true) => {
+                    if self.dialog.window().is_visible() {
+                        self.clipboard.hide();
+                        continue;
+                    }
+                    self.screenshot.cancel();
+                    self.shortcuts.hide();
+                    self.activities.hide();
+                    self.quick_settings.window().hide();
+                    self.message_tray.window().hide();
+                    self.hide_selectors();
+                    self.rename.hide();
+                    self.app_switcher.hide();
+                }
+                DesktopEvent::Clipboard(false) => {}
                 DesktopEvent::Shortcuts(PopupEvent::Visible) => {
                     if self.dialog.window().is_visible() {
                         self.shortcuts.hide();
@@ -909,6 +976,7 @@ impl Desktop {
         self.publishing.set(false);
     }
     fn hide_for_screenshot(&self) {
+        self.clipboard.hide();
         self.shortcuts.hide();
         self.activities.hide();
         self.activities.visibility_controller().hide_now();
@@ -944,6 +1012,11 @@ impl Desktop {
             return Err("Desktop surfaces have closed".into());
         }
         match command {
+            Command::ClipboardShow => self.clipboard.show(None)?,
+            Command::ClipboardHide => self.clipboard.hide(),
+            Command::ClipboardToggle => self.clipboard.toggle(None)?,
+            Command::ClipboardOpen => self.clipboard.open()?,
+            Command::ClipboardSettings => self.clipboard.preferences(),
             Command::ScreenshotShow => self.screenshot.show(None)?,
             Command::ScreenshotHide => self.screenshot.cancel(),
             Command::ScreenshotToggle => self.screenshot.toggle()?,
@@ -998,6 +1071,7 @@ impl Desktop {
         for (window, handler) in self.popup_handlers.take() {
             window.disconnect(handler);
         }
+        self.clipboard.close();
         self.screenshot.close();
         self.shortcuts.close();
         self.panels.stop();
