@@ -33,11 +33,18 @@ pub enum WindowRole {
     PanelPopup,
     PanelPopupUnderlay,
     Screenshot,
+    Clipboard,
 }
 
 impl WindowRole {
     fn configure(self, window: &adw::Window) {
         let (namespace, layer, anchors, keyboard) = match self {
+            Self::Clipboard => (
+                "way-shell-clipboard",
+                Layer::Overlay,
+                &EDGES[..],
+                KeyboardMode::Exclusive,
+            ),
             Self::Screenshot => (
                 "way-shell-screenshot",
                 Layer::Overlay,
@@ -171,7 +178,7 @@ impl WindowRole {
                 window.set_margin(Edge::Top, 10);
                 window.set_size_request(440, 100);
             }
-            Self::Activities | Self::Dialog => {}
+            Self::Activities | Self::Dialog | Self::Clipboard => {}
         }
     }
 }

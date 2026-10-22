@@ -8,6 +8,7 @@ use std::{
 };
 
 type Callback = Rc<dyn Fn()>;
+type PointerCallback = Rc<dyn Fn(&gtk::gdk::Monitor, f64, f64)>;
 
 #[derive(Clone)]
 struct Underlay {
@@ -22,6 +23,7 @@ struct Inner {
     surfaces: RefCell<HashMap<gtk::gdk::Monitor, Underlay>>,
     dismiss: RefCell<Vec<Callback>>,
     on_closed: RefCell<Vec<Callback>>,
+    pointer: RefCell<Vec<PointerCallback>>,
     visible: Cell<bool>,
     generation: Cell<u64>,
     reconciling: Cell<bool>,
@@ -93,6 +95,20 @@ impl Inner {
                     button.set_hexpand(true);
                     button.set_vexpand(true);
                     window.window().set_content(Some(&button));
+                    let motion = gtk::EventControllerMotion::new();
+                    let weak = Rc::downgrade(self);
+                    let output = monitor.clone();
+                    motion.connect_enter(move |_, x, y| {
+                        if let Some(inner) = weak
+                            .upgrade()
+                            .filter(|inner| inner.visible.get() && !inner.closed.get())
+                        {
+                            for callback in inner.pointer.borrow().clone() {
+                                callback(&output, x, y);
+                            }
+                        }
+                    });
+                    button.add_controller(motion);
                     let weak = Rc::downgrade(self);
                     let output = monitor.clone();
                     button.connect_clicked(move |button| {
@@ -178,6 +194,7 @@ impl Inner {
             surface.window.close();
         }
         self.dismiss.borrow_mut().clear();
+        self.pointer.borrow_mut().clear();
         let callbacks = self.on_closed.take();
         for callback in callbacks {
             callback();
@@ -207,6 +224,7 @@ impl UnderlaySet {
             surfaces: RefCell::new(HashMap::new()),
             dismiss: RefCell::new(Vec::new()),
             on_closed: RefCell::new(Vec::new()),
+            pointer: RefCell::new(Vec::new()),
             visible: Cell::new(false),
             generation: Cell::new(0),
             reconciling: Cell::new(false),
@@ -252,6 +270,11 @@ impl UnderlaySet {
             self.0.dismiss.borrow_mut().push(Rc::new(callback));
         }
     }
+    pub fn on_pointer(&self, callback: impl Fn(&gtk::gdk::Monitor, f64, f64) + 'static) {
+        if !self.0.closed.get() {
+            self.0.pointer.borrow_mut().push(Rc::new(callback));
+        }
+    }
     pub(super) fn on_closed(&self, callback: impl Fn() + 'static) {
         if self.0.closed.get() {
             callback();
@@ -259,13 +282,13 @@ impl UnderlaySet {
             self.0.on_closed.borrow_mut().push(Rc::new(callback));
         }
     }
-    pub(super) fn present(&self) {
+    pub fn present(&self) {
         self.0.set_visible(true);
     }
-    pub(super) fn hide(&self) {
+    pub fn hide(&self) {
         self.0.set_visible(false);
     }
-    pub(super) fn close(&self) {
+    pub fn close(&self) {
         self.0.close();
     }
 }

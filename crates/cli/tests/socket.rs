@@ -243,3 +243,24 @@ fn screencast_stop_appends_opcode() {
     assert_eq!(bytes, 40u32.to_le_bytes());
     assert!(output.status.success());
 }
+
+#[test]
+fn clipboard_commands_append_opcodes() {
+    let server = Server::new();
+    for (action, opcode) in [
+        ("show", 41u32),
+        ("hide", 42),
+        ("toggle", 43),
+        ("open", 44),
+        ("clear", 45),
+        ("clear-all", 46),
+        ("incognito-enable", 47),
+        ("incognito-disable", 48),
+        ("incognito-toggle", 49),
+        ("settings", 50),
+    ] {
+        let (bytes, output) = server.exchange(&["clipboard", action], &[1, 0, 0, 0]);
+        assert_eq!(bytes, opcode.to_le_bytes());
+        status(output, 0);
+    }
+}

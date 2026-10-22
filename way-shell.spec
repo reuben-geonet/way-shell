@@ -2,7 +2,7 @@ Name: way-shell
 Version: 1.0.0
 Release: 1%{?dist}
 Summary: A Gnome-like desktop shell for Wayland compositors.
-License: AGPL-3.0-only AND Apache-2.0 AND MIT
+License: AGPL-3.0-only AND GPL-3.0-or-later AND Apache-2.0 AND MIT
 
 URL: https://github.com/ldelossa/way-shell
 Source0: %{name}-%{version}.tar.gz
@@ -15,6 +15,7 @@ BuildRequires: cargo-rpm-macros >= 26.4
 BuildRequires: systemd-rpm-macros
 BuildRequires: clang-devel
 
+BuildRequires: pkgconfig(libcanberra)
 BuildRequires: pkgconfig(libadwaita-1)
 BuildRequires: pkgconfig(wireplumber-0.5)
 BuildRequires: pkgconfig(libnm)

@@ -48,9 +48,10 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 target/debug/way-shell --help
 ```
 
-The workspace uses Rust 2024 and requires Rust 1.90 or newer. Its four crates are
+The workspace uses Rust 2024 and requires Rust 1.90 or newer. Its five crates are
 `way-shell-core` (protocols and shared logic), `way-shell` (services and GTK UI),
-`way-shell-shortcuts` (compositor shortcut parsing), and `way-sh` (the command-line
+`way-shell-shortcuts` (compositor shortcut parsing), `way-shell-clipboard`
+(clipboard content, actions and SQLite history), and `way-sh` (the command-line
 client, without GTK). `Cargo.lock` pins Rust
 dependencies; the Nix environment supplies the compiler and native libraries.
 See [the Nix commands below](#nix-commands) for packaging and optional developer
@@ -68,7 +69,9 @@ Way-Shell is licensed under `AGPL-3.0-only`. See [LICENSE](LICENSE) for the
 full license text. Packaged third-party dependency notices are installed under
 `share/licenses/way-shell/dependencies/`; Fedora packages also include
 `cargo-vendor.txt` and `cargo-licenses.txt` in `share/licenses/way-shell/`.
-The Apache-2.0 and MIT entries in package metadata describe bundled
+Clipboard settings, styles and icons adapted from Copyous are licensed under
+GPL-3.0-or-later; the installed `copyous.txt` includes its notice and license.
+The GPL-3.0-or-later, Apache-2.0 and MIT entries in package metadata describe bundled
 dependencies; they are not alternative licenses for Way-Shell.
 
 ## Video Demonstration
@@ -98,6 +101,7 @@ bindsym $mod+o exec way-sh output-switcher toggle
 bindsym $mod+w exec way-sh workspace-switcher toggle
 bindsym $mod+a exec way-sh workspace-app-switcher toggle
 bindsym $mod+r exec way-sh rename-switcher toggle
+bindsym $mod+v exec way-sh clipboard open
 ```
 
 ## Using Way-Shell
@@ -159,7 +163,7 @@ through its own startup configuration or manage the service with its session.
 
 Existing `org.ldelossa.way-shell` GSettings schemas and saved settings are retained.
 Use `gsettings list-recursively org.ldelossa.way-shell.system` to inspect system
-settings, and the `.panel`, `.notifications` and `.window-manager` schemas for
+settings, and the `.panel`, `.notifications`, `.clipboard` and `.window-manager` schemas for
 the other controls. The installed package compiles its schemas; `nix develop`
 provides a local schema directory for source builds.
 

@@ -72,6 +72,16 @@ pub enum Command {
     ScreenshotHide,
     ScreenshotToggle,
     ScreencastStop,
+    ClipboardShow,
+    ClipboardHide,
+    ClipboardToggle,
+    ClipboardOpen,
+    ClipboardClear,
+    ClipboardClearAll,
+    ClipboardIncognitoEnable,
+    ClipboardIncognitoDisable,
+    ClipboardIncognitoToggle,
+    ClipboardSettings,
 }
 impl Command {
     fn decode(bytes: &[u8]) -> Option<Self> {
@@ -117,6 +127,17 @@ impl Command {
             38 => Self::ScreenshotHide,
             39 => Self::ScreenshotToggle,
             40 => Self::ScreencastStop,
+            41 => Self::ClipboardShow,
+            42 => Self::ClipboardHide,
+            43 => Self::ClipboardToggle,
+            44 => Self::ClipboardOpen,
+            45 => Self::ClipboardClear,
+            46 => Self::ClipboardClearAll,
+            47 => Self::ClipboardIncognitoEnable,
+            48 => Self::ClipboardIncognitoDisable,
+            49 => Self::ClipboardIncognitoToggle,
+            50 => Self::ClipboardSettings,
+
             // Opcode zero historically decoded but had no successful operation.
             _ => return None,
         })

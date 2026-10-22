@@ -1290,3 +1290,40 @@ button.screenshot-cancel:hover {
 }
 #panel button.panel-recording:hover { background: #ffa348; }
 #panel button.panel-recording:disabled { opacity: 0.7; }
+
+/* Layout based on Copyous v2.1.2, Copyright Copyous contributors, GPL-3.0-or-later. */
+window.clipboard-surface, window.clipboard-surface > contents { background: transparent; }
+.clipboard-dialog { background:#36363a; color:#fff; border:1px solid alpha(#fff,.12); border-radius:18px; box-shadow:0 2px 4px alpha(#000,.35); }
+.clipboard-header { padding:15px 15px 0; }
+.clipboard-header button,.clipboard-footer button { min-height:24px; }
+.clipboard-search { background:#47474c; border-radius:99px; }
+.clipboard-search entry.search { background:transparent; border:0; box-shadow:none; min-height:24px; }
+.clipboard-search entry.search > image:first-child { opacity:0; min-width:0; -gtk-icon-size:1px; margin:0; }
+.clipboard-search entry.search text { background:transparent; border:0; box-shadow:none; }
+.clipboard-search button { background:transparent; }
+.clipboard-items { background:transparent; padding:15px; }
+.clipboard-items row { background:transparent; margin:0 0 6px 0; padding:0 6px 0 0; border:0; outline:0; }
+.clipboard-items row:selected .clipboard-card { outline:2px solid #78aeed; outline-offset:-2px; }
+.clipboard-card { background:#47474c; border-radius:18px; padding:7px 10px 10px; color:#fff; }
+.clipboard-card:hover { background:mix(#47474c,#fff,.05); }
+.clipboard-card-header { min-height:24px; }
+.clipboard-card-header button { padding:3px; min-height:12px; min-width:12px; border-radius:99px; background:alpha(#fff,.12); }
+.clipboard-card-header image { -gtk-icon-size:12px; }
+.clipboard-kind { font-weight:bold; font-size:10pt; opacity:.6; }
+.clipboard-time { font-size:9pt; opacity:.55; }
+.clipboard-content { font-size:11pt; }
+.clipboard-content.monospace { font-family:monospace; font-size:10pt; }
+.clipboard-character { font-size:58pt; }
+.clipboard-footer { padding:9px; }
+.clipboard-tag-blue { color:#3584e4; }.clipboard-tag-teal { color:#2190a4; }.clipboard-tag-green { color:#3a944a; }.clipboard-tag-yellow { color:#c88800; }.clipboard-tag-orange { color:#ed5b00; }.clipboard-tag-red { color:#e62d42; }.clipboard-tag-pink { color:#d56199; }.clipboard-tag-purple { color:#9141ac; }.clipboard-tag-slate { color:#6f8396; }
+
+.clipboard-dialog {background:#fafafb;color:#222226;}.clipboard-card,.clipboard-search {background:#fff;color:#222226;}.clipboard-time {color:#777;}
+
+.clipboard-wiggle-left {-gtk-icon-transform: rotate(-12deg);}
+.clipboard-wiggle-right {-gtk-icon-transform: rotate(12deg);}
+
+.clipboard-file-path {font-style:italic;}
+.clipboard-files-list {border-radius:8px; background:alpha(currentColor,.06);}
+.clipboard-files-list label {padding:3px 6px; border-bottom:1px solid alpha(currentColor,.12);}
+
+.clipboard-status button {min-width:16px; min-height:16px; padding:0; margin:0;}

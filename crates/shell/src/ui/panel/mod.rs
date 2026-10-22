@@ -1,4 +1,5 @@
 //! One owned panel for each live GDK monitor.
+mod clipboard;
 pub mod clock;
 pub(super) mod recording;
 pub mod status;
@@ -28,6 +29,7 @@ use std::{
 
 #[derive(Clone)]
 pub struct PanelServices {
+    pub clipboard: Rc<crate::services::clipboard::ClipboardService>,
     pub recording: ScreencastService,
     pub clock: ClockService,
     pub notifications: NotificationsService,
@@ -39,12 +41,15 @@ pub struct PanelServices {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PanelAction {
+    ToggleClipboard(gtk::gdk::Monitor),
+    ClipboardSettings,
     ToggleMessageTray,
     ToggleQuickSettings,
     ToggleShortcuts(gtk::gdk::Monitor),
 }
 
 struct Panel {
+    _clipboard: clipboard::ClipboardIndicator,
     window: LayerWindow,
     container: gtk::CenterBox,
     clock: PanelClock,
@@ -99,6 +104,19 @@ impl Panel {
             }
         });
         let recording = RecordingIndicator::new(owner.services.recording.clone());
+        let action = owner.action.clone();
+        let output = monitor.clone();
+        let clipboard = clipboard::ClipboardIndicator::new(
+            owner.services.clipboard.clone(),
+            move |preferences| {
+                action(if preferences {
+                    PanelAction::ClipboardSettings
+                } else {
+                    PanelAction::ToggleClipboard(output.clone())
+                })
+            },
+        );
+        right.append(clipboard.widget());
         right.append(recording.widget());
         right.append(&help);
         right.append(status.widget());
@@ -108,6 +126,7 @@ impl Panel {
         }
         window.window().set_content(Some(&container));
         let panel = Self {
+            _clipboard: clipboard,
             window,
             container,
             clock,
