@@ -1,5 +1,6 @@
 //! Grouped, scrollable shortcut sheet, inspired by nwg-shell-config's help window.
 use super::panel_popup::{PanelPopup, PopupEvent};
+use super::progress::Progress;
 use crate::services::{
     shortcuts::{ShortcutsService, Status},
     wm::WindowManager,
@@ -27,6 +28,7 @@ pub struct ShortcutsSheet {
     subscription: Cell<Option<u64>>,
     scroll_restore: RefCell<Option<glib::SourceId>>,
     stopped: Cell<bool>,
+    progress: Progress,
 }
 impl ShortcutsSheet {
     pub fn new(service: Rc<ShortcutsService>, manager: WindowManager) -> Result<Rc<Self>, String> {
@@ -45,7 +47,7 @@ impl ShortcutsSheet {
             680,
         )?;
         popup.window().add_css_class("shortcuts-sheet");
-        let this = Rc::new(Self {
+        let this = Rc::new_cyclic(|weak: &std::rc::Weak<Self>| Self {
             popup,
             service,
             manager,
@@ -54,6 +56,14 @@ impl ShortcutsSheet {
             subscription: Cell::new(None),
             scroll_restore: RefCell::new(None),
             stopped: Cell::new(false),
+            progress: Progress::new({
+                let weak = weak.clone();
+                move |_| {
+                    if let Some(this) = weak.upgrade() {
+                        this.render();
+                    }
+                }
+            }),
         });
         let weak = Rc::downgrade(&this);
         let id = this.service.on_changed(move || {
@@ -66,8 +76,17 @@ impl ShortcutsSheet {
         this.popup.on_event(move |event| {
             if let Some(this) = weak.upgrade() {
                 match event {
-                    PopupEvent::Visible => this.service.set_visible(true),
-                    PopupEvent::Hidden => this.service.set_visible(false),
+                    PopupEvent::Visible => {
+                        this.service.set_visible(true);
+                        this.render();
+                    }
+                    PopupEvent::Hidden => {
+                        this.progress.clear();
+                        if let Some(source) = this.scroll_restore.borrow_mut().take() {
+                            source.remove();
+                        }
+                        this.service.set_visible(false);
+                    }
                     PopupEvent::Dismissed => (),
                 }
             }
@@ -119,6 +138,20 @@ impl ShortcutsSheet {
         if self.stopped.get() {
             return;
         }
+        let mut data = self.service.data();
+        if !self.popup.is_visible()
+            || data.status != Status::Loading && data.status != Status::Current
+            || data.reload_failed
+            || !data.snapshot.diagnostics.is_empty()
+        {
+            self.progress.clear();
+        } else {
+            self.progress.set_busy(data.status == Status::Loading);
+        }
+        let holding = data.status == Status::Current && self.progress.visible();
+        if holding {
+            data.rows.clear();
+        }
         let scroll = self.scroller.vadjustment().value();
         if let Some(source) = self.scroll_restore.borrow_mut().take() {
             source.remove();
@@ -126,14 +159,18 @@ impl ShortcutsSheet {
         while let Some(child) = self.rows.first_child() {
             self.rows.remove(&child);
         }
-        let data = self.service.data();
         let explanation = label(
             "Saved configuration. Sway edits may need a compositor reload before they take effect.",
         );
         explanation.add_css_class("dim-label");
         self.rows.append(&explanation);
-        let status = match data.status {
-            Status::Loading => Some("Loading configured shortcuts…"),
+        let status = match if holding {
+            Status::Loading
+        } else {
+            data.status
+        } {
+            Status::Loading if self.progress.visible() => Some("Loading configured shortcuts…"),
+            Status::Loading => None,
             Status::Unavailable => {
                 Some("Configuration is unavailable. Internal navigation is still available below.")
             }
@@ -148,8 +185,9 @@ impl ShortcutsSheet {
             }
             Status::Current => None,
         };
-        if let Some(status) = status {
-            let widget = label(status);
+        {
+            let widget = label(status.unwrap_or(" "));
+            widget.set_opacity(if status.is_some() { 1.0 } else { 0.0 });
             widget.add_css_class("shortcuts-status");
             self.rows.append(&widget);
         }
@@ -282,6 +320,7 @@ impl ShortcutsSheet {
         if self.stopped.replace(true) {
             return;
         }
+        self.progress.clear();
         if let Some(id) = self.subscription.take() {
             self.service.disconnect(id);
         }
