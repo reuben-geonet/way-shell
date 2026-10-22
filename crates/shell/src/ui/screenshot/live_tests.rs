@@ -260,6 +260,19 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     display.clipboard().set_text("clipboard untouched");
     let expected = screenshot.preview.borrow().as_ref().unwrap().images[launch].clone();
     screenshot.capture();
+    assert!(
+        !screenshot
+            .controls
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .capture
+            .is_sensitive()
+    );
+    assert_ne!(
+        screenshot.controls.borrow().as_ref().unwrap().status.text(),
+        "Saving…"
+    );
     screenshot.capture();
     screenshot.cancel();
     assert!(screenshot.is_active());
@@ -363,6 +376,106 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         pasted.extend_from_slice(&bytes);
     }
     assert!(pasted.starts_with(b"\x89PNG\r\n\x1a\n"));
+    // Exercise the presentation independently of disk speed. Real encoding,
+    // saving, clipboard ownership and retry are checked above.
+    for outcome in ["success", "error", "clipboard error", "dismissal"] {
+        screenshot.show(None).unwrap();
+        wait(&context, || {
+            screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+        });
+        let id = screenshot.lifecycle.borrow().generation;
+        screenshot
+            .lifecycle
+            .borrow_mut()
+            .transition(id, Phase::Preview, Phase::Exporting);
+        screenshot.refresh();
+        let height = screenshot
+            .controls
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .root
+            .measure(gtk::Orientation::Vertical, -1);
+        screenshot.progress.begin();
+        context.block_on(glib::timeout_future(Duration::from_millis(320)));
+        assert_eq!(
+            screenshot.controls.borrow().as_ref().unwrap().status.text(),
+            "Saving…"
+        );
+        assert_eq!(
+            screenshot
+                .controls
+                .borrow()
+                .as_ref()
+                .unwrap()
+                .root
+                .measure(gtk::Orientation::Vertical, -1),
+            height
+        );
+        if outcome == "error" {
+            screenshot.export_failed(id, "Immediate save failure");
+            assert!(!screenshot.progress.visible());
+            assert_eq!(
+                screenshot.controls.borrow().as_ref().unwrap().status.text(),
+                "Immediate save failure"
+            );
+            assert!(
+                screenshot
+                    .controls
+                    .borrow()
+                    .as_ref()
+                    .unwrap()
+                    .capture
+                    .is_sensitive()
+            );
+            screenshot.cancel();
+        } else {
+            let before = notifications.state().notifications.len();
+            let copied = if outcome == "clipboard error" {
+                Err("Immediate clipboard failure".to_owned())
+            } else {
+                Ok(false)
+            };
+            screenshot.complete_export(id, &files[0].path(), copied);
+            let published = notifications.state().notifications;
+            assert_eq!(published[before].request.summary, "Screenshot saved");
+            assert!(
+                published[before]
+                    .request
+                    .body
+                    .contains(directory.to_str().unwrap())
+            );
+            if outcome == "clipboard error" {
+                assert_eq!(published.len(), before + 2);
+                assert_eq!(
+                    published[before + 1].request.summary,
+                    "Screenshot clipboard copy failed"
+                );
+                assert!(!screenshot.is_active());
+            } else {
+                assert_eq!(published.len(), before + 1);
+                context.block_on(glib::timeout_future(Duration::from_millis(100)));
+                assert!(screenshot.is_active());
+                assert!(screenshot.progress.visible());
+                if outcome == "dismissal" {
+                    screenshot.cancel();
+                    screenshot.show(None).unwrap();
+                    wait(&context, || {
+                        screenshot.lifecycle.borrow().phase == Some(Phase::Preview)
+                    });
+                    context.block_on(glib::timeout_future(Duration::from_millis(520)));
+                    assert!(screenshot.is_active());
+                    screenshot.cancel();
+                }
+            }
+            wait(&context, || !screenshot.is_active());
+            assert!(screenshot.surfaces.borrow().is_empty());
+            assert_eq!(notifications.state().notifications, published);
+        }
+        context.block_on(glib::timeout_future(Duration::from_millis(520)));
+        assert!(!screenshot.is_active());
+        assert!(!screenshot.progress.visible());
+    }
     // Exercise real wf-recorder output, not a mock capture pipeline. The
     // surrounding compositor and audio server must belong to this test run.
     assert!(screencast::available());
@@ -472,6 +585,22 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         recording.stop();
         recording.stop();
         assert_eq!(recording.phase(), screencast::Phase::Stopping);
+        let frozen = recording.elapsed();
+        let first_panel = crate::ui::panel::recording::RecordingIndicator::new(recording.clone());
+        let rebuilt_panel = crate::ui::panel::recording::RecordingIndicator::new(recording.clone());
+        for panel in [&first_panel, &rebuilt_panel] {
+            assert!(!panel.widget().is_sensitive());
+            let label = panel
+                .widget()
+                .child()
+                .unwrap()
+                .first_child()
+                .unwrap()
+                .downcast::<gtk::Label>()
+                .unwrap();
+            assert_eq!(label.text(), frozen);
+            assert!(!label.text().contains("Saving"));
+        }
         wait(&context, || !recording.is_active());
         let files: Vec<_> = std::fs::read_dir(&videos)
             .unwrap()

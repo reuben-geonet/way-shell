@@ -1,4 +1,5 @@
 //! One cancellable frozen desktop session, owned by Desktop.
+use super::progress::Progress;
 use crate::{
     services::{
         notifications::NotificationsService,
@@ -137,6 +138,8 @@ pub struct Screenshot {
     active: RefCell<Option<ActiveCallback>>,
     stopped: Cell<bool>,
     dismissed: Cell<bool>,
+    progress: Progress,
+    saved: Cell<bool>,
 }
 impl Screenshot {
     pub fn new(
@@ -146,7 +149,7 @@ impl Screenshot {
         recording: ScreencastService,
         display: &gdk::Display,
     ) -> Rc<Self> {
-        let this = Rc::new(Self {
+        let this = Rc::new_cyclic(|weak: &std::rc::Weak<Self>| Self {
             manager,
             settings,
             notifications,
@@ -165,6 +168,18 @@ impl Screenshot {
             active: RefCell::new(None),
             stopped: Cell::new(false),
             dismissed: Cell::new(false),
+            progress: Progress::new({
+                let weak = weak.clone();
+                move |visible| {
+                    if let Some(this) = weak.upgrade()
+                        && this.lifecycle.borrow().phase == Some(Phase::Exporting)
+                        && !this.dismissed.get()
+                    {
+                        this.status(if visible { "Saving…" } else { "" });
+                    }
+                }
+            }),
+            saved: Cell::new(false),
         });
         let weak = Rc::downgrade(&this);
         let handler = display.monitors().connect_items_changed(move |_, _, _, _| {
@@ -271,6 +286,11 @@ impl Screenshot {
         // Capture commits an export. Hiding can release the overlay immediately,
         // but a second session must wait for the accepted file write to finish.
         if self.lifecycle.borrow().phase == Some(Phase::Exporting) {
+            if self.saved.get() {
+                self.reset();
+                return;
+            }
+            self.progress.clear();
             if !self.dismissed.replace(true) {
                 self.controls.take();
                 self.surfaces.take();
@@ -287,6 +307,8 @@ impl Screenshot {
         self.reset();
     }
     fn reset(&self) {
+        self.progress.clear();
+        self.saved.set(false);
         let active = self.is_active() && !self.dismissed.replace(false);
         self.lifecycle.borrow_mut().cancel();
         if let Some(task) = self.task.take() {
@@ -502,7 +524,8 @@ impl Screenshot {
         status.set_wrap(true);
         status.set_max_width_chars(38);
         status.add_css_class("screenshot-status");
-        status.set_visible(false);
+        status.set_text(" ");
+        status.set_opacity(0.0);
         let cancel = gtk::Button::from_icon_name("window-close-symbolic");
         cancel.add_css_class("screenshot-cancel");
         cancel.set_halign(gtk::Align::End);
@@ -673,8 +696,12 @@ impl Screenshot {
                 } else {
                     target.as_ref().err().map_or("", String::as_str)
                 };
-                controls.status.set_text(error);
-                controls.status.set_visible(!error.is_empty());
+                controls
+                    .status
+                    .set_text(if error.is_empty() { " " } else { error });
+                controls
+                    .status
+                    .set_opacity(if error.is_empty() { 0.0 } else { 1.0 });
             }
             if let Ok((width, height, _)) = size {
                 let name = match preview.selection.mode {
@@ -1046,7 +1073,8 @@ impl Screenshot {
             (p.layout.clone(), p.images.clone(), p.selection.clone())
         };
         self.refresh();
-        self.status("Saving…");
+        self.status("");
+        self.progress.begin();
         let clipboard = self.display.clipboard();
         let weak = Rc::downgrade(self);
         let stamp = glib::DateTime::now_local()
@@ -1093,18 +1121,7 @@ impl Screenshot {
                 this.task.borrow_mut().take();
                 match saved {
                     Ok(path) => {
-                        this.reset();
-                        let body = match &copied {
-                            Ok(true) => {
-                                format!("Saved to {} and copied to clipboard", path.display())
-                            }
-                            Ok(false) => format!("Saved to {}", path.display()),
-                            Err(_) => format!("Saved to {}; clipboard copy failed", path.display()),
-                        };
-                        this.notify("Screenshot saved", &body, Some(&path));
-                        if let Err(error) = copied {
-                            this.notify("Screenshot clipboard copy failed", &error, None);
-                        }
+                        this.complete_export(id, &path, copied);
                     }
                     Err(error) => {
                         let status = match copied {
@@ -1123,11 +1140,48 @@ impl Screenshot {
     }
     fn status(&self, message: &str) {
         if let Some(c) = self.controls.borrow().as_ref() {
-            c.status.set_text(message);
-            c.status.set_visible(!message.is_empty());
+            c.status
+                .set_text(if message.is_empty() { " " } else { message });
+            c.status
+                .set_opacity(if message.is_empty() { 0.0 } else { 1.0 });
+        }
+    }
+    fn complete_export(
+        self: &Rc<Self>,
+        id: u64,
+        path: &std::path::Path,
+        copied: Result<bool, String>,
+    ) {
+        if !self.current(id) || self.saved.replace(true) {
+            return;
+        }
+        let immediate = self.dismissed.get() || copied.is_err();
+        let body = match &copied {
+            Ok(true) => format!("Saved to {} and copied to clipboard", path.display()),
+            Ok(false) => format!("Saved to {}", path.display()),
+            Err(_) => format!("Saved to {}; clipboard copy failed", path.display()),
+        };
+        self.notify("Screenshot saved", &body, Some(path));
+        if let Err(error) = copied {
+            self.notify("Screenshot clipboard copy failed", &error, None);
+        }
+        // Notifications follow the file worker; only the overlay may wait.
+        if !self.current(id) {
+            return;
+        }
+        if immediate {
+            self.reset();
+        } else {
+            let weak = Rc::downgrade(self);
+            self.progress.finish(move || {
+                if let Some(this) = weak.upgrade().filter(|t| t.current(id)) {
+                    this.reset();
+                }
+            });
         }
     }
     fn export_failed(&self, id: u64, error: &str) {
+        self.progress.clear();
         if self.dismissed.get() {
             self.reset();
             self.notify("Screenshot could not be saved", error, None);
