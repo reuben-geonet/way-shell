@@ -344,6 +344,110 @@ fn watch_directories(snapshot: &Snapshot) -> Vec<PathBuf> {
 mod tests {
     use super::*;
     #[test]
+    #[ignore = "requires an isolated Wayland compositor"]
+    fn shortcut_loading_navigation_minimum_errors_and_reopening() {
+        use crate::ui::shortcuts::ShortcutsSheet;
+        use gtk::prelude::*;
+        adw::init().unwrap();
+        crate::resources::get();
+        let context = glib::MainContext::default();
+        let pause = |ms| context.block_on(glib::timeout_future(Duration::from_millis(ms)));
+        let manager: WindowManager = glib::Object::new();
+        let service = ShortcutsService::with_context(
+            manager.clone(),
+            gio::Settings::new("org.ldelossa.way-shell.window-manager"),
+            Context::default(),
+        );
+        // Drive worker publications explicitly so timings do not depend on disk speed.
+        service.dirty.set(false);
+        let sheet = ShortcutsSheet::new(service.clone(), manager).unwrap();
+        let display = gtk::gdk::Display::default().unwrap();
+        let monitor = display
+            .monitors()
+            .item(0)
+            .unwrap()
+            .downcast::<gtk::gdk::Monitor>()
+            .unwrap();
+        fn labels(widget: &gtk::Widget) -> Vec<String> {
+            let mut texts = Vec::new();
+            // GTK only parents an expander's content while it is expanded.
+            if let Some(expander) = widget.downcast_ref::<gtk::Expander>()
+                && let Some(child) = expander.child()
+            {
+                texts.extend(labels(&child));
+            }
+            if let Some(label) = widget.downcast_ref::<gtk::Label>()
+                && label.opacity() > 0.0
+            {
+                texts.push(label.text().to_string());
+            }
+            for child in std::iter::successors(widget.first_child(), |w| w.next_sibling()) {
+                texts.extend(labels(&child));
+            }
+            texts
+        }
+        let texts = || labels(sheet.popup().window().upcast_ref());
+        let loading = || texts().iter().any(|s| s.contains("Loading configured"));
+        let navigation = || texts().iter().any(|s| s == "Inside Way-Shell");
+        let snapshot = way_shell_shortcuts::parse_text(
+            Compositor::Sway,
+            Path::new("/config"),
+            "bindsym Mod4+A focus left",
+            &Context::default(),
+        );
+        let good = reconcile(Some("/config".into()), snapshot, vec![], &mut None, false);
+        let publish = |data: Data| {
+            service.data.replace(data);
+            service.publish();
+        };
+        sheet.popup().show(&monitor).unwrap();
+        assert!(navigation());
+        assert!(!loading());
+        pause(40);
+        publish(good.clone());
+        pause(320);
+        assert!(!loading());
+        assert!(
+            texts()
+                .iter()
+                .any(|s| s == "A" || s.contains("focus left") || s.contains("Focus left"))
+        );
+        publish(Data::default());
+        pause(320);
+        assert!(loading());
+        assert!(navigation());
+        publish(good.clone());
+        pause(100);
+        assert!(loading());
+        pause(420);
+        assert!(!loading());
+        publish(Data::default());
+        pause(320);
+        publish(Data {
+            status: Status::Unavailable,
+            messages: vec!["Immediate fixture failure".into()],
+            ..Data::default()
+        });
+        assert!(!loading());
+        assert!(texts().iter().any(|s| s == "Retry"));
+        assert!(
+            texts()
+                .iter()
+                .any(|s| s.contains("Immediate fixture failure"))
+        );
+        publish(Data::default());
+        pause(320);
+        sheet.hide();
+        publish(good);
+        pause(520);
+        assert!(!sheet.popup().is_visible());
+        sheet.popup().show(&monitor).unwrap();
+        assert!(!loading());
+        assert!(navigation());
+        sheet.close();
+        service.stop();
+    }
+    #[test]
     fn stale_only_for_the_same_source_and_recovers() {
         let path = PathBuf::from("/config");
         let good = way_shell_shortcuts::parse_text(
