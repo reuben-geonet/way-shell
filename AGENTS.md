@@ -1,6 +1,6 @@
 ## Design Guidance
 
-Build only what the current requirement needs. Prefer standard tools and straightforward code; introduce abstractions, dependencies and configuration only for a concrete benefit. Treat every helper and test as an ongoing maintenance cost. Document temporary workarounds with the affected versions and removal conditions.
+Build only what the current requirement needs. Prefer standard tools and straightforward code; introduce abstractions, dependencies and configuration only for a concrete benefit. Treat every helper and test as an ongoing maintenance cost.
 
 For loading feedback, retain useful content and stable controls during background work. Delay optional progress by 300 ms; operations that finish sooner show no indicator. Once shown, keep progress visible for at least 500 ms. Successful presentation changes may wait for that minimum, but underlying work, input guards, cancellation and errors follow actual operation state immediately. Errors bypass presentation holds. Reserve space so progress does not move labels, buttons or headings. Closing or dismissing a surface must clear its presentation timers, and stale callbacks must never reopen it or change a newer operation. Keep recording/privacy indicators, actual availability changes, direct volume/brightness feedback and notifications immediate. Verify both fast and slow operations, minimum visibility, errors, cancellation, overlapping operations and timer cleanup on dismissal and teardown.
 
@@ -27,3 +27,17 @@ For loading feedback, retain useful content and stable controls during backgroun
 
 Use [Scoped Commits](https://scopedcommits.com/): `<scope>: <description>`.
 Choose the affected subsystem as the scope, such as `nix`, and keep descriptions concise.
+
+## Documentation
+
+Do not add or create additional documentation unless explicitly requested. Update existing documentation references only when the changed surface requires it.
+
+## Known Issues
+
+When a bug appears specific to an upstream dependency or version, investigate whether upstream already resolves it. Prefer retaining an otherwise correct implementation when the upstream fix meets deployment requirements.
+
+Also consider whether a proportionate implementation change would resolve the issue and provide concrete project benefits beyond avoiding the upstream bug. Assess whether those benefits justify the added complexity, maintenance cost and behaviour changes.
+
+Discuss the evidence, options and trade-offs with the user, and obtain explicit agreement before implementing a local change. Keep compatibility workarounds narrowly scoped and document the affected versions and removal conditions.
+
+- Sway 1.11 can leave stale monitor information after Quick Settings moves between displays, causing the screenshot toolbar to reopen on a previously used monitor. Sway 1.12 resolves this issue; retain the current implementation rather than adding a shell workaround.
