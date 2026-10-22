@@ -499,7 +499,7 @@ mod tests {
     #[test]
     #[ignore = "requires an isolated Wayland compositor"]
     fn tray_icons_reserve_space_retain_replacements_and_reject_stale_results() {
-        adw::init().unwrap();
+        crate::ui::init_test_display();
         let context = glib::MainContext::default();
         let directory = std::env::temp_dir().join(format!(
             "way-shell-tray-presentation-{}",

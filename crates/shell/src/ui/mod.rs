@@ -16,3 +16,24 @@ pub mod switcher;
 pub mod tray_support;
 pub mod window;
 pub mod workspace_switcher;
+
+#[cfg(test)]
+pub(crate) fn init_test_display() {
+    adw::init().unwrap();
+    crate::resources::get();
+    let display = gtk::gdk::Display::default().unwrap();
+    let provider = gtk::CssProvider::new();
+    provider.load_from_path(
+        std::env::var_os("WAY_SHELL_SCREENSHOT_TEST_CSS")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../data/theme/way-shell-dark.css")
+            }),
+    );
+    gtk::style_context_add_provider_for_display(
+        &display,
+        &provider,
+        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
+}

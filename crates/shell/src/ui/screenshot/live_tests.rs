@@ -658,9 +658,24 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     );
     if backend == Backend::Sway {
         use std::io::{Read, Write};
+        let scale = screenshot
+            .preview
+            .borrow()
+            .as_ref()
+            .unwrap()
+            .layout
+            .outputs
+            .iter()
+            .find(|output| output.connector == "HEADLESS-1")
+            .unwrap()
+            .scale;
+        let command = format!(
+            "output HEADLESS-1 scale {}",
+            if scale == 1.25 { 1.0 } else { 1.25 }
+        );
         let mut peer = std::os::unix::net::UnixStream::connect(manager.socket_path()).unwrap();
         peer.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
-        peer.write_all(&way_shell_core::sway::encode(0, b"output HEADLESS-1 scale 1.25").unwrap())
+        peer.write_all(&way_shell_core::sway::encode(0, command.as_bytes()).unwrap())
             .unwrap();
         let mut header = [0; 14];
         peer.read_exact(&mut header).unwrap();
