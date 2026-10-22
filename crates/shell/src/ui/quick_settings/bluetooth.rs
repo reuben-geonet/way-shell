@@ -1,6 +1,7 @@
 //! Persistent Bluetooth rows, content-sized layout and recoverable operation errors.
 use super::{QuickSettingsWindow, grid::GridButton, menu::Menu};
 use crate::services::bluetooth::{BluetoothDevice, BluetoothService, settings};
+use crate::ui::progress::Progress;
 use gtk::{accessible::Property, prelude::*};
 use std::{
     cell::{Cell, RefCell},
@@ -12,7 +13,7 @@ struct Row {
     icon: gtk::Image,
     name: gtk::Label,
     action: gtk::Label,
-    spinner: gtk::Spinner,
+    progress: Progress,
 }
 /// Paired devices shown before the device list starts scrolling.
 const MAX_VISIBLE_DEVICES: usize = 5;
@@ -31,6 +32,8 @@ pub struct BluetoothControls {
     last_powered: Cell<bool>,
     last_ready: Cell<bool>,
     stopped: Cell<bool>,
+    progress: Progress,
+    stable_icon: Rc<Cell<&'static str>>,
 }
 impl BluetoothControls {
     pub fn new(
@@ -78,6 +81,21 @@ impl BluetoothControls {
         tile.reveal_button()
             .unwrap()
             .update_property(&[Property::Label("Open Bluetooth menu")]);
+        let stable_icon = Rc::new(Cell::new("bluetooth-disabled-symbolic"));
+        let progress = Progress::new({
+            let tile = tile.clone();
+            let menu = menu.clone();
+            let stable_icon = stable_icon.clone();
+            move |visible| {
+                let icon = if visible {
+                    "bluetooth-acquiring-symbolic"
+                } else {
+                    stable_icon.get()
+                };
+                tile.set_icon(icon);
+                menu.set_icon(icon);
+            }
+        });
         let this = Rc::new(Self {
             service,
             settings,
@@ -93,6 +111,8 @@ impl BluetoothControls {
             last_powered: Cell::new(false),
             last_ready: Cell::new(false),
             stopped: Cell::new(false),
+            progress,
+            stable_icon,
         });
         for signal in ["changed", "operation-error", "operation-succeeded"] {
             let weak = Rc::downgrade(&this);
@@ -108,6 +128,32 @@ impl BluetoothControls {
             });
             this.handlers.borrow_mut().push(handler);
         }
+        let weak = Rc::downgrade(&this);
+        this.tile.widget().connect_unmap(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.clear_progress();
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.tile.widget().connect_map(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh(false);
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.menu.widget().connect_map(move |_| {
+            if let Some(this) = weak.upgrade() {
+                this.refresh(false);
+            }
+        });
+        let weak = Rc::downgrade(&this);
+        this.menu.widget().connect_unmap(move |_| {
+            if let Some(this) = weak.upgrade() {
+                for row in this.rows.borrow().values() {
+                    row.progress.clear();
+                }
+            }
+        });
         let weak = Rc::downgrade(&this);
         this.tile.toggle().connect_clicked(move |_| {
             if let Some(this) = weak.upgrade().filter(|s| !s.stopped.get()) {
@@ -168,9 +214,9 @@ impl BluetoothControls {
             self.service.disconnect(handler);
         }
         self.observers.borrow_mut().clear();
+        self.clear_progress();
         self.tile.set_sensitive(false);
         for row in self.rows.borrow().values() {
-            row.spinner.stop();
             row.button.set_sensitive(false);
         }
     }
@@ -188,12 +234,18 @@ impl BluetoothControls {
             .build();
         let action = gtk::Label::new(None);
         action.add_css_class("bluetooth-action");
+        action.set_width_chars(10);
         let spinner = gtk::Spinner::new();
         spinner.set_size_request(16, 16);
+        spinner.set_halign(gtk::Align::Center);
+        spinner.set_valign(gtk::Align::Center);
+        spinner.set_opacity(0.0);
+        let feedback = gtk::Overlay::new();
+        feedback.set_child(Some(&action));
+        feedback.add_overlay(&spinner);
         contents.append(&icon);
         contents.append(&name);
-        contents.append(&action);
-        contents.append(&spinner);
+        contents.append(&feedback);
         button.set_child(Some(&contents));
         self.menu.list().append(&button);
         let weak = Rc::downgrade(self);
@@ -210,12 +262,20 @@ impl BluetoothControls {
                 }
             }
         });
+        let progress = Progress::new({
+            let action = action.clone();
+            move |visible| {
+                action.set_opacity(if visible { 0.0 } else { 1.0 });
+                spinner.set_opacity(if visible { 1.0 } else { 0.0 });
+                spinner.set_spinning(visible);
+            }
+        });
         Row {
             button,
             icon,
             name,
             action,
-            spinner,
+            progress,
         }
     }
     fn refresh(self: &Rc<Self>, reorder: bool) {
@@ -239,7 +299,7 @@ impl BluetoothControls {
             .collect();
         for path in removed {
             if let Some(row) = self.rows.borrow_mut().remove(&path) {
-                row.spinner.stop();
+                row.progress.clear();
                 row.button.set_sensitive(false);
                 self.menu.list().remove(&row.button);
             }
@@ -268,9 +328,15 @@ impl BluetoothControls {
             } else {
                 "Connect"
             });
-            row.action.set_visible(!device.busy);
-            row.spinner.set_visible(device.busy);
-            row.spinner.set_spinning(device.busy);
+            if !state.ready
+                || state.hardware_blocked
+                || !state.powered
+                || !self.menu.widget().is_mapped()
+            {
+                row.progress.clear();
+            } else {
+                row.progress.set_busy(device.busy);
+            }
             row.button.set_sensitive(!device.busy && !state.busy);
             row.button.update_property(&[Property::Label(&format!(
                 "{} {}",
@@ -307,12 +373,21 @@ impl BluetoothControls {
         };
         self.tile.set_optional_subtitle(subtitle.as_deref());
         self.tile.set_toggled(state.powered);
-        let icon = if state.busy {
-            "bluetooth-acquiring-symbolic"
-        } else if state.powered {
+        let stable_icon = if state.powered {
             "bluetooth-active-symbolic"
         } else {
             "bluetooth-disabled-symbolic"
+        };
+        self.stable_icon.set(stable_icon);
+        if !state.ready || state.hardware_blocked || !self.tile.widget().is_mapped() {
+            self.progress.clear();
+        } else {
+            self.progress.set_busy(state.busy);
+        }
+        let icon = if self.progress.visible() {
+            "bluetooth-acquiring-symbolic"
+        } else {
+            stable_icon
         };
         self.tile.set_icon(icon);
         self.menu.set_icon(icon);
@@ -349,7 +424,14 @@ impl BluetoothControls {
     fn clear_error(&self) {
         self.menu.banner().set_reveal_child(false);
     }
+    fn clear_progress(&self) {
+        self.progress.clear();
+        for row in self.rows.borrow().values() {
+            row.progress.clear();
+        }
+    }
     fn show_error(&self, message: &str) {
+        self.clear_progress();
         self.error.set_label(message);
         self.menu.banner().set_reveal_child(true);
         if !self.tile.revealer().reveals_child()
@@ -362,5 +444,82 @@ impl BluetoothControls {
 impl Drop for BluetoothControls {
     fn drop(&mut self) {
         self.stop();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    #[ignore = "requires an isolated Wayland compositor"]
+    fn bluetooth_progress_timing_dimensions_errors_and_teardown() {
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let pause =
+            |ms| context.block_on(glib::timeout_future(std::time::Duration::from_millis(ms)));
+        let service: BluetoothService = glib::Object::new();
+        let settings = gio::Settings::new("org.ldelossa.way-shell.system");
+        let window = QuickSettingsWindow::new().unwrap();
+        let controls = BluetoothControls::new(service, settings, &window);
+        let device = BluetoothDevice {
+            path: "/device".into(),
+            alias: "Headphones".into(),
+            icon: "audio-headphones".into(),
+            connected: false,
+            busy: false,
+        };
+        let row = controls.row(&device);
+        row.action.set_label("Disconnect");
+        let width = row.button.measure(gtk::Orientation::Horizontal, -1);
+        row.progress.begin();
+        pause(40);
+        row.progress.finish(|| {});
+        pause(300);
+        assert!(!row.progress.visible());
+        assert_eq!(row.action.opacity(), 1.0);
+        row.progress.begin();
+        pause(320);
+        assert_eq!(row.action.opacity(), 0.0);
+        assert_eq!(row.button.measure(gtk::Orientation::Horizontal, -1), width);
+        row.progress.finish(|| {});
+        pause(100);
+        assert!(row.progress.visible());
+        pause(420);
+        assert!(!row.progress.visible());
+        row.progress.begin();
+        pause(320);
+        controls.rows.borrow_mut().insert(device.path, row);
+        controls.show_error("Immediate failure");
+        assert!(
+            !controls
+                .rows
+                .borrow()
+                .values()
+                .next()
+                .unwrap()
+                .progress
+                .visible()
+        );
+        controls
+            .rows
+            .borrow()
+            .values()
+            .next()
+            .unwrap()
+            .progress
+            .begin();
+        controls.stop();
+        pause(320);
+        assert!(
+            !controls
+                .rows
+                .borrow()
+                .values()
+                .next()
+                .unwrap()
+                .progress
+                .visible()
+        );
+        window.close();
     }
 }
