@@ -46,7 +46,7 @@ jobs:
           delete-branch: true
           title: 'nix: update Fedora VM locks'
           body: |
-            Weekly Fedora VM lock refresh. The updater validated every candidate Fedora image before committing these locks.
+            Weekly Fedora VM lock refresh.
 
       - name: Enable rebase auto merge
         if: vars.VM_LOCKS_AUTOMERGE_ENABLED == 'true' && steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
@@ -92,7 +92,7 @@ jobs:
           delete-branch: true
           title: 'nix: update Arch VM locks'
           body: |
-            Weekly Arch VM lock refresh. The updater validated every candidate Arch image before committing these locks.
+            Weekly Arch VM lock refresh.
 
       - name: Enable rebase auto merge
         if: vars.VM_LOCKS_AUTOMERGE_ENABLED == 'true' && steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
