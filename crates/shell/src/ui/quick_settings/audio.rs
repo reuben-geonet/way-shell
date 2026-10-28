@@ -2,7 +2,7 @@
 
 use super::{QuickSettingsWindow, menu::Menu};
 use crate::services::audio::{AudioNode, AudioService, AudioState, NodeKind, NodeState};
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -136,19 +136,19 @@ impl VolumeView {
 struct MainScale {
     kind: NodeKind,
     key: Cell<Option<NodeKey>>,
-    root: gtk::Box,
-    button: gtk::Button,
-    icon: gtk::Image,
-    scale: gtk::Scale,
+    root: gtk4::Box,
+    button: gtk4::Button,
+    icon: gtk4::Image,
+    scale: gtk4::Scale,
 }
 impl MainScale {
     fn new(kind: NodeKind, name: &str) -> Self {
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         root.set_widget_name(name);
-        let button = gtk::Button::new();
-        let icon = gtk::Image::from_icon_name(&VolumeView::of(None, kind).icon);
+        let button = gtk4::Button::new();
+        let icon = gtk4::Image::from_icon_name(&VolumeView::of(None, kind).icon);
         button.set_child(Some(&icon));
-        let scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 0.05);
+        let scale = gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, 1.0, 0.05);
         scale.set_hexpand(true);
         root.append(&button);
         root.append(&scale);
@@ -185,10 +185,10 @@ impl MainScale {
 pub struct AudioControls {
     service: AudioService,
     window: Weak<QuickSettingsWindow>,
-    button: gtk::Button,
+    button: gtk4::Button,
     menu: Menu,
-    empty: gtk::Label,
-    scales: gtk::Revealer,
+    empty: gtk4::Label,
+    scales: gtk4::Revealer,
     sink: MainScale,
     source: MainScale,
     rows: RefCell<Vec<Rc<MixerRow>>>,
@@ -201,15 +201,15 @@ pub struct AudioControls {
 impl AudioControls {
     pub fn new(service: AudioService, window: &Rc<QuickSettingsWindow>) -> Rc<Self> {
         let menu = Menu::new("Mixer", "audio-speakers-symbolic");
-        let empty = gtk::Label::new(Some("Audio service is unavailable"));
+        let empty = gtk4::Label::new(Some("Audio service is unavailable"));
         menu.options().append(&empty);
-        let button = gtk::Button::from_icon_name("audio-speakers-symbolic");
+        let button = gtk4::Button::from_icon_name("audio-speakers-symbolic");
         button.add_css_class("circular");
-        let scales = gtk::Revealer::new();
-        scales.set_transition_type(gtk::RevealerTransitionType::SlideUp);
+        let scales = gtk4::Revealer::new();
+        scales.set_transition_type(gtk4::RevealerTransitionType::SlideUp);
         scales.set_transition_duration(250);
         scales.set_reveal_child(true);
-        let contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let contents = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         let sink = MainScale::new(NodeKind::Sink, "default-sink-container");
         let source = MainScale::new(NodeKind::Source, "default-source-container");
         contents.append(&sink.root);
@@ -260,13 +260,13 @@ impl AudioControls {
         this.refresh();
         this
     }
-    pub fn mixer_button(&self) -> &gtk::Button {
+    pub fn mixer_button(&self) -> &gtk4::Button {
         &self.button
     }
     pub fn menu(&self) -> &Menu {
         &self.menu
     }
-    pub fn scales(&self) -> &gtk::Revealer {
+    pub fn scales(&self) -> &gtk4::Revealer {
         &self.scales
     }
     pub fn set_mixer_revealed(&self, revealed: bool) {
@@ -377,7 +377,7 @@ impl AudioControls {
                 self.menu.list().remove(&row.root);
             }
         }
-        let mut previous: Option<gtk::Widget> = None;
+        let mut previous: Option<gtk4::Widget> = None;
         for (row, node) in rows.iter().zip(nodes) {
             if self.closed.get() {
                 break;
@@ -434,14 +434,14 @@ impl Drop for AudioControls {
 
 struct MixerRow {
     key: NodeKey,
-    root: gtk::Box,
-    button: gtk::Button,
-    icon: gtk::Image,
-    active: gtk::Image,
-    label: gtk::Label,
-    revealer: gtk::Revealer,
-    volume: gtk::Scale,
-    dropdown: gtk::DropDown,
+    root: gtk4::Box,
+    button: gtk4::Button,
+    icon: gtk4::Image,
+    active: gtk4::Image,
+    label: gtk4::Label,
+    revealer: gtk4::Revealer,
+    volume: gtk4::Scale,
+    dropdown: gtk4::DropDown,
     targets: RefCell<Vec<RouteTarget>>,
     changing: Cell<bool>,
     closed: Cell<bool>,
@@ -451,33 +451,33 @@ struct MixerRow {
 }
 impl MixerRow {
     fn new(owner: &Rc<AudioControls>, node: &AudioNode) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("quick-settings-menu-option-mixer");
-        let button = gtk::Button::new();
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let active = gtk::Image::from_icon_name("media-record-symbolic");
-        let icon = gtk::Image::from_icon_name("audio-speakers-symbolic");
-        let label = gtk::Label::new(None);
+        let button = gtk4::Button::new();
+        let content = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let active = gtk4::Image::from_icon_name("media-record-symbolic");
+        let icon = gtk4::Image::from_icon_name("audio-speakers-symbolic");
+        let label = gtk4::Label::new(None);
         label.set_xalign(0.0);
         label.set_max_width_chars(120);
-        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         content.append(&active);
         content.append(&icon);
         content.append(&label);
         button.set_child(Some(&content));
         root.append(&button);
-        let revealer = gtk::Revealer::new();
-        revealer.set_transition_type(gtk::RevealerTransitionType::SwingDown);
+        let revealer = gtk4::Revealer::new();
+        revealer.set_transition_type(gtk4::RevealerTransitionType::SwingDown);
         revealer.set_transition_duration(350);
-        let details = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let details = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         details.set_focusable(true);
-        let volume = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 0.05);
+        let volume = gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, 1.0, 0.05);
         volume.set_hexpand(true);
-        let dropdown = gtk::DropDown::from_strings(&[]);
+        let dropdown = gtk4::DropDown::from_strings(&[]);
         if target_kind(node.kind).is_some() {
-            let route = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            let route = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
             route.add_css_class("mixer-link");
-            route.append(&gtk::Image::from_icon_name(
+            route.append(&gtk4::Image::from_icon_name(
                 "network-wireless-hotspot-symbolic",
             ));
             route.append(&dropdown);
@@ -566,13 +566,13 @@ impl MixerRow {
                 node_label(node, false)
             )));
             if let Some(icon) = owner.application_icon(&node.application) {
-                let theme = gtk::IconTheme::for_display(&self.icon.display());
+                let theme = gtk4::IconTheme::for_display(&self.icon.display());
                 let paintable = theme.lookup_by_gicon(
                     &icon,
                     64,
                     1,
-                    gtk::TextDirection::Rtl,
-                    gtk::IconLookupFlags::empty(),
+                    gtk4::TextDirection::Rtl,
+                    gtk4::IconLookupFlags::empty(),
                 );
                 self.icon.set_paintable(Some(&paintable));
             } else {
@@ -589,7 +589,7 @@ impl MixerRow {
             }
             if *self.targets.borrow() != targets {
                 let names: Vec<_> = targets.iter().map(|target| target.label.as_str()).collect();
-                let model = gtk::StringList::new(&names);
+                let model = gtk4::StringList::new(&names);
                 self.targets.replace(targets.clone());
                 self.dropdown.set_model(Some(&model));
             }
@@ -601,7 +601,7 @@ impl MixerRow {
                 .iter()
                 .position(|target| Some(target.key) == selected)
                 .and_then(|index| u32::try_from(index).ok())
-                .unwrap_or(gtk::INVALID_LIST_POSITION);
+                .unwrap_or(gtk4::INVALID_LIST_POSITION);
             self.dropdown.set_selected(index);
             self.dropdown.set_sensitive(!targets.is_empty());
         } else {

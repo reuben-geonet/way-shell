@@ -1,7 +1,7 @@
 //! Workspace buttons retain stable compositor identifiers through inventory changes.
 use crate::services::wm::WindowManager;
 use gio::prelude::*;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -9,13 +9,13 @@ use std::{
 use way_shell_core::wm::{Action, Workspace, WorkspaceTarget};
 
 struct Row {
-    button: gtk::Button,
+    button: gtk4::Button,
     target: RefCell<WorkspaceTarget>,
 }
 struct Inner {
-    root: gtk::Box,
-    list: gtk::Box,
-    monitor: gtk::gdk::Monitor,
+    root: gtk4::Box,
+    list: gtk4::Box,
+    monitor: gtk4::gdk::Monitor,
     manager: WindowManager,
     rows: RefCell<Vec<Rc<Row>>>,
     handlers: RefCell<Vec<(glib::Object, glib::SignalHandlerId)>>,
@@ -45,7 +45,7 @@ impl Inner {
         for (index, workspace) in workspaces.iter().enumerate() {
             if index == rows.len() {
                 let row = Rc::new(Row {
-                    button: gtk::Button::new(),
+                    button: gtk4::Button::new(),
                     target: RefCell::new(WorkspaceTarget::from(workspace)),
                 });
                 row.button.add_css_class("panel-button");
@@ -100,15 +100,15 @@ impl Drop for Inner {
 #[derive(Clone)]
 pub struct WorkspacesBar(Rc<Inner>);
 impl WorkspacesBar {
-    pub fn new(manager: WindowManager, monitor: &gtk::gdk::Monitor) -> Self {
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    pub fn new(manager: WindowManager, monitor: &gtk4::gdk::Monitor) -> Self {
+        let root = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         // Preserve the actual legacy root ID used by custom stylesheets.
         root.set_widget_name("workspaces-bar-list");
-        let scroll = gtk::ScrolledWindow::new();
+        let scroll = gtk4::ScrolledWindow::new();
         scroll.set_max_content_width(800);
-        scroll.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Never);
+        scroll.set_policy(gtk4::PolicyType::Automatic, gtk4::PolicyType::Never);
         scroll.set_propagate_natural_width(true);
-        let list = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let list = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         scroll.set_child(Some(&list));
         root.append(&scroll);
         let inner = Rc::new(Inner {
@@ -147,7 +147,7 @@ impl WorkspacesBar {
         inner.update();
         Self(inner)
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.0.root
     }
 }

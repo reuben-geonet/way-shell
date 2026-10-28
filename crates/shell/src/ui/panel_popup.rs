@@ -1,7 +1,7 @@
 //! Reusable panel-anchored surface; features own their services and content.
 use super::window::{LayerWindow, UnderlaySet, VisibilityController, WindowRole};
-use adw::prelude::*;
 use gtk4_layer_shell::{KeyboardMode, LayerShell};
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -16,11 +16,11 @@ pub enum PopupEvent {
 type Callback = Rc<dyn Fn(PopupEvent)>;
 pub struct PanelPopup {
     visibility: VisibilityController,
-    content: gtk::Box,
-    close_button: gtk::Button,
+    content: gtk4::Box,
+    close_button: gtk4::Button,
     width: i32,
     height: i32,
-    monitor: RefCell<Option<(gtk::gdk::Monitor, glib::SignalHandlerId)>>,
+    monitor: RefCell<Option<(gtk4::gdk::Monitor, glib::SignalHandlerId)>>,
     callbacks: RefCell<Vec<Callback>>,
     visible: Cell<bool>,
     stopped: Cell<bool>,
@@ -29,7 +29,7 @@ impl PanelPopup {
     pub fn new(
         icon: &str,
         title: &str,
-        content: &impl IsA<gtk::Widget>,
+        content: &impl IsA<gtk4::Widget>,
         width: i32,
         height: i32,
     ) -> Result<Rc<Self>, String> {
@@ -37,22 +37,22 @@ impl PanelPopup {
         surface.window().set_title(Some(title));
         surface
             .window()
-            .update_property(&[gtk::accessible::Property::Label(title)]);
+            .update_property(&[gtk4::accessible::Property::Label(title)]);
         surface.window().add_css_class("panel-popup");
         let underlays = UnderlaySet::new(WindowRole::PanelPopupUnderlay)?;
         let visibility = VisibilityController::new(surface, Some(underlays));
-        let container = gtk::Box::new(gtk::Orientation::Vertical, 12);
+        let container = gtk4::Box::new(gtk4::Orientation::Vertical, 12);
         container.add_css_class("panel-popup-content");
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        header.append(&gtk::Image::from_icon_name(icon));
-        let heading = gtk::Label::new(Some(title));
+        let header = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
+        header.append(&gtk4::Image::from_icon_name(icon));
+        let heading = gtk4::Label::new(Some(title));
         heading.add_css_class("title-3");
         heading.set_xalign(0.0);
         heading.set_hexpand(true);
         header.append(&heading);
-        let close_button = gtk::Button::from_icon_name("window-close-symbolic");
+        let close_button = gtk4::Button::from_icon_name("window-close-symbolic");
         close_button.set_tooltip_text(Some("Close"));
-        close_button.update_property(&[gtk::accessible::Property::Label("Close")]);
+        close_button.update_property(&[gtk4::accessible::Property::Label("Close")]);
         header.append(&close_button);
         container.append(&header);
         container.append(content);
@@ -80,11 +80,11 @@ impl PanelPopup {
                 this.dismiss();
             }
         });
-        let keys = gtk::EventControllerKey::new();
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let keys = gtk4::EventControllerKey::new();
+        keys.set_propagation_phase(gtk4::PropagationPhase::Capture);
         let weak = Rc::downgrade(&this);
         keys.connect_key_pressed(move |_, key, _, _| {
-            if key == gtk::gdk::Key::Escape
+            if key == gtk4::gdk::Key::Escape
                 && let Some(this) = weak.upgrade().filter(|this| this.is_visible())
             {
                 this.dismiss();
@@ -102,13 +102,13 @@ impl PanelPopup {
         });
         Ok(this)
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.visibility.main().window()
     }
     pub fn is_visible(&self) -> bool {
         self.visible.get()
     }
-    pub fn monitor(&self) -> Option<gtk::gdk::Monitor> {
+    pub fn monitor(&self) -> Option<gtk4::gdk::Monitor> {
         self.monitor
             .borrow()
             .as_ref()
@@ -126,7 +126,7 @@ impl PanelPopup {
             callback(event);
         }
     }
-    pub fn show(self: &Rc<Self>, monitor: &gtk::gdk::Monitor) -> Result<(), String> {
+    pub fn show(self: &Rc<Self>, monitor: &gtk4::gdk::Monitor) -> Result<(), String> {
         if self.stopped.get() || self.visibility.main().is_closed() || !monitor.is_valid() {
             return Err("Shortcut surface or monitor is unavailable".into());
         }
@@ -174,7 +174,7 @@ impl PanelPopup {
         self.visibility.hide_now();
         self.emit(PopupEvent::Hidden);
     }
-    pub fn toggle(self: &Rc<Self>, monitor: &gtk::gdk::Monitor) -> Result<(), String> {
+    pub fn toggle(self: &Rc<Self>, monitor: &gtk4::gdk::Monitor) -> Result<(), String> {
         if self.is_visible() && self.monitor().as_ref() == Some(monitor) {
             self.hide();
             Ok(())
@@ -199,7 +199,7 @@ impl PanelPopup {
         self.visibility.close();
         // Retaining a GTK widget must not retain live feature callbacks.
         self.callbacks.borrow_mut().clear();
-        self.window().set_content(None::<&gtk::Widget>);
+        self.window().set_content(None::<&gtk4::Widget>);
         while let Some(child) = self.content.first_child() {
             self.content.remove(&child);
         }

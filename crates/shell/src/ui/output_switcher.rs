@@ -2,7 +2,7 @@
 
 use super::switcher::{Switcher, SwitcherAction, SwitcherEntry};
 use crate::services::wm::WindowManager;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, OnceCell},
     rc::Rc,

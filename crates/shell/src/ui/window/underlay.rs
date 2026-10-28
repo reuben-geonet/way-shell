@@ -1,6 +1,6 @@
 //! Monitor-bound click-away surfaces sharing one popup's visibility lifetime.
 use super::{CloseReason, LayerWindow, WindowRole};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -8,19 +8,19 @@ use std::{
 };
 
 type Callback = Rc<dyn Fn()>;
-type PointerCallback = Rc<dyn Fn(&gtk::gdk::Monitor, f64, f64)>;
+type PointerCallback = Rc<dyn Fn(&gtk4::gdk::Monitor, f64, f64)>;
 
 #[derive(Clone)]
 struct Underlay {
     window: LayerWindow,
-    button: gtk::Button,
+    button: gtk4::Button,
 }
 
 struct Inner {
     role: WindowRole,
     monitors: gio::ListModel,
     monitor_handler: RefCell<Option<glib::SignalHandlerId>>,
-    surfaces: RefCell<HashMap<gtk::gdk::Monitor, Underlay>>,
+    surfaces: RefCell<HashMap<gtk4::gdk::Monitor, Underlay>>,
     dismiss: RefCell<Vec<Callback>>,
     on_closed: RefCell<Vec<Callback>>,
     pointer: RefCell<Vec<PointerCallback>>,
@@ -35,7 +35,7 @@ impl Inner {
     fn snapshot(&self) -> Vec<Underlay> {
         // Follow GDK's ordering, but never hold the collection across GTK calls.
         (0..self.monitors.n_items())
-            .filter_map(|i| self.monitors.item(i).and_downcast::<gtk::gdk::Monitor>())
+            .filter_map(|i| self.monitors.item(i).and_downcast::<gtk4::gdk::Monitor>())
             .filter_map(|monitor| self.surfaces.borrow().get(&monitor).cloned())
             .collect()
     }
@@ -64,7 +64,7 @@ impl Inner {
         let result = (|| {
             while self.pending.replace(false) && !self.closed.get() {
                 let monitors = (0..self.monitors.n_items())
-                    .filter_map(|i| self.monitors.item(i).and_downcast::<gtk::gdk::Monitor>())
+                    .filter_map(|i| self.monitors.item(i).and_downcast::<gtk4::gdk::Monitor>())
                     .filter(|monitor| monitor.is_valid())
                     .collect::<Vec<_>>();
                 let removed = self
@@ -91,11 +91,11 @@ impl Inner {
                         continue;
                     }
                     let window = LayerWindow::new(self.role, Some(&monitor))?;
-                    let button = gtk::Button::new();
+                    let button = gtk4::Button::new();
                     button.set_hexpand(true);
                     button.set_vexpand(true);
                     window.window().set_content(Some(&button));
-                    let motion = gtk::EventControllerMotion::new();
+                    let motion = gtk4::EventControllerMotion::new();
                     let weak = Rc::downgrade(self);
                     let output = monitor.clone();
                     motion.connect_enter(move |_, x, y| {
@@ -216,7 +216,7 @@ pub struct UnderlaySet(Rc<Inner>);
 
 impl UnderlaySet {
     pub fn new(role: WindowRole) -> Result<Self, String> {
-        let display = gtk::gdk::Display::default().ok_or("No GTK display is available")?;
+        let display = gtk4::gdk::Display::default().ok_or("No GTK display is available")?;
         let inner = Rc::new(Inner {
             role,
             monitors: display.monitors(),
@@ -257,7 +257,7 @@ impl UnderlaySet {
             .map(|surface| surface.window)
             .collect()
     }
-    pub fn buttons(&self) -> Vec<gtk::Button> {
+    pub fn buttons(&self) -> Vec<gtk4::Button> {
         self.0
             .snapshot()
             .into_iter()
@@ -270,7 +270,7 @@ impl UnderlaySet {
             self.0.dismiss.borrow_mut().push(Rc::new(callback));
         }
     }
-    pub fn on_pointer(&self, callback: impl Fn(&gtk::gdk::Monitor, f64, f64) + 'static) {
+    pub fn on_pointer(&self, callback: impl Fn(&gtk4::gdk::Monitor, f64, f64) + 'static) {
         if !self.0.closed.get() {
             self.0.pointer.borrow_mut().push(Rc::new(callback));
         }

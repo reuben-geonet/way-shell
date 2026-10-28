@@ -1,7 +1,7 @@
 //! A stable application group with the newest notification above older cards.
 use super::notification_card::{CardEvent, CardMode, NotificationCard, widget_children};
 use crate::services::notifications::{CloseReason, Notification, NotificationsService};
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -20,16 +20,16 @@ enum Update {
     Expanded(bool),
 }
 pub struct NotificationGroup {
-    root: gtk::Box,
+    root: gtk4::Box,
     app: String,
     service: NotificationsService,
-    header_revealer: gtk::Revealer,
-    older_revealer: gtk::Revealer,
-    head: gtk::Box,
-    older: gtk::Box,
-    overlay_button: gtk::Button,
-    conceal: gtk::Button,
-    dismiss: gtk::Button,
+    header_revealer: gtk4::Revealer,
+    older_revealer: gtk4::Revealer,
+    head: gtk4::Box,
+    older: gtk4::Box,
+    overlay_button: gtk4::Button,
+    conceal: gtk4::Button,
+    dismiss: gtk4::Button,
     cards: RefCell<Vec<Rc<NotificationCard>>>,
     updates: RefCell<VecDeque<Update>>,
     updating: Cell<bool>,
@@ -43,36 +43,36 @@ impl NotificationGroup {
         app: String,
         event: impl Fn(GroupEvent) + 'static,
     ) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        let header = gtk::CenterBox::new();
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        let header = gtk4::CenterBox::new();
         header.add_css_class("notification-group-list-header");
-        let title = gtk::Label::new(Some(&app));
+        let title = gtk4::Label::new(Some(&app));
         title.add_css_class("notification-group-app-name");
         header.set_start_widget(Some(&title));
-        let conceal = gtk::Button::from_icon_name("view-restore-symbolic");
+        let conceal = gtk4::Button::from_icon_name("view-restore-symbolic");
         conceal.add_css_class("circular");
         conceal.add_css_class("notification-group-conceal-button");
-        let dismiss = gtk::Button::from_icon_name("window-close-symbolic");
+        let dismiss = gtk4::Button::from_icon_name("window-close-symbolic");
         dismiss.add_css_class("circular");
         dismiss.add_css_class("notification-group-dismiss-button");
-        let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let buttons = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         buttons.append(&conceal);
         buttons.append(&dismiss);
         header.set_end_widget(Some(&buttons));
-        let header_revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideUp)
+        let header_revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SlideUp)
             .child(&header)
             .build();
-        let head = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let head = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         head.add_css_class("notification-group-head-notification-container");
-        let older = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let older = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         older.add_css_class("notification-group-notification-list");
-        let older_revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideDown)
+        let older_revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SlideDown)
             .child(&older)
             .build();
-        let overlay = gtk::Overlay::new();
-        let overlay_button = gtk::Button::new();
+        let overlay = gtk4::Overlay::new();
+        let overlay_button = gtk4::Button::new();
         overlay_button.add_css_class("notification-group-overlay-expand-button");
         overlay_button.set_visible(false);
         overlay.set_child(Some(&head));
@@ -123,7 +123,7 @@ impl NotificationGroup {
             });
         this
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
     pub fn app(&self) -> &str {
@@ -145,10 +145,10 @@ impl NotificationGroup {
     pub fn is_expanded(&self) -> bool {
         self.expanded.get()
     }
-    pub fn expand_button(&self) -> &gtk::Button {
+    pub fn expand_button(&self) -> &gtk4::Button {
         &self.overlay_button
     }
-    pub fn dismiss_button(&self) -> &gtk::Button {
+    pub fn dismiss_button(&self) -> &gtk4::Button {
         &self.dismiss
     }
     pub fn upsert(self: &Rc<Self>, notification: Notification) {
@@ -256,7 +256,7 @@ impl NotificationGroup {
     }
     fn rebuild(&self) {
         let cards = self.cards();
-        let mut head = vec![self.header_revealer.clone().upcast::<gtk::Widget>()];
+        let mut head = vec![self.header_revealer.clone().upcast::<gtk4::Widget>()];
         if let Some(card) = cards.first() {
             head.push(card.widget().clone().upcast());
         }
@@ -264,7 +264,7 @@ impl NotificationGroup {
         let older: Vec<_> = cards
             .iter()
             .skip(1)
-            .map(|card| card.widget().clone().upcast::<gtk::Widget>())
+            .map(|card| card.widget().clone().upcast::<gtk4::Widget>())
             .collect();
         for child in widget_children(&self.head) {
             if !head.contains(&child) {
@@ -277,7 +277,7 @@ impl NotificationGroup {
             }
         }
         for (container, children) in [(&self.head, &head), (&self.older, &older)] {
-            let mut previous: Option<&gtk::Widget> = None;
+            let mut previous: Option<&gtk4::Widget> = None;
             for child in children {
                 if child.parent().is_none() {
                     container.append(child);

@@ -347,7 +347,7 @@ mod tests {
     #[ignore = "requires an isolated Wayland compositor"]
     fn shortcut_loading_navigation_minimum_errors_and_reopening() {
         use crate::ui::shortcuts::ShortcutsSheet;
-        use gtk::prelude::*;
+        use gtk4::prelude::*;
         crate::ui::init_test_display();
         let context = glib::MainContext::default();
         let pause = |ms| context.block_on(glib::timeout_future(Duration::from_millis(ms)));
@@ -360,22 +360,22 @@ mod tests {
         // Drive worker publications explicitly so timings do not depend on disk speed.
         service.dirty.set(false);
         let sheet = ShortcutsSheet::new(service.clone(), manager).unwrap();
-        let display = gtk::gdk::Display::default().unwrap();
+        let display = gtk4::gdk::Display::default().unwrap();
         let monitor = display
             .monitors()
             .item(0)
             .unwrap()
-            .downcast::<gtk::gdk::Monitor>()
+            .downcast::<gtk4::gdk::Monitor>()
             .unwrap();
-        fn labels(widget: &gtk::Widget) -> Vec<String> {
+        fn labels(widget: &gtk4::Widget) -> Vec<String> {
             let mut texts = Vec::new();
             // GTK only parents an expander's content while it is expanded.
-            if let Some(expander) = widget.downcast_ref::<gtk::Expander>()
+            if let Some(expander) = widget.downcast_ref::<gtk4::Expander>()
                 && let Some(child) = expander.child()
             {
                 texts.extend(labels(&child));
             }
-            if let Some(label) = widget.downcast_ref::<gtk::Label>()
+            if let Some(label) = widget.downcast_ref::<gtk4::Label>()
                 && label.opacity() > 0.0
             {
                 texts.push(label.text().to_string());

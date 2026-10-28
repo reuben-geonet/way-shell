@@ -1,22 +1,22 @@
 //! Every panel observes the same recorder and elapsed clock.
 use crate::services::screencast::{Phase, ScreencastService};
-use gtk::prelude::*;
+use gtk4::prelude::*;
 
 pub struct RecordingIndicator {
     service: ScreencastService,
-    button: gtk::Button,
+    button: gtk4::Button,
     changed: Option<glib::SignalHandlerId>,
     clicked: Option<glib::SignalHandlerId>,
 }
 impl RecordingIndicator {
     pub fn new(service: ScreencastService) -> Self {
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.add_css_class("panel-recording");
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        let label = gtk::Label::new(None);
+        let content = gtk4::Box::new(gtk4::Orientation::Horizontal, 6);
+        let label = gtk4::Label::new(None);
         label.set_width_chars(5);
         content.append(&label);
-        content.append(&gtk::Image::from_icon_name("media-playback-stop-symbolic"));
+        content.append(&gtk4::Image::from_icon_name("media-playback-stop-symbolic"));
         button.set_child(Some(&content));
         let weak_button = button.downgrade();
         let weak_label = label.downgrade();
@@ -44,7 +44,7 @@ impl RecordingIndicator {
             clicked: Some(clicked),
         }
     }
-    pub fn widget(&self) -> &gtk::Button {
+    pub fn widget(&self) -> &gtk4::Button {
         &self.button
     }
 }
@@ -58,7 +58,7 @@ impl Drop for RecordingIndicator {
         }
     }
 }
-fn refresh(service: &ScreencastService, button: &gtk::Button, label: &gtk::Label) {
+fn refresh(service: &ScreencastService, button: &gtk4::Button, label: &gtk4::Label) {
     let phase = service.phase();
     button.set_visible(phase != Phase::Idle);
     button.set_sensitive(matches!(phase, Phase::Starting | Phase::Recording));
@@ -70,7 +70,7 @@ fn refresh(service: &ScreencastService, button: &gtk::Button, label: &gtk::Label
         _ => "Stop recording",
     };
     button.set_tooltip_text(Some(action));
-    button.update_property(&[gtk::accessible::Property::Label(&format!(
+    button.update_property(&[gtk4::accessible::Property::Label(&format!(
         "{action}: {text}"
     ))]);
 }

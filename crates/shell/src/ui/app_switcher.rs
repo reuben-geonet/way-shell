@@ -4,7 +4,7 @@ use super::{
     window::{LayerWindow, VisibilityController, WindowRole},
 };
 use crate::services::wayland::{Toplevel, ToplevelAction, WaylandService};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::BTreeMap,
@@ -159,8 +159,8 @@ pub struct AppSwitcher {
     service: WaylandService,
     visibility: VisibilityController,
     instances: LayerWindow,
-    apps_box: gtk::Box,
-    instances_box: gtk::Box,
+    apps_box: gtk4::Box,
+    instances_box: gtk4::Box,
     selection: RefCell<Selection>,
     handlers: RefCell<Vec<glib::SignalHandlerId>>,
     inhibited: Cell<bool>,
@@ -189,13 +189,13 @@ impl AppSwitcher {
         main.window().set_widget_name("app-switcher");
         main.window().set_hexpand(true);
         main.window().set_vexpand(true);
-        let apps_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let apps_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         apps_box.set_widget_name("app-switcher-list");
         let scroll = scrolled(&apps_box, 1400);
         main.window().set_content(Some(&scroll));
         let instances = LayerWindow::new(WindowRole::AppInstances, None)?;
         instances.window().set_widget_name("app-switcher");
-        let instances_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let instances_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         instances
             .window()
             .set_content(Some(&scrolled(&instances_box, 1200)));
@@ -256,9 +256,9 @@ impl AppSwitcher {
                 this.instances.close();
             }
         });
-        let keys = gtk::EventControllerKey::new();
+        let keys = gtk4::EventControllerKey::new();
         keys.set_name(Some("way-shell-switcher-keys"));
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        keys.set_propagation_phase(gtk4::PropagationPhase::Capture);
         let weak = Rc::downgrade(&this);
         keys.connect_key_pressed(move |_, key, _, modifiers| {
             weak.upgrade().map_or(glib::Propagation::Proceed, |this| {
@@ -267,7 +267,7 @@ impl AppSwitcher {
         });
         let weak = Rc::downgrade(&this);
         keys.connect_key_released(move |_, key, _, _| {
-            if (key == gtk::gdk::Key::Super_L || key == gtk::gdk::Key::Super_R)
+            if (key == gtk4::gdk::Key::Super_L || key == gtk4::gdk::Key::Super_R)
                 && let Some(this) = weak.upgrade()
                 && this.is_visible()
             {
@@ -279,10 +279,10 @@ impl AppSwitcher {
         Ok(this)
     }
 
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.visibility.main().window()
     }
-    pub fn instances_window(&self) -> &adw::Window {
+    pub fn instances_window(&self) -> &libadwaita::Window {
         self.instances.window()
     }
     pub fn is_visible(&self) -> bool {
@@ -469,7 +469,7 @@ impl AppSwitcher {
             let icon = self.icon(&group.app_id);
             let active = selected_group.is_some_and(|selected| selected.app_id == group.app_id);
             let (contents, button) = app_button(&group.app_id, icon.as_ref(), false);
-            let arrow = gtk::Image::from_icon_name("pan-down-symbolic");
+            let arrow = gtk4::Image::from_icon_name("pan-down-symbolic");
             arrow.add_css_class("app-switcher-app-widget-expand-arrow");
             arrow.set_pixel_size(12);
             arrow.set_visible(group.instances.len() > 1);
@@ -533,8 +533,8 @@ impl AppSwitcher {
 
     fn key_pressed(
         self: &Rc<Self>,
-        key: gtk::gdk::Key,
-        modifiers: gtk::gdk::ModifierType,
+        key: gtk4::gdk::Key,
+        modifiers: gtk4::gdk::ModifierType,
     ) -> glib::Propagation {
         if !self.is_visible() {
             return glib::Propagation::Proceed;
@@ -571,8 +571,8 @@ enum KeyAction {
     Cancel,
 }
 
-fn key_action(key: gtk::gdk::Key, modifiers: gtk::gdk::ModifierType) -> Option<KeyAction> {
-    use gtk::gdk::{Key, ModifierType as Mods};
+fn key_action(key: gtk4::gdk::Key, modifiers: gtk4::gdk::ModifierType) -> Option<KeyAction> {
+    use gtk4::gdk::{Key, ModifierType as Mods};
     if !modifiers.contains(Mods::SUPER_MASK) {
         return None;
     }
@@ -592,8 +592,8 @@ fn key_action(key: gtk::gdk::Key, modifiers: gtk::gdk::ModifierType) -> Option<K
     })
 }
 
-fn scrolled(child: &gtk::Box, max_width: i32) -> gtk::ScrolledWindow {
-    gtk::ScrolledWindow::builder()
+fn scrolled(child: &gtk4::Box, max_width: i32) -> gtk4::ScrolledWindow {
+    gtk4::ScrolledWindow::builder()
         .max_content_width(max_width)
         .max_content_height(-1)
         .propagate_natural_width(true)
@@ -602,7 +602,7 @@ fn scrolled(child: &gtk::Box, max_width: i32) -> gtk::ScrolledWindow {
         .build()
 }
 
-fn clear_box(container: &gtk::Box) {
+fn clear_box(container: &gtk4::Box) {
     while let Some(child) = container.first_child() {
         container.remove(&child);
     }
@@ -618,27 +618,27 @@ fn desktop_icon(apps: &[gio::AppInfo], app_id: &str) -> Option<gio::Icon> {
         .and_then(|app| app.icon())
 }
 
-fn app_button(text: &str, icon: Option<&gio::Icon>, instance: bool) -> (gtk::Box, gtk::Button) {
-    let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+fn app_button(text: &str, icon: Option<&gio::Icon>, instance: bool) -> (gtk4::Box, gtk4::Button) {
+    let container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
     container.add_css_class("app-switcher-app-widget");
-    let button = gtk::Button::new();
+    let button = gtk4::Button::new();
     button.add_css_class("app-switcher-app-widget-button");
     if instance {
         button.add_css_class("instance");
     }
-    let contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    contents.set_halign(gtk::Align::Center);
-    contents.set_valign(gtk::Align::Center);
-    let image = gtk::Image::from_icon_name("application-x-executable");
+    let contents = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+    contents.set_halign(gtk4::Align::Center);
+    contents.set_valign(gtk4::Align::Center);
+    let image = gtk4::Image::from_icon_name("application-x-executable");
     image.set_pixel_size(if instance { 48 } else { 64 });
     if let Some(icon) = icon {
         image.set_from_gicon(icon);
     }
-    let label = gtk::Label::new(Some(text));
+    let label = gtk4::Label::new(Some(text));
     label.add_css_class("app-switcher-app-widget-label");
     label.set_width_chars(if instance { 14 } else { 15 });
     label.set_max_width_chars(if instance { 14 } else { 15 });
-    label.set_ellipsize(gtk::pango::EllipsizeMode::Start);
+    label.set_ellipsize(gtk4::pango::EllipsizeMode::Start);
     label.set_xalign(0.5);
     contents.append(&image);
     contents.append(&label);
@@ -673,7 +673,7 @@ mod tests {
     }
     #[test]
     fn keys_preserve_super_tab_instance_aliases_and_cancel() {
-        use gtk::gdk::{Key, ModifierType as Mods};
+        use gtk4::gdk::{Key, ModifierType as Mods};
         let super_key = Mods::SUPER_MASK;
         let shift = super_key | Mods::SHIFT_MASK;
         assert_eq!(key_action(Key::Tab, super_key), Some(KeyAction::NextApp));

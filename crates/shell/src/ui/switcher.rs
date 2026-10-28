@@ -1,6 +1,6 @@
 //! Shared search/list surface used by workspace, output and rename views.
 use super::window::{LayerWindow, Visibility, VisibilityController, WindowRole};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -33,9 +33,9 @@ enum Update {
 
 pub struct Switcher {
     visibility: VisibilityController,
-    search: gtk::SearchEntry,
-    list: gtk::ListBox,
-    rows: RefCell<Vec<(SwitcherEntry, gtk::ListBoxRow)>>,
+    search: gtk4::SearchEntry,
+    list: gtk4::ListBox,
+    rows: RefCell<Vec<(SwitcherEntry, gtk4::ListBoxRow)>>,
     has_list: bool,
     allow_raw: bool,
     action: Box<dyn Fn(SwitcherAction)>,
@@ -54,22 +54,22 @@ impl Switcher {
         surface.window().set_widget_name("switcher");
         surface.window().set_hexpand(true);
         surface.window().set_vexpand(true);
-        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         container.set_hexpand(true);
         container.set_vexpand(true);
-        let search_container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let search_container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         search_container.set_widget_name("search-container");
         search_container.set_hexpand(true);
-        let search = gtk::SearchEntry::new();
+        let search = gtk4::SearchEntry::new();
         search.set_widget_name("search-entry");
         search_container.append(&search);
         container.append(&search_container);
-        let list = gtk::ListBox::new();
+        let list = gtk4::ListBox::new();
         list.set_widget_name("list");
         list.set_hexpand(true);
         list.set_vexpand(true);
         if has_list {
-            let scrolled = gtk::ScrolledWindow::builder()
+            let scrolled = gtk4::ScrolledWindow::builder()
                 .max_content_height(400)
                 .propagate_natural_height(true)
                 .propagate_natural_width(true)
@@ -129,9 +129,9 @@ impl Switcher {
                 this.activate(false);
             }
         });
-        let keys = gtk::EventControllerKey::new();
+        let keys = gtk4::EventControllerKey::new();
         keys.set_name(Some("way-shell-switcher-keys"));
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        keys.set_propagation_phase(gtk4::PropagationPhase::Capture);
         let weak = Rc::downgrade(&this);
         keys.connect_key_pressed(move |_, key, _, modifiers| {
             weak.upgrade().map_or(glib::Propagation::Proceed, |this| {
@@ -142,13 +142,13 @@ impl Switcher {
         Ok(this)
     }
 
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.visibility.main().window()
     }
-    pub fn search(&self) -> &gtk::SearchEntry {
+    pub fn search(&self) -> &gtk4::SearchEntry {
         &self.search
     }
-    pub fn list(&self) -> &gtk::ListBox {
+    pub fn list(&self) -> &gtk4::ListBox {
         &self.list
     }
     pub fn is_visible(&self) -> bool {
@@ -213,10 +213,10 @@ impl Switcher {
         }
         let mut rows = Vec::with_capacity(entries.len());
         for entry in entries {
-            let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            let contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
             contents.add_css_class("switcher-entry");
-            contents.append(&gtk::Label::new(Some(&entry.label)));
-            let row = gtk::ListBoxRow::new();
+            contents.append(&gtk4::Label::new(Some(&entry.label)));
+            let row = gtk4::ListBoxRow::new();
             row.set_child(Some(&contents));
             self.list.append(&row);
             rows.push((entry, row));
@@ -368,10 +368,10 @@ impl Switcher {
 
     fn key_pressed(
         &self,
-        key: gtk::gdk::Key,
-        modifiers: gtk::gdk::ModifierType,
+        key: gtk4::gdk::Key,
+        modifiers: gtk4::gdk::ModifierType,
     ) -> glib::Propagation {
-        use gtk::gdk::{Key, ModifierType as Mods};
+        use gtk4::gdk::{Key, ModifierType as Mods};
         if key == Key::Escape {
             self.cancel();
         } else if self.has_list

@@ -1,6 +1,6 @@
 //! Calendar selection and local date updates share the shell clock.
 use crate::services::clock::ClockService;
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -16,11 +16,11 @@ fn format(date: &glib::DateTime, pattern: &str) -> String {
 pub struct Calendar {
     clock: ClockService,
     now: RefCell<glib::DateTime>,
-    root: gtk::Box,
-    calendar: gtk::Calendar,
-    today: gtk::Button,
-    today_row: adw::ActionRow,
-    month: gtk::Label,
+    root: gtk4::Box,
+    calendar: gtk4::Calendar,
+    today: gtk4::Button,
+    today_row: libadwaita::ActionRow,
+    month: gtk4::Label,
     handler: Cell<Option<glib::SignalHandlerId>>,
     updating: Cell<bool>,
     pending: Cell<bool>,
@@ -29,22 +29,22 @@ pub struct Calendar {
 impl Calendar {
     pub fn new(clock: ClockService) -> Result<Rc<Self>, glib::BoolError> {
         let now = glib::DateTime::now_local()?;
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("calendar-area");
-        let today = gtk::Button::new();
+        let today = gtk4::Button::new();
         today.set_widget_name("calendar-today");
         today.set_hexpand(true);
-        let today_row = adw::ActionRow::new();
+        let today_row = libadwaita::ActionRow::new();
         today.set_child(Some(&today_row));
-        let selector = gtk::CenterBox::new();
+        let selector = gtk4::CenterBox::new();
         selector.set_widget_name("calendar-month-selector");
-        let back = gtk::Button::from_icon_name("pan-start-symbolic");
-        let forward = gtk::Button::from_icon_name("pan-end-symbolic");
-        let month = gtk::Label::new(None);
+        let back = gtk4::Button::from_icon_name("pan-start-symbolic");
+        let forward = gtk4::Button::from_icon_name("pan-end-symbolic");
+        let month = gtk4::Label::new(None);
         selector.set_start_widget(Some(&back));
         selector.set_center_widget(Some(&month));
         selector.set_end_widget(Some(&forward));
-        let calendar = gtk::Calendar::new();
+        let calendar = gtk4::Calendar::new();
         calendar.set_size_request(-1, 224);
         calendar.set_show_heading(false);
         calendar.set_show_week_numbers(false);
@@ -114,10 +114,10 @@ impl Calendar {
         this.refresh();
         Ok(this)
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
-    pub fn calendar(&self) -> &gtk::Calendar {
+    pub fn calendar(&self) -> &gtk4::Calendar {
         &self.calendar
     }
     pub fn close(&self) {

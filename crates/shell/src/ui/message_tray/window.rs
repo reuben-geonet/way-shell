@@ -2,7 +2,7 @@
 use crate::ui::window::{
     LayerWindow, Transition, UnderlaySet, Visibility, VisibilityController, WindowRole,
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -30,13 +30,13 @@ type HeightObserver = Box<dyn Fn(i32)>;
 
 pub struct MessageTrayWindow {
     visibility: VisibilityController,
-    content: gtk::Box,
-    animation: RefCell<Option<adw::TimedAnimation>>,
+    content: gtk4::Box,
+    animation: RefCell<Option<libadwaita::TimedAnimation>>,
     observers: RefCell<Vec<Observer>>,
     events: RefCell<VecDeque<MessageTrayEvent>>,
     height_budget: Cell<i32>,
     height_observer: RefCell<Option<HeightObserver>>,
-    monitor: RefCell<Option<(gtk::gdk::Monitor, glib::SignalHandlerId)>>,
+    monitor: RefCell<Option<(gtk4::gdk::Monitor, glib::SignalHandlerId)>>,
     publishing: Cell<bool>,
     desired: Cell<bool>,
     announced: Cell<bool>,
@@ -48,7 +48,7 @@ impl MessageTrayWindow {
         let main = LayerWindow::new(WindowRole::MessageTray, None)?;
         main.window().set_widget_name("message-tray");
         main.window().set_opacity(0.0);
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let content = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         content.set_width_request(700);
         main.window().set_content(Some(&content));
         main.window().set_default_size(700, PREFERRED_HEIGHT);
@@ -102,13 +102,13 @@ impl MessageTrayWindow {
         });
         Ok(this)
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.visibility.main().window()
     }
-    pub fn content(&self) -> &gtk::Box {
+    pub fn content(&self) -> &gtk4::Box {
         &self.content
     }
-    pub fn underlay_buttons(&self) -> Vec<gtk::Button> {
+    pub fn underlay_buttons(&self) -> Vec<gtk4::Button> {
         self.visibility.underlays().unwrap().buttons()
     }
     pub fn visibility_controller(&self) -> &VisibilityController {
@@ -240,12 +240,12 @@ impl MessageTrayWindow {
     }
     fn animate(self: &Rc<Self>, transition: Transition, showing: bool, revision: u64) {
         let weak = Rc::downgrade(self);
-        let target = adw::CallbackAnimationTarget::new(move |value| {
+        let target = libadwaita::CallbackAnimationTarget::new(move |value| {
             if let Some(this) = weak.upgrade().filter(|this| this.current(revision)) {
                 this.window().set_opacity(value);
             }
         });
-        let animation = adw::TimedAnimation::new(
+        let animation = libadwaita::TimedAnimation::new(
             self.window(),
             self.window().opacity(),
             if showing { 1.0 } else { 0.0 },

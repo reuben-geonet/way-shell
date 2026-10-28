@@ -6,7 +6,7 @@ use crate::{
     },
     ui::tray_support::{load_theme_icon, menu_model, rgba_pixbuf},
 };
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::BTreeMap,
@@ -19,17 +19,17 @@ use std::{
 #[derive(Clone)]
 pub struct TrayBar(Rc<Bar>);
 struct Bar {
-    widget: gtk::Box,
-    list: gtk::Box,
+    widget: gtk4::Box,
+    list: gtk4::Box,
     service: TrayService,
     handler: RefCell<Option<glib::SignalHandlerId>>,
     rows: RefCell<BTreeMap<String, Rc<Indicator>>>,
 }
 impl TrayBar {
     pub fn new(service: TrayService) -> Self {
-        let widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let widget = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         widget.set_widget_name("panel-indicator-bar");
-        let list = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let list = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         list.add_css_class("panel-indicator-bar-list");
         widget.append(&list);
         let bar = Rc::new(Bar {
@@ -52,7 +52,7 @@ impl TrayBar {
         }
         Self(bar)
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.0.widget
     }
 }
@@ -114,15 +114,15 @@ impl Drop for MenuBinding {
     }
 }
 struct Indicator {
-    widget: gtk::Box,
-    button: gtk::Button,
-    icon: gtk::Image,
+    widget: gtk4::Box,
+    button: gtk4::Button,
+    icon: gtk4::Image,
     service: TrayService,
     key: ItemKey,
     item: RefCell<TrayItem>,
     active: Cell<bool>,
     click_handler: RefCell<Option<glib::SignalHandlerId>>,
-    popup: RefCell<Option<gtk::PopoverMenu>>,
+    popup: RefCell<Option<gtk4::PopoverMenu>>,
     menu: RefCell<Option<MenuBinding>>,
     menu_revision: Cell<u64>,
     icon_revision: Cell<u64>,
@@ -131,14 +131,14 @@ struct Indicator {
 }
 impl Indicator {
     fn new(service: TrayService, item: TrayItem) -> Rc<Self> {
-        let widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let widget = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         widget.set_widget_name("panel-indicator-bar-widget");
-        let inner = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let inner = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         inner.add_css_class("panel-indicator-bar-widget-box");
-        let icon = gtk::Image::new();
+        let icon = gtk4::Image::new();
         icon.set_pixel_size(16);
         icon.set_size_request(16, 16);
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.set_child(Some(&icon));
         inner.append(&button);
         widget.append(&inner);
@@ -252,9 +252,9 @@ impl Indicator {
     fn show_supplied_icon(&self, item: &TrayItem) -> bool {
         if let Some(image) = item.icon.pixmap.as_ref().and_then(rgba_pixbuf) {
             self.icon
-                .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image)));
+                .set_paintable(Some(&gtk4::gdk::Texture::for_pixbuf(&image)));
         } else if !item.icon.name.is_empty()
-            && gtk::IconTheme::for_display(&self.icon.display()).has_icon(&item.icon.name)
+            && gtk4::IconTheme::for_display(&self.icon.display()).has_icon(&item.icon.name)
         {
             self.icon.set_icon_name(Some(&item.icon.name));
         } else {
@@ -267,7 +267,7 @@ impl Indicator {
         self.icon.set_icon_name(Some("image-missing"));
         self.displayed.set(false);
     }
-    fn finish_icon(&self, revision: u64, result: Result<gtk::gdk_pixbuf::Pixbuf, glib::Error>) {
+    fn finish_icon(&self, revision: u64, result: Result<gtk4::gdk_pixbuf::Pixbuf, glib::Error>) {
         if !self.active.get() || self.icon_revision.get() != revision {
             return;
         }
@@ -275,7 +275,7 @@ impl Indicator {
         match result {
             Ok(image) => {
                 self.icon
-                    .set_paintable(Some(&gtk::gdk::Texture::for_pixbuf(&image)));
+                    .set_paintable(Some(&gtk4::gdk::Texture::for_pixbuf(&image)));
                 self.displayed.set(true);
             }
             Err(error) => {
@@ -409,7 +409,7 @@ impl Indicator {
         let popup = if let Some(popup) = current {
             popup
         } else {
-            let popup = gtk::PopoverMenu::from_model_full(&model, gtk::PopoverMenuFlags::NESTED);
+            let popup = gtk4::PopoverMenu::from_model_full(&model, gtk4::PopoverMenuFlags::NESTED);
             self.popup.replace(Some(popup.clone()));
             popup.set_parent(&self.button);
             popup
@@ -517,7 +517,7 @@ mod tests {
         row.update_icon();
         assert!(row.icon.paintable().is_none());
         assert!(row.icon.icon_name().is_none());
-        let width = row.icon.measure(gtk::Orientation::Horizontal, -1);
+        let width = row.icon.measure(gtk4::Orientation::Horizontal, -1);
         let wait = |row: &Rc<Indicator>| {
             let deadline = std::time::Instant::now() + Duration::from_secs(3);
             while row.icon_task.borrow().is_some() {
@@ -528,7 +528,7 @@ mod tests {
         wait(&row);
         assert!(row.displayed.get());
         let displayed = row.icon.paintable();
-        assert_eq!(row.icon.measure(gtk::Orientation::Horizontal, -1), width);
+        assert_eq!(row.icon.measure(gtk4::Orientation::Horizontal, -1), width);
         row.item.replace(item("missing.png", directory_name, None));
         row.update_icon();
         let old_revision = row.icon_revision.get();

@@ -5,7 +5,7 @@ use crate::services::{
     shortcuts::{ShortcutsService, Status},
     wm::WindowManager,
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -23,8 +23,8 @@ pub struct ShortcutsSheet {
     popup: Rc<PanelPopup>,
     service: Rc<ShortcutsService>,
     manager: WindowManager,
-    rows: gtk::Box,
-    scroller: gtk::ScrolledWindow,
+    rows: gtk4::Box,
+    scroller: gtk4::ScrolledWindow,
     subscription: Cell<Option<u64>>,
     scroll_restore: RefCell<Option<glib::SourceId>>,
     stopped: Cell<bool>,
@@ -32,10 +32,10 @@ pub struct ShortcutsSheet {
 }
 impl ShortcutsSheet {
     pub fn new(service: Rc<ShortcutsService>, manager: WindowManager) -> Result<Rc<Self>, String> {
-        let rows = gtk::Box::new(gtk::Orientation::Vertical, 12);
+        let rows = gtk4::Box::new(gtk4::Orientation::Vertical, 12);
         rows.add_css_class("shortcuts-sections");
-        let scroller = gtk::ScrolledWindow::new();
-        scroller.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        let scroller = gtk4::ScrolledWindow::new();
+        scroller.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
         scroller.set_vexpand(true);
         scroller.set_hexpand(true);
         scroller.set_child(Some(&rows));
@@ -111,11 +111,11 @@ impl ShortcutsSheet {
     pub fn hide(&self) {
         self.popup.hide();
     }
-    pub fn toggle_on(&self, monitor: &gtk::gdk::Monitor) -> Result<(), String> {
+    pub fn toggle_on(&self, monitor: &gtk4::gdk::Monitor) -> Result<(), String> {
         self.popup.toggle(monitor)
     }
-    fn focused_monitor(&self) -> Result<gtk::gdk::Monitor, String> {
-        let display = gtk::gdk::Display::default().ok_or("No display is available")?;
+    fn focused_monitor(&self) -> Result<gtk4::gdk::Monitor, String> {
+        let display = gtk4::gdk::Display::default().ok_or("No display is available")?;
         let monitors = display.monitors();
         let output = self
             .manager
@@ -124,7 +124,7 @@ impl ShortcutsSheet {
             .find(|w| w.focused)
             .and_then(|w| w.output);
         let valid: Vec<_> = (0..monitors.n_items())
-            .filter_map(|i| monitors.item(i).and_downcast::<gtk::gdk::Monitor>())
+            .filter_map(|i| monitors.item(i).and_downcast::<gtk4::gdk::Monitor>())
             .filter(|m| m.is_valid())
             .collect();
         valid
@@ -203,8 +203,8 @@ impl ShortcutsSheet {
             data.status,
             Status::Unavailable | Status::Stale | Status::Incomplete
         ) {
-            let retry = gtk::Button::with_label("Retry");
-            retry.set_halign(gtk::Align::Start);
+            let retry = gtk4::Button::with_label("Retry");
+            retry.set_halign(gtk4::Align::Start);
             let weak = Rc::downgrade(self);
             retry.connect_clicked(move |_| {
                 if let Some(this) = weak.upgrade().filter(|this| !this.stopped.get()) {
@@ -214,7 +214,7 @@ impl ShortcutsSheet {
             self.rows.append(&retry);
         }
         let mut section = String::new();
-        let mut grid = gtk::Grid::new();
+        let mut grid = gtk4::Grid::new();
         let mut index = 0;
         for row in data.rows {
             if section != row.section {
@@ -228,10 +228,10 @@ impl ShortcutsSheet {
             key.set_width_chars(24);
             key.set_max_width_chars(24);
             grid.attach(&key, 0, index, 1, 1);
-            let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
+            let content = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
             content.set_hexpand(true);
             content.append(&label(&row.description));
-            let details = gtk::Expander::new(Some("Details"));
+            let details = gtk4::Expander::new(Some("Details"));
             details.add_css_class("shortcuts-details");
             let source = label(&row.details.join("\n\n"));
             source.set_selectable(true);
@@ -283,7 +283,7 @@ impl ShortcutsSheet {
             diagnostics.insert(0, format!("Source: {}", path.display()));
         }
         if !diagnostics.is_empty() {
-            let details = gtk::Expander::new(Some("Configuration details"));
+            let details = gtk4::Expander::new(Some("Configuration details"));
             details.add_css_class("shortcuts-details");
             let text = label(&diagnostics.join("\n"));
             text.set_selectable(true);
@@ -302,14 +302,14 @@ impl ShortcutsSheet {
                 }
             })));
     }
-    fn section(&self, name: &str) -> gtk::Grid {
+    fn section(&self, name: &str) -> gtk4::Grid {
         self.rows
-            .append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+            .append(&gtk4::Separator::new(gtk4::Orientation::Horizontal));
         let heading = label(name);
         heading.add_css_class("heading");
         heading.add_css_class("shortcuts-heading");
         self.rows.append(&heading);
-        let grid = gtk::Grid::new();
+        let grid = gtk4::Grid::new();
         grid.set_column_spacing(18);
         grid.set_row_spacing(10);
         grid.set_hexpand(true);
@@ -336,7 +336,7 @@ impl Drop for ShortcutsSheet {
         self.close();
     }
 }
-fn label(text: &str) -> gtk::Label {
+fn label(text: &str) -> gtk4::Label {
     let truncated;
     let text = if text.chars().count() > 8192 {
         truncated = format!(
@@ -347,11 +347,11 @@ fn label(text: &str) -> gtk::Label {
     } else {
         text
     };
-    let label = gtk::Label::new(Some(text));
+    let label = gtk4::Label::new(Some(text));
     label.set_xalign(0.0);
-    label.set_valign(gtk::Align::Start);
+    label.set_valign(gtk4::Align::Start);
     label.set_wrap(true);
-    label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    label.set_wrap_mode(gtk4::pango::WrapMode::WordChar);
     label.set_hexpand(true);
     label
 }

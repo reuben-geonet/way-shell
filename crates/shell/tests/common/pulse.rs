@@ -5,7 +5,7 @@ mod audio_policy;
 pub use audio_policy::Policy;
 
 use glib::translate::ToGlibPtr;
-use pulse::{context::*, operation::*, proplist::*, sample::*, stream::*};
+use libpulse_sys::{context::*, operation::*, proplist::*, sample::*, stream::*};
 use std::{
     cell::Cell,
     ffi::{CStr, CString, c_void},
@@ -14,12 +14,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-struct Mainloop(NonNull<pulse_glib::pa_glib_mainloop>);
+struct Mainloop(NonNull<libpulse_mainloop_glib_sys::pa_glib_mainloop>);
 
 impl Drop for Mainloop {
     fn drop(&mut self) {
         // Every context and stream has already released its reference to this loop.
-        unsafe { pulse_glib::pa_glib_mainloop_free(self.0.as_ptr()) };
+        unsafe { libpulse_mainloop_glib_sys::pa_glib_mainloop_free(self.0.as_ptr()) };
     }
 }
 
@@ -36,7 +36,7 @@ impl Connection {
 
     fn error(&self) -> String {
         unsafe {
-            let message = pulse::error::pa_strerror(pa_context_errno(self.raw.as_ptr()));
+            let message = libpulse_sys::error::pa_strerror(pa_context_errno(self.raw.as_ptr()));
             CStr::from_ptr(message).to_string_lossy().into_owned()
         }
     }
@@ -77,12 +77,14 @@ impl Client {
         );
         let server = CString::new(server).unwrap();
         let mainloop = Mainloop(
-            NonNull::new(unsafe { pulse_glib::pa_glib_mainloop_new(context.to_glib_none().0) })
-                .expect("create Pulse GLib loop"),
+            NonNull::new(unsafe {
+                libpulse_mainloop_glib_sys::pa_glib_mainloop_new(context.to_glib_none().0)
+            })
+            .expect("create Pulse GLib loop"),
         );
         let raw = NonNull::new(unsafe {
             pa_context_new(
-                pulse_glib::pa_glib_mainloop_get_api(mainloop.0.as_ptr()),
+                libpulse_mainloop_glib_sys::pa_glib_mainloop_get_api(mainloop.0.as_ptr()),
                 c"way-shell-routing-test".as_ptr(),
             )
         })

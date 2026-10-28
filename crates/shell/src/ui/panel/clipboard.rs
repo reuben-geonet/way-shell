@@ -1,34 +1,34 @@
 use crate::services::clipboard::ClipboardService;
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
     time::Duration,
 };
 pub struct ClipboardIndicator {
-    button: gtk::Button,
+    button: gtk4::Button,
     service: Rc<ClipboardService>,
     subscription: u64,
     animation: Rc<RefCell<Option<glib::SourceId>>>,
 }
 impl ClipboardIndicator {
     pub fn new(service: Rc<ClipboardService>, action: impl Fn(bool) + 'static) -> Self {
-        let button = gtk::Button::new();
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        let icon = gtk::Image::from_icon_name("way-shell-clipboard-symbolic");
-        let text = gtk::Label::new(None);
-        text.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        let button = gtk4::Button::new();
+        let content = gtk4::Box::new(gtk4::Orientation::Horizontal, 4);
+        let icon = gtk4::Image::from_icon_name("way-shell-clipboard-symbolic");
+        let text = gtk4::Label::new(None);
+        text.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         text.set_max_width_chars(28);
         content.append(&icon);
         content.append(&text);
         button.set_child(Some(&content));
         button.add_css_class("clipboard-indicator");
         button.set_tooltip_text(Some("Clipboard history"));
-        button.update_property(&[gtk::accessible::Property::Label("Clipboard history")]);
+        button.update_property(&[gtk4::accessible::Property::Label("Clipboard history")]);
         let action = Rc::new(action);
         let clicked = action.clone();
         button.connect_clicked(move |_| clicked(false));
-        let gesture = gtk::GestureClick::new();
+        let gesture = gtk4::GestureClick::new();
         gesture.set_button(2);
         gesture.connect_released(move |_, _, _, _| action(true));
         button.add_controller(gesture);
@@ -139,9 +139,9 @@ impl ClipboardIndicator {
             }
         });
         // Secondary-click actions are explicit and share the same service state.
-        let menu = gtk::Popover::new();
-        let rows = gtk::Box::new(gtk::Orientation::Vertical, 4);
-        let pause = gtk::CheckButton::with_label("Incognito");
+        let menu = gtk4::Popover::new();
+        let rows = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
+        let pause = gtk4::CheckButton::with_label("Incognito");
         pause.set_active(service.settings.boolean("incognito"));
         let source = service.clone();
         pause.connect_toggled(move |button| {
@@ -149,14 +149,14 @@ impl ClipboardIndicator {
         });
         rows.append(&pause);
         for (title, all) in [("Clear History", false), ("Clear All History", true)] {
-            let clear = gtk::Button::with_label(title);
+            let clear = gtk4::Button::with_label(title);
             let source = service.clone();
             clear.connect_clicked(move |_| source.clear(all));
             rows.append(&clear);
         }
         menu.set_child(Some(&rows));
         menu.set_parent(&button);
-        let gesture = gtk::GestureClick::new();
+        let gesture = gtk4::GestureClick::new();
         gesture.set_button(3);
         let source = service.clone();
         let popover = menu.clone();
@@ -173,7 +173,7 @@ impl ClipboardIndicator {
             animation,
         }
     }
-    pub fn widget(&self) -> &gtk::Button {
+    pub fn widget(&self) -> &gtk4::Button {
         &self.button
     }
 }

@@ -44,7 +44,7 @@ use crate::{
         workspace_switcher::{WorkspaceMode, WorkspaceSwitcher},
     },
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -63,7 +63,7 @@ const SIGTERM: i32 = 15;
 /// GApplication owns process registration; this owner keeps the Rust runtime
 /// alive even while all outputs are absent. Signal closures only hold weak refs.
 pub struct ShellApplication {
-    application: adw::Application,
+    application: libadwaita::Application,
     runtime: RefCell<Option<Rc<Runtime>>>,
     starting: RefCell<Option<glib::JoinHandle<()>>>,
     hold: RefCell<Option<gio::ApplicationHoldGuard>>,
@@ -76,7 +76,7 @@ pub struct ShellApplication {
 impl ShellApplication {
     pub fn new() -> Rc<Self> {
         let application =
-            adw::Application::new(Some(APPLICATION_ID), gio::ApplicationFlags::FLAGS_NONE);
+            libadwaita::Application::new(Some(APPLICATION_ID), gio::ApplicationFlags::FLAGS_NONE);
         let this = Rc::new(Self {
             application,
             runtime: RefCell::new(None),
@@ -104,7 +104,7 @@ impl ShellApplication {
         this.handlers.borrow_mut().push(handler);
         this
     }
-    pub fn application(&self) -> &adw::Application {
+    pub fn application(&self) -> &libadwaita::Application {
         &self.application
     }
     pub fn run(&self) -> glib::ExitCode {
@@ -233,7 +233,7 @@ impl Services {
         wayland: WaylandService,
         manager: WindowManager,
         configuration: &Configuration,
-        display: &gtk::gdk::Display,
+        display: &gtk4::gdk::Display,
     ) -> Result<Self, String> {
         let theme = ThemeService::with_settings(
             configuration.system.clone(),
@@ -343,7 +343,7 @@ impl Drop for Services {
 
 pub struct Runtime {
     configuration: Configuration,
-    display: gtk::gdk::Display,
+    display: gtk4::gdk::Display,
     services: RefCell<Option<Rc<Services>>>,
     ui: RefCell<Option<Rc<Desktop>>>,
     ipc: RefCell<Option<Rc<IpcService>>>,
@@ -387,7 +387,7 @@ impl Runtime {
             }
             glib::timeout_future(Duration::from_millis(5)).await;
         }
-        let display = gtk::gdk::Display::default().ok_or("No GTK Wayland display is available")?;
+        let display = gtk4::gdk::Display::default().ok_or("No GTK Wayland display is available")?;
         let services = Rc::new(Services::new(wayland, manager, &configuration, &display)?);
         let this = Rc::new(Self {
             configuration,
@@ -681,7 +681,7 @@ struct Desktop {
     panels: Panels,
     shortcuts: Rc<ShortcutsSheet>,
     screenshot: Rc<Screenshot>,
-    popup_handlers: RefCell<Vec<(adw::Window, glib::SignalHandlerId)>>,
+    popup_handlers: RefCell<Vec<(libadwaita::Window, glib::SignalHandlerId)>>,
     events: RefCell<VecDeque<DesktopEvent>>,
     publishing: Cell<bool>,
     stopped: Cell<bool>,
@@ -690,7 +690,7 @@ impl Desktop {
     fn new(
         services: &Services,
         configuration: &Configuration,
-        display: &gtk::gdk::Display,
+        display: &gtk4::gdk::Display,
         action: impl Fn(PanelAction) + 'static,
     ) -> Result<Rc<Self>, String> {
         let dialog = Dialog::new()?;
@@ -987,8 +987,8 @@ impl Desktop {
         self.app_switcher.hide();
         self.dialog.cancel();
         // Tray menus and tooltips are GTK popovers parented below panels.
-        fn dismiss(widget: &gtk::Widget) {
-            if let Some(popover) = widget.downcast_ref::<gtk::Popover>() {
+        fn dismiss(widget: &gtk4::Widget) {
+            if let Some(popover) = widget.downcast_ref::<gtk4::Popover>() {
                 popover.popdown();
                 popover.set_visible(false);
             }

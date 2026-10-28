@@ -1,5 +1,5 @@
 //! Two-column quick-settings tiles with one owned menu open at a time.
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -7,13 +7,13 @@ use std::{
 };
 
 pub struct GridButton {
-    root: gtk::Box,
-    toggle: gtk::Button,
-    title: gtk::Label,
-    subtitle: gtk::Label,
-    icon: gtk::Image,
-    reveal_button: Option<gtk::Button>,
-    revealer: gtk::Revealer,
+    root: gtk4::Box,
+    toggle: gtk4::Button,
+    title: gtk4::Label,
+    subtitle: gtk4::Label,
+    icon: gtk4::Image,
+    reveal_button: Option<gtk4::Button>,
+    revealer: gtk4::Revealer,
     reveal_action: RefCell<Option<Rc<dyn Fn()>>>,
     reveal_changed: RefCell<Option<Rc<dyn Fn()>>>,
 }
@@ -23,27 +23,27 @@ impl GridButton {
         title: &str,
         subtitle: Option<&str>,
         icon: &str,
-        menu: Option<&gtk::Widget>,
+        menu: Option<&gtk4::Widget>,
     ) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         root.set_hexpand(true);
         root.set_size_request(100, 60);
         root.add_css_class("quick-settings-grid-button");
-        let toggle = gtk::Button::new();
+        let toggle = gtk4::Button::new();
         toggle.add_css_class("quick-settings-grid-button-toggle");
         toggle.set_hexpand(true);
-        let overlay = gtk::Overlay::new();
+        let overlay = gtk4::Overlay::new();
         overlay.set_child(Some(&toggle));
         root.append(&overlay);
-        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        contents.set_valign(gtk::Align::Center);
-        let icon = gtk::Image::from_icon_name(icon);
+        let contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        contents.set_valign(gtk4::Align::Center);
+        let icon = gtk4::Image::from_icon_name(icon);
         icon.set_pixel_size(20);
-        icon.set_halign(gtk::Align::Start);
+        icon.set_halign(gtk4::Align::Start);
         icon.add_css_class("quick-settings-grid-button-icon");
         contents.append(&icon);
-        let text = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        text.set_valign(gtk::Align::Center);
+        let text = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        text.set_valign(gtk4::Align::Center);
         let title = tile_label(title, "quick-settings-grid-button-title");
         let subtitle_widget = tile_label(
             subtitle.unwrap_or(""),
@@ -54,18 +54,18 @@ impl GridButton {
         text.append(&subtitle_widget);
         contents.append(&text);
         toggle.set_child(Some(&contents));
-        let revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideDown)
+        let revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SlideDown)
             .transition_duration(350)
             .build();
         revealer.add_css_class("quick-settings-grid-button-revealer");
         revealer.set_child(menu);
         let reveal_button = menu.map(|_| {
             toggle.add_css_class("with-revealer");
-            let button = gtk::Button::from_icon_name("go-next-symbolic");
+            let button = gtk4::Button::from_icon_name("go-next-symbolic");
             button.add_css_class("quick-settings-grid-button-reveal-hidden");
             button.add_css_class("quick-settings-grid-button-reveal-visible");
-            button.set_halign(gtk::Align::End);
+            button.set_halign(gtk4::Align::End);
             overlay.add_overlay(&button);
             button
         });
@@ -99,16 +99,16 @@ impl GridButton {
         }
         this
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
-    pub fn toggle(&self) -> &gtk::Button {
+    pub fn toggle(&self) -> &gtk4::Button {
         &self.toggle
     }
-    pub fn reveal_button(&self) -> Option<&gtk::Button> {
+    pub fn reveal_button(&self) -> Option<&gtk4::Button> {
         self.reveal_button.as_ref()
     }
-    pub fn revealer(&self) -> &gtk::Revealer {
+    pub fn revealer(&self) -> &gtk4::Revealer {
         &self.revealer
     }
     pub fn set_title(&self, title: &str) {
@@ -153,20 +153,20 @@ impl GridButton {
     }
 }
 
-fn tile_label(text: &str, class: &str) -> gtk::Label {
-    let label = gtk::Label::new(Some(text));
-    label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+fn tile_label(text: &str, class: &str) -> gtk4::Label {
+    let label = gtk4::Label::new(Some(text));
+    label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
     label.set_width_chars(12);
     label.set_max_width_chars(12);
     label.set_xalign(0.0);
-    label.set_halign(gtk::Align::Start);
+    label.set_halign(gtk4::Align::Start);
     label.add_css_class(class);
     label
 }
 
 struct Row {
-    root: gtk::Box,
-    center: gtk::CenterBox,
+    root: gtk4::Box,
+    center: gtk4::CenterBox,
 }
 enum Update {
     Buttons(Vec<Rc<GridButton>>),
@@ -176,7 +176,7 @@ enum Update {
 }
 
 pub struct Grid {
-    root: gtk::Box,
+    root: gtk4::Box,
     buttons: RefCell<Vec<Rc<GridButton>>>,
     rows: RefCell<Vec<Row>>,
     updates: RefCell<VecDeque<Update>>,
@@ -188,7 +188,7 @@ pub struct Grid {
 
 impl Grid {
     pub fn new(focused: impl Fn(bool) + 'static) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.set_widget_name("quick-settings-grid");
         root.set_hexpand(true);
         root.set_vexpand(true);
@@ -203,7 +203,7 @@ impl Grid {
             focus_state: Cell::new(false),
         })
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
     /// Supply the complete order, including dynamic network tiles. Existing
@@ -310,12 +310,12 @@ impl Grid {
         }
         let old_rows = self.rows.take();
         for row in old_rows {
-            row.center.set_start_widget(None::<&gtk::Widget>);
-            row.center.set_end_widget(None::<&gtk::Widget>);
+            row.center.set_start_widget(None::<&gtk4::Widget>);
+            row.center.set_end_widget(None::<&gtk4::Widget>);
             while let Some(child) = row
                 .root
                 .last_child()
-                .filter(|child| child != row.center.upcast_ref::<gtk::Widget>())
+                .filter(|child| child != row.center.upcast_ref::<gtk4::Widget>())
             {
                 row.root.remove(&child);
             }
@@ -323,8 +323,8 @@ impl Grid {
         }
         let mut rows = Vec::new();
         for pair in unique.chunks(2) {
-            let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-            let center = gtk::CenterBox::new();
+            let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+            let center = gtk4::CenterBox::new();
             root.append(&center);
             center.set_start_widget(Some(pair[0].widget()));
             if let Some(right) = pair.get(1) {

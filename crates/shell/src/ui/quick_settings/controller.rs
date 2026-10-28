@@ -13,7 +13,7 @@ use crate::services::{
     audio::AudioService, bluetooth::BluetoothService, network::NetworkService,
     notifications::NotificationsService, power::PowerService,
 };
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{cell::Cell, rc::Rc};
 
 pub struct QuickSettingsServices {
@@ -88,7 +88,7 @@ impl QuickSettings {
             }
         });
         window.content().append(header.widget());
-        let scales = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let scales = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         scales.set_widget_name("quick-settings-scales");
         scales.append(audio.scales());
         scales.append(system.brightness_row());
@@ -153,7 +153,7 @@ impl QuickSettings {
         this.update_tiles();
         Ok(this)
     }
-    pub fn screenshot_button(&self) -> &gtk::Button {
+    pub fn screenshot_button(&self) -> &gtk4::Button {
         self.header.screenshot_button()
     }
     pub fn window(&self) -> &Rc<QuickSettingsWindow> {

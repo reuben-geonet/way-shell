@@ -1,17 +1,17 @@
 //! Panel clock and notification indicator, sharing the application's services.
 use crate::services::{clock::ClockService, notifications::NotificationsService};
 use gio::prelude::*;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
 };
 
 struct Inner {
-    root: gtk::Box,
-    button: gtk::Button,
-    label: gtk::Label,
-    indicator: gtk::Image,
+    root: gtk4::Box,
+    button: gtk4::Button,
+    label: gtk4::Label,
+    indicator: gtk4::Image,
     format: String,
     notifications: NotificationsService,
     settings: gio::Settings,
@@ -75,14 +75,14 @@ impl PanelClock {
                 "Invalid clock-format setting {requested:?}; using the default"
             );
         }
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         root.add_css_class("panel-clock");
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.add_css_class("panel-button");
-        let label = gtk::Label::new(None);
+        let label = gtk4::Label::new(None);
         button.set_child(Some(&label));
         root.append(&button);
-        let indicator = gtk::Image::new();
+        let indicator = gtk4::Image::new();
         indicator.add_css_class("panel-clock-notif");
         root.append(&indicator);
         let inner = Rc::new(Inner {
@@ -141,7 +141,7 @@ impl PanelClock {
         inner.update_notifications();
         Ok(Self(inner))
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.0.root
     }
     pub fn set_toggled(&self, toggled: bool) {

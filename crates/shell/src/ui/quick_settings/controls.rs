@@ -7,7 +7,7 @@ use crate::services::{
     theme::{Theme, ThemeService},
     wayland::WaylandService,
 };
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -52,16 +52,16 @@ pub struct SystemControls {
     profiles: Rc<GridButton>,
     profiles_menu: Menu,
     profiles_state: RefCell<Option<ProfilesState>>,
-    profile_rows: RefCell<HashMap<String, gtk::Box>>,
+    profile_rows: RefCell<HashMap<String, gtk4::Box>>,
     idle: Rc<GridButton>,
     nightlight: Rc<GridButton>,
-    temperature: gtk::Scale,
+    temperature: gtk4::Scale,
     keyboard: Rc<GridButton>,
-    keyboard_scale: gtk::Scale,
+    keyboard_scale: gtk4::Scale,
     keyboard_maximum: Cell<Option<u32>>,
     theme: Rc<GridButton>,
-    brightness_row: gtk::Box,
-    brightness_scale: gtk::Scale,
+    brightness_row: gtk4::Box,
+    brightness_scale: gtk4::Scale,
     refreshing: Cell<bool>,
     refresh_pending: Cell<bool>,
     stopped: Cell<bool>,
@@ -78,16 +78,16 @@ impl SystemControls {
         let idle = GridButton::new("Idle Inhibitor", None, "radio-mixed-symbolic", None);
         let night_menu = Menu::new("Temperature", "night-light-symbolic");
         let temperature =
-            gtk::Scale::with_range(gtk::Orientation::Horizontal, 1000.0, 6800.0, 500.0);
+            gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 1000.0, 6800.0, 500.0);
         temperature.set_value(3000.0);
         for value in (1000..=6000).step_by(1000) {
             temperature.add_mark(
                 value as f64,
-                gtk::PositionType::Bottom,
+                gtk4::PositionType::Bottom,
                 Some(&format!("{}K", value / 1000)),
             );
         }
-        temperature.add_mark(6800.0, gtk::PositionType::Bottom, Some("68K"));
+        temperature.add_mark(6800.0, gtk4::PositionType::Bottom, Some("68K"));
         night_menu.options().append(&temperature);
         let nightlight = GridButton::new(
             "Night Light",
@@ -96,7 +96,7 @@ impl SystemControls {
             Some(night_menu.widget().upcast_ref()),
         );
         let keyboard_menu = Menu::new("Keyboard Backlight", "keyboard-brightness-symbolic");
-        let keyboard_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 1.0);
+        let keyboard_scale = gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, 1.0, 1.0);
         keyboard_scale.set_round_digits(0);
         keyboard_menu.options().append(&keyboard_scale);
         let keyboard = GridButton::new(
@@ -111,10 +111,11 @@ impl SystemControls {
             "preferences-desktop-appearance-symbolic",
             None,
         );
-        let brightness_row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let brightness_row = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         brightness_row.set_widget_name("brightness-container");
-        brightness_row.append(&gtk::Image::from_icon_name("display-brightness-symbolic"));
-        let brightness_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 0.05);
+        brightness_row.append(&gtk4::Image::from_icon_name("display-brightness-symbolic"));
+        let brightness_scale =
+            gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, 1.0, 0.05);
         brightness_scale.set_hexpand(true);
         brightness_row.append(&brightness_scale);
         let this = Rc::new(Self {
@@ -246,16 +247,16 @@ impl SystemControls {
             .chain([self.keyboard.clone(), self.theme.clone()])
             .collect()
     }
-    pub fn brightness_row(&self) -> &gtk::Box {
+    pub fn brightness_row(&self) -> &gtk4::Box {
         &self.brightness_row
     }
-    pub fn brightness_scale(&self) -> &gtk::Scale {
+    pub fn brightness_scale(&self) -> &gtk4::Scale {
         &self.brightness_scale
     }
-    pub fn keyboard_scale(&self) -> &gtk::Scale {
+    pub fn keyboard_scale(&self) -> &gtk4::Scale {
         &self.keyboard_scale
     }
-    pub fn temperature_scale(&self) -> &gtk::Scale {
+    pub fn temperature_scale(&self) -> &gtk4::Scale {
         &self.temperature
     }
     pub fn stop(&self) {
@@ -283,7 +284,7 @@ impl SystemControls {
             .borrow_mut()
             .push(Subscription::new(object, handler));
     }
-    fn clicked(self: &Rc<Self>, button: &gtk::Button, callback: impl Fn(&Rc<Self>) + 'static) {
+    fn clicked(self: &Rc<Self>, button: &gtk4::Button, callback: impl Fn(&Rc<Self>) + 'static) {
         let weak = Rc::downgrade(self);
         button.connect_clicked(move |button| {
             if let Some(this) = weak.upgrade()
@@ -355,7 +356,7 @@ impl SystemControls {
                     for value in 0..=maximum {
                         self.keyboard_scale.add_mark(
                             value as f64,
-                            gtk::PositionType::Bottom,
+                            gtk4::PositionType::Bottom,
                             Some(&value.to_string()),
                         );
                     }
@@ -406,7 +407,7 @@ impl SystemControls {
         }
         let mut old = self.profile_rows.take();
         let mut next = HashMap::new();
-        let mut previous: Option<gtk::Widget> = None;
+        let mut previous: Option<gtk4::Widget> = None;
         for profile in state.profiles {
             let row = old
                 .remove(&profile)
@@ -426,16 +427,16 @@ impl SystemControls {
         self.profile_rows.replace(next);
         self.profiles_menu.update_viewport(MAX_VISIBLE_PROFILES);
     }
-    fn profile_row(self: &Rc<Self>, profile: &str) -> gtk::Box {
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    fn profile_row(self: &Rc<Self>, profile: &str) -> gtk4::Box {
+        let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         row.add_css_class("quick-settings-menu-option-power-profiles");
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.set_hexpand(true);
-        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        contents.append(&gtk::Image::from_icon_name(profile_icon(Some(profile))));
-        let label = gtk::Label::new(Some(profile));
+        let contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        contents.append(&gtk4::Image::from_icon_name(profile_icon(Some(profile))));
+        let label = gtk4::Label::new(Some(profile));
         label.set_xalign(0.0);
-        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         contents.append(&label);
         button.set_child(Some(&contents));
         row.append(&button);

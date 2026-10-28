@@ -11,9 +11,9 @@ use super::{
 use crate::services::{
     clipboard::ClipboardService, shortcuts::ShortcutsService, wayland::Toplevel, wm::WindowManager,
 };
-use adw::prelude::*;
-use gtk::{gdk, gio};
+use gtk4::{gdk, gio};
 use gtk4_layer_shell::{KeyboardMode, Layer, LayerShell};
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -32,29 +32,29 @@ pub struct ClipboardDialog {
     shortcuts: Rc<ShortcutsService>,
     surface: LayerWindow,
     underlays: UnderlaySet,
-    root: gtk::Fixed,
-    panel: gtk::Box,
-    header: gtk::CenterBox,
-    footer: gtk::Box,
-    controls: gtk::Box,
-    clear: gtk::Button,
-    search_box: gtk::Box,
-    search: gtk::SearchEntry,
-    pinned: gtk::ToggleButton,
-    filter_menu: gtk::MenuButton,
-    filter_icon: gtk::Image,
-    kind: gtk::SingleSelection,
-    tag: gtk::SingleSelection,
-    model: gtk::StringList,
-    selection: gtk::SingleSelection,
-    list: gtk::ListView,
-    scroller: gtk::ScrolledWindow,
-    empty: gtk::Box,
-    empty_icon: gtk::Image,
-    empty_title: gtk::Label,
-    status: gtk::Label,
-    spinner: gtk::Spinner,
-    retry: gtk::Button,
+    root: gtk4::Fixed,
+    panel: gtk4::Box,
+    header: gtk4::CenterBox,
+    footer: gtk4::Box,
+    controls: gtk4::Box,
+    clear: gtk4::Button,
+    search_box: gtk4::Box,
+    search: gtk4::SearchEntry,
+    pinned: gtk4::ToggleButton,
+    filter_menu: gtk4::MenuButton,
+    filter_icon: gtk4::Image,
+    kind: gtk4::SingleSelection,
+    tag: gtk4::SingleSelection,
+    model: gtk4::StringList,
+    selection: gtk4::SingleSelection,
+    list: gtk4::ListView,
+    scroller: gtk4::ScrolledWindow,
+    empty: gtk4::Box,
+    empty_icon: gtk4::Image,
+    empty_title: gtk4::Label,
+    status: gtk4::Label,
+    spinner: gtk4::Spinner,
+    retry: gtk4::Button,
     progress: Progress,
     visible: Cell<bool>,
     stopped: Cell<bool>,
@@ -67,9 +67,9 @@ pub struct ClipboardDialog {
     processes: RefCell<Vec<gio::Subprocess>>,
     temporary_images: RefCell<Vec<std::path::PathBuf>>,
     preview_cancel: RefCell<Vec<Arc<AtomicBool>>>,
-    preferences: RefCell<Option<adw::PreferencesWindow>>,
-    style: gtk::CssProvider,
-    style_manager: adw::StyleManager,
+    preferences: RefCell<Option<libadwaita::PreferencesWindow>>,
+    style: gtk4::CssProvider,
+    style_manager: libadwaita::StyleManager,
     style_signature: RefCell<String>,
     style_handler: RefCell<Option<glib::SignalHandlerId>>,
     last_revision: Cell<u64>,
@@ -83,79 +83,81 @@ impl ClipboardDialog {
         shortcuts: Rc<ShortcutsService>,
     ) -> Result<Rc<Self>, String> {
         crate::resources::get();
-        gtk::IconTheme::for_display(&gdk::Display::default().ok_or("No GTK display is available")?)
-            .add_resource_path("/org/ldelossa/way-shell/data/clipboard/icons");
+        gtk4::IconTheme::for_display(
+            &gdk::Display::default().ok_or("No GTK display is available")?,
+        )
+        .add_resource_path("/org/ldelossa/way-shell/data/clipboard/icons");
         let surface = LayerWindow::new(WindowRole::Clipboard, None)?;
         surface.window().set_title(Some("Clipboard history"));
         surface.window().add_css_class("clipboard-surface");
-        let root = gtk::Fixed::new();
+        let root = gtk4::Fixed::new();
         root.set_hexpand(true);
         root.set_vexpand(true);
-        let panel = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let panel = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         panel.add_css_class("clipboard-dialog");
         root.put(&panel, 0.0, 0.0);
         surface.window().set_content(Some(&root));
-        let header = gtk::CenterBox::new();
+        let header = gtk4::CenterBox::new();
         header.add_css_class("clipboard-header");
-        let controls = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-        controls.set_valign(gtk::Align::Center);
+        let controls = gtk4::Box::new(gtk4::Orientation::Horizontal, 12);
+        controls.set_valign(gtk4::Align::Center);
         let settings = icon_button("way-shell-settings-symbolic", "Clipboard preferences");
-        let incognito = gtk::ToggleButton::new();
+        let incognito = gtk4::ToggleButton::new();
         incognito.set_icon_name("way-shell-incognito-symbolic");
         incognito.set_tooltip_text(Some("Incognito: pause clipboard history"));
         incognito.add_css_class("circular");
         controls.append(&settings);
         controls.append(&incognito);
         header.set_start_widget(Some(&controls));
-        let search_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let search_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 4);
         search_box.add_css_class("clipboard-search");
         search_box.set_hexpand(false);
-        search_box.set_halign(gtk::Align::Center);
-        search_box.set_valign(gtk::Align::Center);
+        search_box.set_halign(gtk4::Align::Center);
+        search_box.set_valign(gtk4::Align::Center);
         let kind_names: Vec<_> = std::iter::once("All types")
             .chain(Kind::ALL.iter().map(|kind| kind.name()))
             .collect();
-        let kind = gtk::SingleSelection::new(Some(gtk::StringList::new(&kind_names)));
+        let kind = gtk4::SingleSelection::new(Some(gtk4::StringList::new(&kind_names)));
         let tag_names: Vec<_> = std::iter::once("All tags").chain(TAGS).collect();
-        let tag = gtk::SingleSelection::new(Some(gtk::StringList::new(&tag_names)));
-        let filter_menu = gtk::MenuButton::new();
-        let filter_content = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-        let filter_icon = gtk::Image::from_icon_name("system-search-symbolic");
+        let tag = gtk4::SingleSelection::new(Some(gtk4::StringList::new(&tag_names)));
+        let filter_menu = gtk4::MenuButton::new();
+        let filter_content = gtk4::Box::new(gtk4::Orientation::Horizontal, 2);
+        let filter_icon = gtk4::Image::from_icon_name("system-search-symbolic");
         filter_content.append(&filter_icon);
-        let arrow = gtk::Image::from_icon_name("pan-down-symbolic");
+        let arrow = gtk4::Image::from_icon_name("pan-down-symbolic");
         arrow.set_pixel_size(8);
         filter_content.append(&arrow);
         filter_menu.set_child(Some(&filter_content));
         filter_menu.add_css_class("flat");
         filter_menu.set_tooltip_text(Some("Filter clipboard history by type or tag"));
-        let filters = gtk::Box::new(gtk::Orientation::Vertical, 8);
+        let filters = gtk4::Box::new(gtk4::Orientation::Vertical, 8);
         filters.set_margin_top(10);
         filters.set_margin_bottom(10);
         filters.set_margin_start(10);
         filters.set_margin_end(10);
         filters.append(&tag_picker(&tag));
-        filters.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
-        let type_factory = gtk::SignalListItemFactory::new();
+        filters.append(&gtk4::Separator::new(gtk4::Orientation::Horizontal));
+        let type_factory = gtk4::SignalListItemFactory::new();
         type_factory.connect_bind(|_, object| {
-            let Some(item) = object.downcast_ref::<gtk::ListItem>() else {
+            let Some(item) = object.downcast_ref::<gtk4::ListItem>() else {
                 return;
             };
-            let Some(name) = item.item().and_downcast::<gtk::StringObject>() else {
+            let Some(name) = item.item().and_downcast::<gtk4::StringObject>() else {
                 return;
             };
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-            row.append(&gtk::Image::from_icon_name("object-select-symbolic"));
-            let label = gtk::Label::new(Some(&name.string()));
+            let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
+            row.append(&gtk4::Image::from_icon_name("object-select-symbolic"));
+            let label = gtk4::Label::new(Some(&name.string()));
             label.set_xalign(0.0);
             label.set_hexpand(true);
             row.append(&label);
             item.set_child(Some(&row));
         });
-        let types = gtk::ListView::new(Some(kind.clone()), Some(type_factory));
+        let types = gtk4::ListView::new(Some(kind.clone()), Some(type_factory));
         types.add_css_class("clipboard-filter-types");
         types.set_single_click_activate(true);
         filters.append(&types);
-        let popover = gtk::Popover::new();
+        let popover = gtk4::Popover::new();
         popover.add_css_class("clipboard-popover");
         popover.set_child(Some(&filters));
         let weak_popover = popover.downgrade();
@@ -171,31 +173,32 @@ impl ClipboardDialog {
             }
         });
         filter_menu.set_popover(Some(&popover));
-        let search = gtk::SearchEntry::new();
+        let search = gtk4::SearchEntry::new();
         search.set_placeholder_text(Some("Type to search"));
         search.set_hexpand(true);
         search.set_width_request(100);
-        let pinned = gtk::ToggleButton::new();
+        let pinned = gtk4::ToggleButton::new();
         pinned.set_icon_name("way-shell-pin-symbolic");
         pinned.set_tooltip_text(Some("Search pinned items"));
         pinned.add_css_class("clipboard-pinned");
-        pinned.set_valign(gtk::Align::Center);
+        pinned.set_valign(gtk4::Align::Center);
         search_box.append(&filter_menu);
         search_box.append(&search);
         search_box.append(&pinned);
         header.set_center_widget(Some(&search_box));
-        let clear = gtk::Button::with_label("Clear");
+        let clear = gtk4::Button::with_label("Clear");
         clear.add_css_class("pill");
         header.set_end_widget(Some(&clear));
         panel.append(&header);
-        let model = gtk::StringList::new(&[]);
-        let selection = gtk::SingleSelection::new(Some(model.clone()));
-        let list = gtk::ListView::new(Some(selection.clone()), None::<gtk::SignalListItemFactory>);
+        let model = gtk4::StringList::new(&[]);
+        let selection = gtk4::SingleSelection::new(Some(model.clone()));
+        let list =
+            gtk4::ListView::new(Some(selection.clone()), None::<gtk4::SignalListItemFactory>);
         list.add_css_class("clipboard-items");
-        list.set_orientation(gtk::Orientation::Horizontal);
-        let scroller = gtk::ScrolledWindow::new();
+        list.set_orientation(gtk4::Orientation::Horizontal);
+        let scroller = gtk4::ScrolledWindow::new();
         scroller.set_overlay_scrolling(false);
-        scroller.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Never);
+        scroller.set_policy(gtk4::PolicyType::Automatic, gtk4::PolicyType::Never);
         scroller.set_hexpand(true);
         scroller.set_vexpand(true);
         scroller.set_child(Some(&list));
@@ -212,56 +215,57 @@ impl ClipboardDialog {
                 }
             });
         }
-        let content = gtk::Overlay::new();
+        let content = gtk4::Overlay::new();
         content.set_hexpand(true);
         content.set_vexpand(true);
         content.set_child(Some(&scroller));
-        let empty = gtk::Box::new(gtk::Orientation::Vertical, 18);
+        let empty = gtk4::Box::new(gtk4::Orientation::Vertical, 18);
         empty.add_css_class("clipboard-empty");
-        empty.set_halign(gtk::Align::Center);
-        empty.set_valign(gtk::Align::Center);
+        empty.set_halign(gtk4::Align::Center);
+        empty.set_valign(gtk4::Align::Center);
         empty.set_can_target(false);
         empty.set_visible(false);
-        let empty_icon = gtk::Image::from_icon_name("way-shell-clipboard-symbolic");
+        let empty_icon = gtk4::Image::from_icon_name("way-shell-clipboard-symbolic");
         empty_icon.set_pixel_size(64);
-        let empty_title = gtk::Label::new(Some("Clipboard is Empty"));
+        let empty_title = gtk4::Label::new(Some("Clipboard is Empty"));
         empty_title.add_css_class("clipboard-empty-title");
         empty.append(&empty_icon);
         empty.append(&empty_title);
         content.add_overlay(&empty);
         panel.append(&content);
-        let status_box = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let status_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
         status_box.add_css_class("clipboard-status");
         status_box.set_margin_start(15);
         status_box.set_margin_end(15);
-        let spinner = gtk::Spinner::new();
+        let spinner = gtk4::Spinner::new();
         spinner.set_size_request(16, 16);
         spinner.set_opacity(0.0);
-        let status = gtk::Label::new(None);
+        let status = gtk4::Label::new(None);
         status.set_xalign(0.0);
         status.set_hexpand(true);
-        status.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        status.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         status_box.append(&spinner);
         status_box.append(&status);
         let retry = icon_button("view-refresh-symbolic", "Retry opening clipboard history");
         retry.set_opacity(0.0);
         retry.set_sensitive(false);
         status_box.append(&retry);
-        status_box.set_valign(gtk::Align::End);
+        status_box.set_valign(gtk4::Align::End);
         status_box.set_can_target(false);
         content.add_overlay(&status_box);
-        let footer = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let footer = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
         footer.add_css_class("clipboard-footer");
         panel.append(&footer);
         let underlays = UnderlaySet::new(WindowRole::PanelPopupUnderlay)?;
-        let style = gtk::CssProvider::new();
-        gtk::style_context_add_provider_for_display(
-            &gtk::prelude::WidgetExt::display(surface.window()),
+        let style = gtk4::CssProvider::new();
+        gtk4::style_context_add_provider_for_display(
+            &gtk4::prelude::WidgetExt::display(surface.window()),
             &style,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
+            gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
         );
-        let style_manager =
-            adw::StyleManager::for_display(&gtk::prelude::WidgetExt::display(surface.window()));
+        let style_manager = libadwaita::StyleManager::for_display(
+            &gtk4::prelude::WidgetExt::display(surface.window()),
+        );
         let this = Rc::new_cyclic(|weak: &std::rc::Weak<Self>| Self {
             service,
             manager,
@@ -340,7 +344,7 @@ impl ClipboardDialog {
         let incognito = this
             .controls
             .last_child()
-            .and_downcast::<gtk::ToggleButton>()
+            .and_downcast::<gtk4::ToggleButton>()
             .unwrap();
         incognito.set_active(this.service.settings.boolean("incognito"));
         let weak = Rc::downgrade(&this);
@@ -382,14 +386,14 @@ impl ClipboardDialog {
                 }
             });
         }
-        let factory = gtk::SignalListItemFactory::new();
+        let factory = gtk4::SignalListItemFactory::new();
         let weak = Rc::downgrade(&this);
         factory.connect_bind(move |_, object| {
             if let Some(this) = weak.upgrade()
-                && let Some(item) = object.downcast_ref::<gtk::ListItem>()
+                && let Some(item) = object.downcast_ref::<gtk4::ListItem>()
                 && let Some(id) = item
                     .item()
-                    .and_downcast::<gtk::StringObject>()
+                    .and_downcast::<gtk4::StringObject>()
                     .and_then(|value| value.string().parse::<i64>().ok())
                 && let Some(entry) = this.service.entry(id)
             {
@@ -397,14 +401,14 @@ impl ClipboardDialog {
             }
         });
         factory.connect_unbind(|_, object| {
-            if let Some(item) = object.downcast_ref::<gtk::ListItem>() {
-                item.set_child(None::<&gtk::Widget>);
+            if let Some(item) = object.downcast_ref::<gtk4::ListItem>() {
+                item.set_child(None::<&gtk4::Widget>);
             }
         });
         this.list.set_factory(Some(&factory));
         let list = this.list.downgrade();
         this.selection.connect_selected_notify(move |selection| {
-            if selection.selected() != gtk::INVALID_LIST_POSITION
+            if selection.selected() != gtk4::INVALID_LIST_POSITION
                 && let Some(list) = list.upgrade()
             {
                 let _ = list.activate_action(
@@ -442,20 +446,20 @@ impl ClipboardDialog {
                 this.close();
             }
         });
-        let click = gtk::GestureClick::new();
+        let click = gtk4::GestureClick::new();
         let weak = Rc::downgrade(&this);
         click.connect_released(move |_, _, x, y| {
             if let Some(this) = weak.upgrade()
                 && this
                     .root
-                    .pick(x, y, gtk::PickFlags::DEFAULT)
+                    .pick(x, y, gtk4::PickFlags::DEFAULT)
                     .is_none_or(|picked| !picked.is_ancestor(&this.panel) && picked != this.panel)
             {
                 this.hide();
             }
         });
         this.root.add_controller(click);
-        let motion = gtk::EventControllerMotion::new();
+        let motion = gtk4::EventControllerMotion::new();
         let weak = Rc::downgrade(&this);
         motion.connect_enter(move |_, x, y| {
             if let Some(this) = weak.upgrade()
@@ -465,8 +469,9 @@ impl ClipboardDialog {
             }
         });
         this.root.add_controller(motion);
-        let scroll = gtk::EventControllerScroll::new(
-            gtk::EventControllerScrollFlags::BOTH_AXES | gtk::EventControllerScrollFlags::DISCRETE,
+        let scroll = gtk4::EventControllerScroll::new(
+            gtk4::EventControllerScrollFlags::BOTH_AXES
+                | gtk4::EventControllerScrollFlags::DISCRETE,
         );
         let weak = Rc::downgrade(&this);
         scroll.connect_scroll(move |controller, dx, dy| {
@@ -486,13 +491,14 @@ impl ClipboardDialog {
             glib::Propagation::Stop
         });
         this.search_box.add_controller(scroll);
-        let scroll = gtk::EventControllerScroll::new(
-            gtk::EventControllerScrollFlags::BOTH_AXES | gtk::EventControllerScrollFlags::DISCRETE,
+        let scroll = gtk4::EventControllerScroll::new(
+            gtk4::EventControllerScrollFlags::BOTH_AXES
+                | gtk4::EventControllerScrollFlags::DISCRETE,
         );
         let weak = Rc::downgrade(&this);
         scroll.connect_scroll(move |_, dx, dy| {
             if let Some(this) = weak.upgrade() {
-                let vertical = this.list.orientation() == gtk::Orientation::Vertical;
+                let vertical = this.list.orientation() == gtk4::Orientation::Vertical;
                 let adjustment = if vertical {
                     this.scroller.vadjustment()
                 } else {
@@ -531,7 +537,7 @@ impl ClipboardDialog {
     pub fn is_visible(&self) -> bool {
         self.visible.get()
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.surface.window()
     }
     pub fn toggle(self: &Rc<Self>, monitor: Option<&gdk::Monitor>) -> Result<(), String> {
@@ -566,7 +572,7 @@ impl ClipboardDialog {
         self.cancel_paste();
         self.generation.set(self.generation.get().wrapping_add(1));
         self.target.replace(self.service.wayland.focused_toplevel());
-        let display = gtk::prelude::WidgetExt::display(self.window());
+        let display = gtk4::prelude::WidgetExt::display(self.window());
         let monitors = display.monitors();
         let output = self
             .manager
@@ -681,8 +687,8 @@ impl ClipboardDialog {
         }
         self.underlays.close();
         self.surface.close();
-        gtk::style_context_remove_provider_for_display(
-            &gtk::prelude::WidgetExt::display(self.window()),
+        gtk4::style_context_remove_provider_for_display(
+            &gtk4::prelude::WidgetExt::display(self.window()),
             &self.style,
         );
     }
@@ -715,7 +721,7 @@ impl ClipboardDialog {
             settings.int("clipboard-size")
         }
         .min(available_width);
-        let header_height = self.header.measure(gtk::Orientation::Vertical, -1).1;
+        let header_height = self.header.measure(gtk4::Orientation::Vertical, -1).1;
         let height = if vertical {
             if position == "fill" && !settings.boolean("show-at-pointer") {
                 available_height
@@ -731,8 +737,8 @@ impl ClipboardDialog {
         } else {
             width
                 - 42
-                - self.controls.measure(gtk::Orientation::Horizontal, -1).1
-                - self.clear.measure(gtk::Orientation::Horizontal, -1).1
+                - self.controls.measure(gtk4::Orientation::Horizontal, -1).1
+                - self.clear.measure(gtk4::Orientation::Horizontal, -1).1
         };
         self.search_box
             .set_width_request(search_width.clamp(180, 350));
@@ -760,35 +766,35 @@ impl ClipboardDialog {
             .unwrap_or((f64::from(x), f64::from(y)));
         self.root.move_(&self.panel, x, y);
         self.list.set_orientation(if vertical {
-            gtk::Orientation::Vertical
+            gtk4::Orientation::Vertical
         } else {
-            gtk::Orientation::Horizontal
+            gtk4::Orientation::Horizontal
         });
         self.list
             .remove_css_class(if vertical { "horizontal" } else { "vertical" });
         self.list
             .add_css_class(if vertical { "vertical" } else { "horizontal" });
         let scrolling = if settings.boolean("show-scrollbar") {
-            gtk::PolicyType::Automatic
+            gtk4::PolicyType::Automatic
         } else {
-            gtk::PolicyType::External
+            gtk4::PolicyType::External
         };
         self.scroller.set_policy(
             if vertical {
-                gtk::PolicyType::Never
+                gtk4::PolicyType::Never
             } else {
                 scrolling
             },
             if vertical {
                 scrolling
             } else {
-                gtk::PolicyType::Never
+                gtk4::PolicyType::Never
             },
         );
         self.footer.set_visible(vertical);
         if vertical && self.controls.parent().as_ref() != Some(self.footer.upcast_ref()) {
-            self.header.set_start_widget(None::<&gtk::Widget>);
-            self.header.set_end_widget(None::<&gtk::Widget>);
+            self.header.set_start_widget(None::<&gtk4::Widget>);
+            self.header.set_end_widget(None::<&gtk4::Widget>);
             self.controls.set_hexpand(true);
             self.footer.append(&self.controls);
             self.footer.append(&self.clear);
@@ -902,7 +908,7 @@ impl ClipboardDialog {
     fn selected_id(&self) -> Option<i64> {
         self.selection
             .selected_item()
-            .and_downcast::<gtk::StringObject>()?
+            .and_downcast::<gtk4::StringObject>()?
             .string()
             .parse()
             .ok()
@@ -963,16 +969,16 @@ impl ClipboardDialog {
         });
         self.pending_paste.replace(Some(task));
     }
-    fn confirm_clear(self: &Rc<Self>) -> adw::MessageDialog {
-        let dialog = adw::MessageDialog::new(
+    fn confirm_clear(self: &Rc<Self>) -> libadwaita::MessageDialog {
+        let dialog = libadwaita::MessageDialog::new(
             Some(self.window()),
             Some("Clear clipboard history?"),
             Some("Pinned and tagged items are kept unless you include them below."),
         );
-        let all = gtk::CheckButton::with_label("Include pinned and tagged items");
+        let all = gtk4::CheckButton::with_label("Include pinned and tagged items");
         dialog.set_extra_child(Some(&all));
         dialog.add_responses(&[("cancel", "Cancel"), ("clear", "Clear")]);
-        dialog.set_response_appearance("clear", adw::ResponseAppearance::Destructive);
+        dialog.set_response_appearance("clear", libadwaita::ResponseAppearance::Destructive);
         dialog.set_default_response(Some("cancel"));
         dialog.set_close_response("cancel");
         let service = self.service.clone();
@@ -985,7 +991,7 @@ impl ClipboardDialog {
         self.present_dialog(&dialog);
         dialog
     }
-    fn present_dialog(&self, dialog: &adw::MessageDialog) {
+    fn present_dialog(&self, dialog: &libadwaita::MessageDialog) {
         // A normal toplevel sits below the clipboard's full-output overlay and
         // cannot receive pointer input. Keep child dialogs on that same layer.
         dialog.init_layer_shell();
@@ -999,8 +1005,8 @@ impl ClipboardDialog {
         dialog.present();
     }
     fn install_keys(self: &Rc<Self>) {
-        let keys = gtk::EventControllerKey::new();
-        keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let keys = gtk4::EventControllerKey::new();
+        keys.set_propagation_phase(gtk4::PropagationPhase::Capture);
         let weak = Rc::downgrade(self);
         keys.connect_key_pressed(move |_, key, _, state| {
             let Some(this) = weak.upgrade() else {
@@ -1211,26 +1217,26 @@ impl Drop for ClipboardDialog {
         self.close();
     }
 }
-fn icon_button(icon: &str, tooltip: &str) -> gtk::Button {
-    let button = gtk::Button::from_icon_name(icon);
+fn icon_button(icon: &str, tooltip: &str) -> gtk4::Button {
+    let button = gtk4::Button::from_icon_name(icon);
     button.set_tooltip_text(Some(tooltip));
     button.add_css_class("circular");
-    button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
+    button.update_property(&[gtk4::accessible::Property::Label(tooltip)]);
     button
 }
-fn tag_picker(selection: &gtk::SingleSelection) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+fn tag_picker(selection: &gtk4::SingleSelection) -> gtk4::Box {
+    let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
     row.add_css_class("clipboard-tags");
-    let tags = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let tags = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
     for (index, tag) in std::iter::once(None)
         .chain(TAGS.into_iter().map(Some))
         .enumerate()
     {
-        let button = gtk::ToggleButton::new();
+        let button = gtk4::ToggleButton::new();
         button.add_css_class("clipboard-tag-button");
         if let Some(tag) = tag {
             button.add_css_class(&format!("clipboard-tag-{tag}"));
-            let swatch = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            let swatch = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
             swatch.add_css_class("clipboard-tag-swatch");
             button.set_child(Some(&swatch));
         } else {
@@ -1238,7 +1244,7 @@ fn tag_picker(selection: &gtk::SingleSelection) -> gtk::Box {
         }
         let label = format!("{} ({index})", tag.unwrap_or("No tag"));
         button.set_tooltip_text(Some(&label));
-        button.update_property(&[gtk::accessible::Property::Label(&label)]);
+        button.update_property(&[gtk4::accessible::Property::Label(&label)]);
         button.set_active(selection.selected() == index as u32);
         let selected = selection.clone();
         button.connect_clicked(move |button| {
@@ -1257,14 +1263,14 @@ fn tag_picker(selection: &gtk::SingleSelection) -> gtk::Box {
         });
         tags.append(&button);
     }
-    let scroller = gtk::ScrolledWindow::new();
-    scroller.set_policy(gtk::PolicyType::External, gtk::PolicyType::Never);
+    let scroller = gtk4::ScrolledWindow::new();
+    scroller.set_policy(gtk4::PolicyType::External, gtk4::PolicyType::Never);
     scroller.set_min_content_width(170);
     scroller.set_max_content_width(170);
     scroller.set_propagate_natural_width(true);
     scroller.set_child(Some(&tags));
-    let previous = gtk::Button::from_icon_name("pan-start-symbolic");
-    let next = gtk::Button::from_icon_name("pan-end-symbolic");
+    let previous = gtk4::Button::from_icon_name("pan-start-symbolic");
+    let next = gtk4::Button::from_icon_name("pan-end-symbolic");
     for (button, direction) in [(&previous, -1.0), (&next, 1.0)] {
         let adjustment = scroller.hadjustment();
         button.connect_clicked(move |_| {
@@ -1287,9 +1293,9 @@ fn cycle(current: u32, length: u32, reverse: bool) -> u32 {
     }
 }
 fn accelerator(value: &str, key: gdk::Key, state: gdk::ModifierType) -> bool {
-    gtk::accelerator_parse(value).is_some_and(|(expected, modifiers)| {
+    gtk4::accelerator_parse(value).is_some_and(|(expected, modifiers)| {
         expected.to_lower() == key.to_lower()
-            && state & gtk::accelerator_get_default_mod_mask() == modifiers
+            && state & gtk4::accelerator_get_default_mod_mask() == modifiers
     })
 }
 fn shortcut(settings: &gio::Settings, name: &str, key: gdk::Key, state: gdk::ModifierType) -> bool {

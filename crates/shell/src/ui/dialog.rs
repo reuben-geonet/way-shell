@@ -1,6 +1,6 @@
 //! Full-output confirmation with one owned, exactly-once response callback.
 use super::window::{LayerWindow, WindowRole};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -10,10 +10,10 @@ type Response = Box<dyn FnOnce(bool)>;
 
 pub struct Dialog {
     surface: LayerWindow,
-    heading: gtk::Label,
-    body: gtk::Label,
-    confirm: gtk::Button,
-    cancel: gtk::Button,
+    heading: gtk4::Label,
+    body: gtk4::Label,
+    confirm: gtk4::Button,
+    cancel: gtk4::Button,
     pending: RefCell<Option<Response>>,
     revision: Cell<u64>,
     closed: Cell<bool>,
@@ -23,28 +23,28 @@ impl Dialog {
     pub fn new() -> Result<Rc<Self>, String> {
         let surface = LayerWindow::new(WindowRole::Dialog, None)?;
         surface.window().set_widget_name("dialog-overlay");
-        let contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let contents = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         contents.set_widget_name("dialog-overlay-container");
-        contents.set_halign(gtk::Align::Center);
-        contents.set_valign(gtk::Align::Center);
+        contents.set_halign(gtk4::Align::Center);
+        contents.set_valign(gtk4::Align::Center);
         contents.set_size_request(420, 200);
-        let heading = gtk::Label::new(None);
+        let heading = gtk4::Label::new(None);
         heading.add_css_class("dialog-overlay-heading");
-        heading.set_halign(gtk::Align::Center);
-        heading.set_valign(gtk::Align::Center);
+        heading.set_halign(gtk4::Align::Center);
+        heading.set_valign(gtk4::Align::Center);
         heading.set_xalign(0.5);
-        let body = gtk::Label::new(None);
+        let body = gtk4::Label::new(None);
         body.add_css_class("dialog-overlay-body");
-        body.set_halign(gtk::Align::Center);
-        body.set_valign(gtk::Align::Center);
+        body.set_halign(gtk4::Align::Center);
+        body.set_valign(gtk4::Align::Center);
         body.set_xalign(0.5);
-        let buttons = gtk::CenterBox::new();
+        let buttons = gtk4::CenterBox::new();
         buttons.set_hexpand(true);
         buttons.set_vexpand(true);
-        let confirm = gtk::Button::with_label("Confirm");
+        let confirm = gtk4::Button::with_label("Confirm");
         confirm.add_css_class("dialog-overlay-confirm");
         confirm.set_hexpand(true);
-        let cancel = gtk::Button::with_label("Cancel");
+        let cancel = gtk4::Button::with_label("Cancel");
         cancel.add_css_class("dialog-overlay-cancel");
         cancel.set_hexpand(true);
         buttons.set_start_widget(Some(&cancel));
@@ -140,7 +140,7 @@ impl Dialog {
         }
     }
 
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.surface.window()
     }
 

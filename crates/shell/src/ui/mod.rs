@@ -20,10 +20,10 @@ pub mod workspace_switcher;
 
 #[cfg(test)]
 pub(crate) fn init_test_display() {
-    adw::init().unwrap();
+    libadwaita::init().unwrap();
     crate::resources::get();
-    let display = gtk::gdk::Display::default().unwrap();
-    let provider = gtk::CssProvider::new();
+    let display = gtk4::gdk::Display::default().unwrap();
+    let provider = gtk4::CssProvider::new();
     provider.load_from_path(
         std::env::var_os("WAY_SHELL_SCREENSHOT_TEST_CSS")
             .map(std::path::PathBuf::from)
@@ -32,9 +32,9 @@ pub(crate) fn init_test_display() {
                     .join("../../data/theme/way-shell-dark.css")
             }),
     );
-    gtk::style_context_add_provider_for_display(
+    gtk4::style_context_add_provider_for_display(
         &display,
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
 }

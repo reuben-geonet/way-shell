@@ -8,7 +8,7 @@ use crate::services::{
     wayland::WaylandService,
 };
 use crate::ui::progress::Progress;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -48,19 +48,19 @@ impl Drop for Subscription {
 struct Inner {
     subscriptions: RefCell<Vec<Subscription>>,
     services: StatusServices,
-    container: gtk::Box,
-    button: gtk::Button,
-    idle: gtk::Image,
-    nightlight: gtk::Image,
-    airplane: gtk::Image,
-    vpn: gtk::Image,
-    network: gtk::Image,
+    container: gtk4::Box,
+    button: gtk4::Button,
+    idle: gtk4::Image,
+    nightlight: gtk4::Image,
+    airplane: gtk4::Image,
+    vpn: gtk4::Image,
+    network: gtk4::Image,
     network_progress: Progress,
     stable_network_icon: Cell<&'static str>,
     acquiring_network_icon: Cell<&'static str>,
-    microphone: gtk::Image,
-    speaker: gtk::Image,
-    power: gtk::Image,
+    microphone: gtk4::Image,
+    speaker: gtk4::Image,
+    power: gtk4::Image,
     toggled: Cell<bool>,
     updating: Cell<bool>,
     pending: Cell<bool>,
@@ -69,23 +69,23 @@ struct Inner {
 
 impl StatusBar {
     pub fn new(services: StatusServices, action: impl Fn(StatusAction) + 'static) -> Self {
-        let container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let button = gtk::Button::new();
+        let container = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let button = gtk4::Button::new();
         button.add_css_class("panel-button");
-        let icons = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let idle = gtk::Image::from_icon_name("radio-mixed-symbolic");
-        let nightlight = gtk::Image::from_icon_name("night-light-symbolic");
-        let airplane = gtk::Image::from_icon_name("airplane-mode-symbolic");
-        let vpn = gtk::Image::from_icon_name("network-vpn-symbolic");
-        let network = gtk::Image::from_icon_name("network-wired-symbolic");
-        let microphone = gtk::Image::from_icon_name("microphone-sensitivity-high-symbolic");
-        let speaker = gtk::Image::from_icon_name("audio-volume-muted-symbolic");
-        let power = gtk::Image::from_icon_name("battery-missing-symbolic");
+        let icons = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let idle = gtk4::Image::from_icon_name("radio-mixed-symbolic");
+        let nightlight = gtk4::Image::from_icon_name("night-light-symbolic");
+        let airplane = gtk4::Image::from_icon_name("airplane-mode-symbolic");
+        let vpn = gtk4::Image::from_icon_name("network-vpn-symbolic");
+        let network = gtk4::Image::from_icon_name("network-wired-symbolic");
+        let microphone = gtk4::Image::from_icon_name("microphone-sensitivity-high-symbolic");
+        let speaker = gtk4::Image::from_icon_name("audio-volume-muted-symbolic");
+        let power = gtk4::Image::from_icon_name("battery-missing-symbolic");
         for icon in [&idle, &nightlight, &airplane, &vpn, &network] {
             icons.append(icon);
         }
         // Preserve the sound container as well as the icon order for existing CSS.
-        let sound = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let sound = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         sound.append(&microphone);
         sound.append(&speaker);
         icons.append(&sound);
@@ -146,7 +146,7 @@ impl StatusBar {
         Self(inner)
     }
 
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.0.container
     }
 
@@ -249,7 +249,7 @@ impl Inner {
     }
 }
 
-fn set_icon(image: &gtk::Image, name: &str) {
+fn set_icon(image: &gtk4::Image, name: &str) {
     if image.icon_name().as_deref() != Some(name) {
         image.set_icon_name(Some(name));
     }

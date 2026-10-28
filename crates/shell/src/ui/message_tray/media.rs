@@ -1,7 +1,7 @@
 //! MPRIS cards are an owned, stable prefix of the notification list.
 use super::notification_card::{CardLayout, CardMode, app_icon_for_id, load_avatar};
 use crate::services::media::{MediaAction, MediaPlayer, MediaService, PlaybackStatus};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -37,13 +37,13 @@ pub struct MediaCards {
     service: MediaService,
     cards: RefCell<Vec<Rc<MediaCard>>>,
     handler: Cell<Option<glib::SignalHandlerId>>,
-    changed: Box<dyn Fn(Vec<gtk::Widget>)>,
+    changed: Box<dyn Fn(Vec<gtk4::Widget>)>,
     updating: Cell<bool>,
     pending: Cell<bool>,
     closed: Cell<bool>,
 }
 impl MediaCards {
-    pub fn new(service: MediaService, changed: impl Fn(Vec<gtk::Widget>) + 'static) -> Rc<Self> {
+    pub fn new(service: MediaService, changed: impl Fn(Vec<gtk4::Widget>) + 'static) -> Rc<Self> {
         let this = Rc::new(Self {
             service,
             cards: RefCell::new(Vec::new()),
@@ -67,7 +67,7 @@ impl MediaCards {
         this.refresh();
         this
     }
-    pub fn widgets(&self) -> Vec<gtk::Widget> {
+    pub fn widgets(&self) -> Vec<gtk4::Widget> {
         self.cards
             .borrow()
             .iter()
@@ -146,9 +146,9 @@ struct MediaCard {
     owner: String,
     player: RefCell<Option<MediaPlayer>>,
     layout: CardLayout,
-    previous: gtk::Button,
-    play_pause: gtk::Button,
-    next: gtk::Button,
+    previous: gtk4::Button,
+    play_pause: gtk4::Button,
+    next: gtk4::Button,
     artwork: RefCell<Option<glib::JoinHandle<()>>>,
     generation: Cell<u64>,
     closed: Cell<bool>,
@@ -166,12 +166,12 @@ impl MediaCard {
             label.set_width_chars(34);
             label.set_max_width_chars(34);
         }
-        let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let buttons = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         buttons.add_css_class("notification-widget-media-buttons-container");
-        buttons.set_halign(gtk::Align::End);
-        let previous = gtk::Button::from_icon_name("go-previous-symbolic");
-        let play_pause = gtk::Button::from_icon_name("media-playback-pause-symbolic");
-        let next = gtk::Button::from_icon_name("go-next-symbolic");
+        buttons.set_halign(gtk4::Align::End);
+        let previous = gtk4::Button::from_icon_name("go-previous-symbolic");
+        let play_pause = gtk4::Button::from_icon_name("media-playback-pause-symbolic");
+        let next = gtk4::Button::from_icon_name("go-next-symbolic");
         for button in [&previous, &play_pause, &next] {
             button.add_css_class("notification-widget-media-button");
             buttons.append(button);
@@ -265,7 +265,7 @@ impl MediaCard {
         self.cancel_artwork();
         self.layout
             .avatar
-            .set_custom_image(None::<&gtk::gdk::Paintable>);
+            .set_custom_image(None::<&gtk4::gdk::Paintable>);
         if self.closed.get() {
             return;
         }

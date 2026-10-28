@@ -1,6 +1,6 @@
 //! Owned notification cards; replacing content retains the card and its expanded state.
 use crate::services::notifications::{CloseReason, Notification, NotificationsService};
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -21,99 +21,99 @@ pub enum CardEvent {
 }
 
 pub(super) struct CardLayout {
-    pub root: gtk::Box,
-    pub button_container: gtk::Box,
-    pub button: gtk::Button,
-    pub dismiss: gtk::Button,
-    pub expand: gtk::Button,
-    pub header_icon: gtk::Image,
-    pub app_name: gtk::Label,
-    pub timer_label: gtk::Label,
-    pub avatar: adw::Avatar,
-    pub summary: gtk::Label,
-    pub body: gtk::Label,
-    pub actions: gtk::Box,
-    pub action_revealer: gtk::Revealer,
-    pub stack: [gtk::Box; 2],
+    pub root: gtk4::Box,
+    pub button_container: gtk4::Box,
+    pub button: gtk4::Button,
+    pub dismiss: gtk4::Button,
+    pub expand: gtk4::Button,
+    pub header_icon: gtk4::Image,
+    pub app_name: gtk4::Label,
+    pub timer_label: gtk4::Label,
+    pub avatar: libadwaita::Avatar,
+    pub summary: gtk4::Label,
+    pub body: gtk4::Label,
+    pub actions: gtk4::Box,
+    pub action_revealer: gtk4::Revealer,
+    pub stack: [gtk4::Box; 2],
 }
 impl CardLayout {
     pub fn new(mode: CardMode) -> Self {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("notification-widget-container");
         root.set_size_request(400, 120);
-        let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let content = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         content.add_css_class("notification-widget");
         root.append(&content);
-        let header = gtk::CenterBox::new();
+        let header = gtk4::CenterBox::new();
         header.add_css_class("notification-widget-header");
-        let left = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        left.set_valign(gtk::Align::Center);
-        let right = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        right.set_valign(gtk::Align::Center);
+        let left = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        left.set_valign(gtk4::Align::Center);
+        let right = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        right.set_valign(gtk4::Align::Center);
         header.set_start_widget(Some(&left));
         header.set_end_widget(Some(&right));
-        let header_icon = gtk::Image::from_icon_name(FALLBACK);
+        let header_icon = gtk4::Image::from_icon_name(FALLBACK);
         header_icon.set_pixel_size(18);
-        header_icon.set_halign(gtk::Align::Start);
+        header_icon.set_halign(gtk4::Align::Start);
         header_icon.add_css_class("notification-widget-app-icon");
         header_icon.add_css_class("notification-widget-icon");
-        let app_name = gtk::Label::new(None);
+        let app_name = gtk4::Label::new(None);
         app_name.add_css_class("notification-widget-app-name");
-        app_name.set_valign(gtk::Align::Center);
-        let timer_label = gtk::Label::new(Some("Just now"));
+        app_name.set_valign(gtk4::Align::Center);
+        let timer_label = gtk4::Label::new(Some("Just now"));
         timer_label.add_css_class("notification-widget-timer");
-        timer_label.set_valign(gtk::Align::End);
+        timer_label.set_valign(gtk4::Align::End);
         left.append(&header_icon);
         left.append(&app_name);
         left.append(&timer_label);
-        let expand = gtk::Button::from_icon_name("go-down-symbolic");
+        let expand = gtk4::Button::from_icon_name("go-down-symbolic");
         expand.add_css_class("circular");
         expand.add_css_class("notification-widget-expand-button");
         expand.set_visible(mode == CardMode::Tray);
-        let dismiss_icon = gtk::Image::from_icon_name("window-close-symbolic");
+        let dismiss_icon = gtk4::Image::from_icon_name("window-close-symbolic");
         dismiss_icon.set_pixel_size(18);
-        let dismiss = gtk::Button::new();
+        let dismiss = gtk4::Button::new();
         dismiss.set_child(Some(&dismiss_icon));
         dismiss.add_css_class("circular");
         dismiss.add_css_class("notification-widget-dismiss-button");
         right.append(&expand);
         right.append(&dismiss);
         content.append(&header);
-        let button_container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let button_contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let button = gtk::Button::new();
+        let button_container = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let button_contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let button = gtk4::Button::new();
         button.set_child(Some(&button_contents));
         button.add_css_class("notification-widget-button");
         button_container.append(&button);
         content.append(&button_container);
-        let avatar = adw::Avatar::new(48, None, false);
+        let avatar = libadwaita::Avatar::new(48, None, false);
         avatar.add_css_class("notification-widget-icon");
         avatar.set_icon_name(Some(FALLBACK));
-        avatar.set_valign(gtk::Align::Start);
+        avatar.set_valign(gtk4::Align::Start);
         button_contents.append(&avatar);
-        let text = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        text.set_valign(gtk::Align::Center);
+        let text = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        text.set_valign(gtk4::Align::Center);
         let summary = text_label("summary", if mode == CardMode::Osd { 30 } else { 40 });
         let body = text_label("body", if mode == CardMode::Osd { 30 } else { 200 });
         text.append(&summary);
         text.append(&body);
         button_contents.append(&text);
-        let action_revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideDown)
+        let action_revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SlideDown)
             .build();
-        let action_center = gtk::CenterBox::new();
+        let action_center = gtk4::CenterBox::new();
         action_center.set_hexpand(true);
-        let actions = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let actions = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         actions.set_hexpand(true);
         action_center.set_center_widget(Some(&actions));
         action_revealer.set_child(Some(&action_center));
         content.append(&action_revealer);
         let stack = std::array::from_fn(|index| {
-            let row = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let row = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
             row.add_css_class(&format!("notification-group-stack-effect-box{}", index + 1));
             row.set_margin_start(5 * (index as i32 + 1));
             row.set_margin_end(5 * (index as i32 + 1));
-            let label = gtk::Label::new(None);
+            let label = gtk4::Label::new(None);
             label.set_size_request(1, -1);
             row.append(&label);
             row.set_visible(false);
@@ -143,9 +143,9 @@ pub struct NotificationCard {
     layout: CardLayout,
     notification: RefCell<Notification>,
     service: NotificationsService,
-    hide_button: Option<gtk::Button>,
+    hide_button: Option<gtk4::Button>,
     timer: RefCell<Option<glib::SourceId>>,
-    animation: RefCell<Option<adw::TimedAnimation>>,
+    animation: RefCell<Option<libadwaita::TimedAnimation>>,
     artwork: RefCell<Option<glib::JoinHandle<()>>>,
     revision: Cell<u64>,
     animation_revision: Cell<u64>,
@@ -215,7 +215,7 @@ impl NotificationCard {
                         (this.event)(CardEvent::Hide);
                     }
                 });
-            let motion = gtk::EventControllerMotion::new();
+            let motion = gtk4::EventControllerMotion::new();
             let weak = Rc::downgrade(&this);
             motion.connect_enter(move |_, _, _| {
                 if let Some(this) = weak.upgrade() {
@@ -247,34 +247,34 @@ impl NotificationCard {
         )));
         this
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.layout.root
     }
-    pub fn body_container(&self) -> &gtk::Box {
+    pub fn body_container(&self) -> &gtk4::Box {
         &self.layout.button_container
     }
     pub fn id(&self) -> u32 {
         self.notification.borrow().id
     }
-    pub fn summary(&self) -> &gtk::Label {
+    pub fn summary(&self) -> &gtk4::Label {
         &self.layout.summary
     }
-    pub fn body(&self) -> &gtk::Label {
+    pub fn body(&self) -> &gtk4::Label {
         &self.layout.body
     }
-    pub fn button(&self) -> &gtk::Button {
+    pub fn button(&self) -> &gtk4::Button {
         &self.layout.button
     }
-    pub fn dismiss_button(&self) -> &gtk::Button {
+    pub fn dismiss_button(&self) -> &gtk4::Button {
         &self.layout.dismiss
     }
-    pub fn expand_button(&self) -> &gtk::Button {
+    pub fn expand_button(&self) -> &gtk4::Button {
         &self.layout.expand
     }
-    pub fn avatar(&self) -> &adw::Avatar {
+    pub fn avatar(&self) -> &libadwaita::Avatar {
         &self.layout.avatar
     }
-    pub fn actions(&self) -> &gtk::Box {
+    pub fn actions(&self) -> &gtk4::Box {
         &self.layout.actions
     }
     pub fn is_expanded(&self) -> bool {
@@ -330,7 +330,7 @@ impl NotificationCard {
         self.layout.app_name.set_label(&request.app_name);
         self.layout.summary.set_text(&plain_text(&request.summary));
         let body = plain_text(&request.body);
-        if gtk::pango::parse_markup(&body, '\0').is_ok() {
+        if gtk4::pango::parse_markup(&body, '\0').is_ok() {
             self.layout.body.set_markup(&body);
         } else {
             self.layout.body.set_text(&body);
@@ -416,7 +416,7 @@ impl NotificationCard {
         });
         self.layout.action_revealer.set_reveal_child(expanded);
         let weak = Rc::downgrade(self);
-        let target = adw::CallbackAnimationTarget::new(move |value| {
+        let target = libadwaita::CallbackAnimationTarget::new(move |value| {
             if let Some(this) = weak.upgrade()
                 && !this.stopped.get()
                 && this.animation_revision.get() == revision
@@ -424,14 +424,14 @@ impl NotificationCard {
                 this.layout.body.set_lines(value as i32);
             }
         });
-        let animation = adw::TimedAnimation::new(
+        let animation = libadwaita::TimedAnimation::new(
             &self.layout.body,
             self.layout.body.lines() as f64,
             if expanded { 10.0 } else { 1.0 },
             200,
             target,
         );
-        animation.set_easing(adw::Easing::Linear);
+        animation.set_easing(libadwaita::Easing::Linear);
         let weak = Rc::downgrade(self);
         animation.connect_done(move |_| {
             if let Some(this) = weak.upgrade()
@@ -464,7 +464,7 @@ impl NotificationCard {
         self.cancel_artwork();
         self.layout
             .avatar
-            .set_custom_image(None::<&gtk::gdk::Paintable>);
+            .set_custom_image(None::<&gtk4::gdk::Paintable>);
         self.layout.avatar.set_icon_name(Some(FALLBACK));
         self.layout.header_icon.set_icon_name(Some(FALLBACK));
         let request = &notification.request;
@@ -487,13 +487,13 @@ impl NotificationCard {
         }
         if let Some(image) = &request.hints.image {
             let bytes = glib::Bytes::from_owned(image.data().to_vec());
-            let texture = gtk::gdk::MemoryTexture::new(
+            let texture = gtk4::gdk::MemoryTexture::new(
                 image.width() as i32,
                 image.height() as i32,
                 if image.has_alpha() {
-                    gtk::gdk::MemoryFormat::R8g8b8a8
+                    gtk4::gdk::MemoryFormat::R8g8b8a8
                 } else {
-                    gtk::gdk::MemoryFormat::R8g8b8
+                    gtk4::gdk::MemoryFormat::R8g8b8
                 },
                 &bytes,
                 image.rowstride() as usize,
@@ -512,13 +512,13 @@ impl NotificationCard {
         } else if let Some(icon) = app_icon {
             self.layout.avatar.set_icon_name(Some(icon));
         } else if let Some(icon) = desktop.and_then(app_icon_for_id) {
-            let theme = gtk::IconTheme::for_display(&self.layout.root.display());
+            let theme = gtk4::IconTheme::for_display(&self.layout.root.display());
             let paintable = theme.lookup_by_gicon(
                 &icon,
                 48,
                 1,
-                gtk::TextDirection::Rtl,
-                gtk::IconLookupFlags::empty(),
+                gtk4::TextDirection::Rtl,
+                gtk4::IconLookupFlags::empty(),
             );
             self.layout.avatar.set_custom_image(Some(&paintable));
         }
@@ -555,32 +555,33 @@ impl Drop for NotificationCard {
     }
 }
 
-pub(super) async fn load_avatar(location: &str) -> Result<gtk::gdk::Texture, glib::Error> {
+pub(super) async fn load_avatar(location: &str) -> Result<gtk4::gdk::Texture, glib::Error> {
     let file = gio::File::for_commandline_arg(location);
     let stream = file.read_future(glib::Priority::DEFAULT).await?;
-    let image = gtk::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(&stream, 48, 48, true).await?;
-    Ok(gtk::gdk::Texture::for_pixbuf(&image))
+    let image =
+        gtk4::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(&stream, 48, 48, true).await?;
+    Ok(gtk4::gdk::Texture::for_pixbuf(&image))
 }
 
-fn text_label(class: &str, max_width: i32) -> gtk::Label {
-    let label = gtk::Label::new(None);
+fn text_label(class: &str, max_width: i32) -> gtk4::Label {
+    let label = gtk4::Label::new(None);
     label.add_css_class(class);
-    label.set_halign(gtk::Align::Start);
+    label.set_halign(gtk4::Align::Start);
     label.set_max_width_chars(max_width);
-    label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
     label.set_lines(1);
     label.set_wrap(true);
     label.set_size_request(380, -1);
     label.set_xalign(0.0);
     label
 }
-fn action_button(label: &str) -> gtk::Button {
-    let button = gtk::Button::with_label(label);
+fn action_button(label: &str) -> gtk4::Button {
+    let button = gtk4::Button::with_label(label);
     button.set_hexpand(true);
     button.add_css_class("notification-widget-action-button");
     button
 }
-pub(super) fn widget_children(widget: &impl IsA<gtk::Widget>) -> Vec<gtk::Widget> {
+pub(super) fn widget_children(widget: &impl IsA<gtk4::Widget>) -> Vec<gtk4::Widget> {
     let mut result = Vec::new();
     let mut child = widget.first_child();
     while let Some(widget) = child {

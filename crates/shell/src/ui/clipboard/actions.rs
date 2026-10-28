@@ -7,12 +7,12 @@ use std::{
 };
 use way_shell_clipboard::actions::Action;
 impl ClipboardDialog {
-    pub(super) fn item_menu(self: &Rc<Self>, id: i64) -> gtk::Popover {
-        let popover = gtk::Popover::new();
+    pub(super) fn item_menu(self: &Rc<Self>, id: i64) -> gtk4::Popover {
+        let popover = gtk4::Popover::new();
         popover.add_css_class("clipboard-popover");
-        let menu = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let menu = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
         let tag_names: Vec<_> = std::iter::once("No tag").chain(TAGS).collect();
-        let tag = gtk::SingleSelection::new(Some(gtk::StringList::new(&tag_names)));
+        let tag = gtk4::SingleSelection::new(Some(gtk4::StringList::new(&tag_names)));
         tag.set_selected(
             self.service
                 .entry(id)
@@ -40,7 +40,7 @@ impl ClipboardDialog {
                 popover.popdown();
             }
         });
-        menu.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+        menu.append(&gtk4::Separator::new(gtk4::Orientation::Horizontal));
         for (title, title_only) in [("Edit", false), ("Edit Title", true)] {
             if !title_only
                 && self
@@ -50,9 +50,9 @@ impl ClipboardDialog {
             {
                 continue;
             }
-            let button = gtk::Button::with_label(title);
+            let button = gtk4::Button::with_label(title);
             button.add_css_class("clipboard-menu-action");
-            if let Some(label) = button.child().and_downcast::<gtk::Label>() {
+            if let Some(label) = button.child().and_downcast::<gtk4::Label>() {
                 label.set_xalign(0.0);
             }
             let weak = Rc::downgrade(self);
@@ -75,16 +75,16 @@ impl ClipboardDialog {
     }
     fn action_buttons(
         self: &Rc<Self>,
-        menu: &gtk::Box,
+        menu: &gtk4::Box,
         id: i64,
         entry: &Entry,
         actions: &[Action],
-        popover: &gtk::Popover,
+        popover: &gtk4::Popover,
     ) {
         for action in actions {
             if action.is_group() {
-                let expander = gtk::Expander::new(Some(&action.name));
-                let children = gtk::Box::new(gtk::Orientation::Vertical, 3);
+                let expander = gtk4::Expander::new(Some(&action.name));
+                let children = gtk4::Box::new(gtk4::Orientation::Vertical, 3);
                 self.action_buttons(&children, id, entry, &action.actions, popover);
                 expander.set_child(Some(&children));
                 menu.append(&expander);
@@ -93,9 +93,9 @@ impl ClipboardDialog {
             if action.captures(entry).is_none() {
                 continue;
             }
-            let button = gtk::Button::with_label(&action.name);
+            let button = gtk4::Button::with_label(&action.name);
             button.add_css_class("clipboard-menu-action");
-            if let Some(label) = button.child().and_downcast::<gtk::Label>() {
+            if let Some(label) = button.child().and_downcast::<gtk4::Label>() {
                 label.set_xalign(0.0);
             }
             let action = action.clone();
@@ -327,21 +327,21 @@ impl ClipboardDialog {
                 }
             }
         }
-        let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_bytes(
+        let pixbuf = gtk4::gdk_pixbuf::Pixbuf::from_bytes(
             &glib::Bytes::from_owned(pixels),
-            gtk::gdk_pixbuf::Colorspace::Rgb,
+            gtk4::gdk_pixbuf::Colorspace::Rgb,
             true,
             8,
             size as i32,
             size as i32,
             size as i32 * 4,
         );
-        let picture = gtk::Picture::for_paintable(&gdk::Texture::for_pixbuf(&pixbuf));
+        let picture = gtk4::Picture::for_paintable(&gdk::Texture::for_pixbuf(&pixbuf));
         picture.set_size_request(300, 300);
         picture.set_can_shrink(true);
-        let dialog = adw::MessageDialog::new(Some(self.window()), Some("QR Code"), None);
+        let dialog = libadwaita::MessageDialog::new(Some(self.window()), Some("QR Code"), None);
         dialog.add_css_class("clipboard-qr-dialog");
-        let preview = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let preview = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         preview.add_css_class("clipboard-qr-preview");
         preview.append(&picture);
         dialog.set_extra_child(Some(&preview));

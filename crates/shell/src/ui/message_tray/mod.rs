@@ -11,7 +11,7 @@ use crate::services::{
     clock::ClockService, media::MediaService, notifications::NotificationsService,
 };
 use calendar::Calendar;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use media::MediaCards;
 use notification_list::NotificationsList;
 use notification_osd::NotificationOsd;
@@ -51,23 +51,23 @@ impl MessageTray {
             }
         });
         let calendar = Calendar::new(services.clock).map_err(|error| error.to_string())?;
-        let calendar_scroll = gtk::ScrolledWindow::new();
+        let calendar_scroll = gtk4::ScrolledWindow::new();
         calendar_scroll.set_min_content_height(0);
         calendar_scroll.set_propagate_natural_height(true);
-        calendar_scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        calendar_scroll.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
         calendar_scroll.set_child(Some(calendar.widget()));
         let osd = NotificationOsd::new(services.notifications, settings)?;
-        let left = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let left = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         left.set_width_request(469);
         left.append(notifications.widget());
-        let right = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let right = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         right.set_hexpand(true);
         right.set_vexpand(true);
         right.append(&calendar_scroll);
         window.content().append(&left);
         window
             .content()
-            .append(&gtk::Separator::new(gtk::Orientation::Vertical));
+            .append(&gtk4::Separator::new(gtk4::Orientation::Vertical));
         window.content().append(&right);
         let weak = Rc::downgrade(&notifications);
         window.on_height_budget(move |budget| {

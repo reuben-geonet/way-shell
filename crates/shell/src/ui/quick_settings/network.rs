@@ -4,7 +4,7 @@ use crate::services::network::{
     AccessPoint, ActiveConnection, Device, NetworkService, NetworkState, SavedConnection,
 };
 use crate::ui::progress::Progress;
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
@@ -570,11 +570,11 @@ impl Drop for NetworkControls {
 }
 
 struct WiredSection {
-    root: gtk::Box,
-    heading: gtk::Button,
-    label: gtk::Label,
-    anchor: gtk::CheckButton,
-    profiles: RefCell<HashMap<String, gtk::CheckButton>>,
+    root: gtk4::Box,
+    heading: gtk4::Button,
+    label: gtk4::Label,
+    anchor: gtk4::CheckButton,
+    profiles: RefCell<HashMap<String, gtk4::CheckButton>>,
     active_profile: RefCell<Option<String>>,
     reconnect_profile: RefCell<Option<String>>,
     disconnect: Cell<bool>,
@@ -586,17 +586,17 @@ struct WiredSection {
 }
 impl WiredSection {
     fn new(menu: &Rc<WiredMenu>, device_id: &str) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("quick-settings-wired-section");
-        let heading = gtk::Button::new();
+        let heading = gtk4::Button::new();
         heading.add_css_class("quick-settings-wired-adapter");
         heading.set_hexpand(true);
-        let label = gtk::Label::new(None);
+        let label = gtk4::Label::new(None);
         label.set_xalign(0.5);
         label.set_hexpand(true);
         heading.set_child(Some(&label));
         root.append(&heading);
-        let anchor = gtk::CheckButton::new();
+        let anchor = gtk4::CheckButton::new();
         anchor.set_visible(false);
         root.append(&anchor);
         let section = Rc::new(Self {
@@ -651,7 +651,7 @@ struct WiredMenu {
     tile: Rc<GridButton>,
     sections: RefCell<HashMap<String, Rc<WiredSection>>>,
     preferred: RefCell<Option<(String, String)>>,
-    failure: gtk::Button,
+    failure: gtk4::Button,
     progress: Progress,
     stable_subtitle: RefCell<String>,
     stable_icon: Cell<&'static str>,
@@ -660,7 +660,7 @@ struct WiredMenu {
 impl WiredMenu {
     fn new(service: NetworkService, window: &Rc<QuickSettingsWindow>) -> Rc<Self> {
         let menu = Menu::new("Wired", "network-wired-symbolic");
-        let failure = gtk::Button::with_label("Failed to connect to wired network");
+        let failure = gtk4::Button::with_label("Failed to connect to wired network");
         failure.add_css_class("failure-banner");
         menu.banner().set_child(Some(&failure));
         let tile = GridButton::new(
@@ -784,7 +784,7 @@ impl WiredMenu {
             let description = format!("{action} {name}");
             section
                 .heading
-                .update_property(&[gtk::accessible::Property::Label(&description)]);
+                .update_property(&[gtk4::accessible::Property::Label(&description)]);
             section.heading.set_tooltip_text(Some(&description));
             if device.state == 100
                 && let Some(active) = active
@@ -829,7 +829,7 @@ impl WiredMenu {
                 .set_active(active_profile.is_none() || section.off.get());
             let mut old_profiles = section.profiles.take();
             let mut next_profiles = HashMap::new();
-            let mut previous: gtk::Widget = section.anchor.clone().upcast();
+            let mut previous: gtk4::Widget = section.anchor.clone().upcast();
             for profile in profiles {
                 let row = old_profiles
                     .remove(&profile.id)
@@ -860,7 +860,7 @@ impl WiredMenu {
                 self.menu.list().remove(&section.root);
             }
         }
-        let mut previous: Option<gtk::Widget> = None;
+        let mut previous: Option<gtk4::Widget> = None;
         for section in &ordered {
             if section.root.parent().is_none() {
                 self.menu.list().append(&section.root);
@@ -889,7 +889,7 @@ impl WiredMenu {
             self.menu.options().remove(&hint);
         }
         if needs_setup {
-            let hint = gtk::Label::new(Some(
+            let hint = gtk4::Label::new(Some(
                 "Set up a wired connection in NetworkManager to connect.",
             ));
             hint.set_widget_name("wired-setup-hint");
@@ -959,8 +959,8 @@ impl WiredMenu {
         section: &Rc<WiredSection>,
         device_id: &str,
         profile: &SavedConnection,
-    ) -> gtk::CheckButton {
-        let row = gtk::CheckButton::with_label(&profile.name);
+    ) -> gtk4::CheckButton {
+        let row = gtk4::CheckButton::with_label(&profile.name);
         row.add_css_class("quick-settings-wired-profile");
         row.set_group(Some(&section.anchor));
         let weak_menu = Rc::downgrade(self);
@@ -1113,8 +1113,8 @@ struct WifiMenu {
     window: Weak<QuickSettingsWindow>,
     menu: Menu,
     progress: Progress,
-    refresh_button: gtk::Button,
-    failure: gtk::Button,
+    refresh_button: gtk4::Button,
+    failure: gtk4::Button,
     rows: RefCell<HashMap<AccessPointKey, Rc<WifiRow>>>,
     scan: RefCell<Option<Rc<Request>>>,
     stopped: Cell<bool>,
@@ -1123,19 +1123,19 @@ struct WifiMenu {
 impl WifiMenu {
     fn new(service: NetworkService, device: String, window: Weak<QuickSettingsWindow>) -> Rc<Self> {
         let menu = Menu::new("Wi-Fi", "network-wireless-signal-excellent-symbolic");
-        let failure_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let failure_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         failure_box.add_css_class("failure-banner");
-        let failure = gtk::Button::with_label("Failed to connect to network");
+        let failure = gtk4::Button::with_label("Failed to connect to network");
         failure.set_hexpand(true);
         failure_box.append(&failure);
         menu.banner().set_child(Some(&failure_box));
-        let spinner = gtk::Spinner::new();
+        let spinner = gtk4::Spinner::new();
         spinner.set_size_request(16, 16);
         spinner.set_opacity(0.0);
         menu.heading().append(&spinner);
-        let refresh_button = gtk::Button::from_icon_name("view-refresh-symbolic");
+        let refresh_button = gtk4::Button::from_icon_name("view-refresh-symbolic");
         refresh_button.set_hexpand(true);
-        refresh_button.set_halign(gtk::Align::End);
+        refresh_button.set_halign(gtk4::Align::End);
         menu.heading().append(&refresh_button);
         let this = Rc::new(Self {
             service,
@@ -1242,7 +1242,7 @@ impl WifiMenu {
             }
             return;
         }
-        let mut previous: Option<gtk::Widget> = None;
+        let mut previous: Option<gtk4::Widget> = None;
         for row in &ordered {
             if row.root.parent().is_none() {
                 self.menu.list().append(&row.root);
@@ -1358,32 +1358,32 @@ impl Drop for WifiMenu {
     }
 }
 struct WifiRow {
-    root: gtk::Box,
-    button: gtk::Button,
-    label: gtk::Label,
-    icon: gtk::Image,
-    security: gtk::Image,
-    active: gtk::Image,
+    root: gtk4::Box,
+    button: gtk4::Button,
+    label: gtk4::Label,
+    icon: gtk4::Image,
+    security: gtk4::Image,
+    active: gtk4::Image,
     progress: Progress,
-    revealer: gtk::Revealer,
-    password: gtk::PasswordEntry,
+    revealer: gtk4::Revealer,
+    password: gtk4::PasswordEntry,
     point: RefCell<AccessPoint>,
     request: RefCell<Option<Rc<Request>>>,
     stopped: Cell<bool>,
 }
 impl WifiRow {
     fn new(menu: &Rc<WifiMenu>, point: AccessPoint) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("quick-settings-menu-option-wifi");
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let icon = gtk::Image::new();
-        let security = gtk::Image::from_icon_name("network-wireless-encrypted-symbolic");
+        let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let icon = gtk4::Image::new();
+        let security = gtk4::Image::from_icon_name("network-wireless-encrypted-symbolic");
         security.set_pixel_size(10);
-        let label = gtk::Label::new(None);
+        let label = gtk4::Label::new(None);
         label.set_xalign(0.0);
-        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        let active = gtk::Image::from_icon_name("object-select-symbolic");
-        let spinner = gtk::Spinner::new();
+        label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        let active = gtk4::Image::from_icon_name("object-select-symbolic");
+        let spinner = gtk4::Spinner::new();
         spinner.set_size_request(16, 16);
         spinner.set_opacity(0.0);
         row.append(&icon);
@@ -1391,18 +1391,18 @@ impl WifiRow {
         row.append(&label);
         row.append(&active);
         row.append(&spinner);
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.set_child(Some(&row));
         root.append(&button);
-        let entry_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let entry_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         entry_box.add_css_class("quick-settings-menu-option-wifi-password-entry-container");
-        entry_box.append(&gtk::Image::from_icon_name("dialog-password-symbolic"));
-        let password = gtk::PasswordEntry::new();
+        entry_box.append(&gtk4::Image::from_icon_name("dialog-password-symbolic"));
+        let password = gtk4::PasswordEntry::new();
         password.set_hexpand(true);
         password.set_show_peek_icon(true);
         entry_box.append(&password);
-        let revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SwingDown)
+        let revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SwingDown)
             .transition_duration(350)
             .child(&entry_box)
             .build();
@@ -1566,7 +1566,7 @@ impl Drop for WifiRow {
 }
 
 struct VpnRow {
-    widget: adw::SwitchRow,
+    widget: libadwaita::SwitchRow,
     updating: Cell<bool>,
     stopped: Cell<bool>,
     request: RefCell<Option<Rc<Request>>>,
@@ -1663,7 +1663,7 @@ impl VpnMenu {
                 self.menu.list().remove(&row.widget);
             }
         }
-        let mut previous: Option<gtk::Widget> = None;
+        let mut previous: Option<gtk4::Widget> = None;
         for row in ordered {
             if self.stopped.get() {
                 row.stop();
@@ -1683,7 +1683,7 @@ impl VpnMenu {
         }
     }
     fn row(self: &Rc<Self>, saved: &SavedConnection) -> Rc<VpnRow> {
-        let widget = adw::SwitchRow::new();
+        let widget = libadwaita::SwitchRow::new();
         widget.add_css_class("switch-row-vpn");
         let row = Rc::new(VpnRow {
             widget,
@@ -1771,7 +1771,7 @@ mod tests {
         let point = ap("point", b"Useful network name", 80, true);
         let row = WifiRow::new(&menu, point.clone());
         row.update(&point, 100, true);
-        let width = row.root.measure(gtk::Orientation::Horizontal, -1);
+        let width = row.root.measure(gtk4::Orientation::Horizontal, -1);
         row.update(&point, 40, true);
         pause(50);
         row.update(&point, 100, true);
@@ -1780,7 +1780,7 @@ mod tests {
         row.update(&point, 40, true);
         pause(320);
         assert!(row.progress.visible());
-        assert_eq!(row.root.measure(gtk::Orientation::Horizontal, -1), width);
+        assert_eq!(row.root.measure(gtk4::Orientation::Horizontal, -1), width);
         row.update(&point, 100, true);
         pause(100);
         assert!(row.progress.visible());

@@ -6,7 +6,7 @@ mod protocol;
 use connection::Driver;
 use gio::prelude::*;
 use glib::subclass::prelude::*;
-use gtk::prelude::*;
+use gtk4::prelude::*;
 pub use model::{Output, Seat, Toplevel};
 pub use protocol::ClipboardOffer;
 use std::{
@@ -31,7 +31,7 @@ mod imp {
         pub ready: Cell<bool>,
         pub stopped: Cell<bool>,
         pub error: RefCell<Option<String>>,
-        pub inhibitor: RefCell<Option<gtk::gdk::Toplevel>>,
+        pub inhibitor: RefCell<Option<gtk4::gdk::Toplevel>>,
     }
     #[glib::object_subclass]
     impl ObjectSubclass for WaylandService {
@@ -340,7 +340,7 @@ impl WaylandService {
             driver.disable_gamma();
         }
     }
-    pub fn inhibit_shortcuts(&self, widget: &impl IsA<gtk::Widget>) -> Result<(), String> {
+    pub fn inhibit_shortcuts(&self, widget: &impl IsA<gtk4::Widget>) -> Result<(), String> {
         if self.imp().inhibitor.borrow().is_some() {
             return Err("Another window already inhibits compositor shortcuts".into());
         }
@@ -350,9 +350,9 @@ impl WaylandService {
         let native = widget.native().ok_or("The widget has no native window")?;
         let surface = native.surface().ok_or("The widget has no surface")?;
         let toplevel = surface
-            .downcast::<gtk::gdk::Toplevel>()
+            .downcast::<gtk4::gdk::Toplevel>()
             .map_err(|_| "The widget is not a toplevel")?;
-        toplevel.inhibit_system_shortcuts(None::<&gtk::gdk::Event>);
+        toplevel.inhibit_system_shortcuts(None::<&gtk4::gdk::Event>);
         self.imp().inhibitor.replace(Some(toplevel));
         Ok(())
     }

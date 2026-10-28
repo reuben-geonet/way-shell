@@ -7,7 +7,7 @@ use super::{
 use crate::services::notifications::{
     CloseReason, Notification, NotificationEvent, NotificationsService,
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -17,7 +17,7 @@ use std::{
 enum Update {
     Event(NotificationEvent),
     Seed(Notification),
-    Media(Vec<gtk::Widget>),
+    Media(Vec<gtk4::Widget>),
     Collapse,
     Hidden,
     PruneEmpty,
@@ -33,20 +33,20 @@ fn tray_height(natural_list_height: i32, controls_height: i32, budget: i32) -> i
 }
 
 pub struct NotificationsList {
-    root: gtk::Box,
-    list: gtk::Box,
-    scroll: gtk::ScrolledWindow,
-    controls: gtk::CenterBox,
+    root: gtk4::Box,
+    list: gtk4::Box,
+    scroll: gtk4::ScrolledWindow,
+    controls: gtk4::CenterBox,
     height_budget: Cell<i32>,
-    status: adw::StatusPage,
-    clear: gtk::Button,
-    dnd: adw::SwitchRow,
+    status: libadwaita::StatusPage,
+    clear: gtk4::Button,
+    dnd: libadwaita::SwitchRow,
     service: NotificationsService,
     settings: gio::Settings,
     service_handler: RefCell<Option<glib::SignalHandlerId>>,
     settings_handler: RefCell<Option<glib::SignalHandlerId>>,
     groups: RefCell<Vec<Rc<NotificationGroup>>>,
-    media: RefCell<Vec<gtk::Widget>>,
+    media: RefCell<Vec<gtk4::Widget>>,
     updates: RefCell<VecDeque<Update>>,
     updating: Cell<bool>,
     changing_dnd: Cell<bool>,
@@ -59,39 +59,39 @@ impl NotificationsList {
         settings: gio::Settings,
         fit_height: impl Fn(i32) + 'static,
     ) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.set_widget_name("notifications-list");
-        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         container.set_widget_name("notifications-list-container");
         root.append(&container);
-        let scroll = gtk::ScrolledWindow::new();
+        let scroll = gtk4::ScrolledWindow::new();
         scroll.set_vexpand(true);
         scroll.set_min_content_height(0);
         scroll.set_propagate_natural_height(true);
-        scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
-        let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        scroll.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
+        let list = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         list.set_widget_name("notifications-list-list");
         list.set_vexpand(true);
         scroll.set_child(Some(&list));
-        let status = adw::StatusPage::builder()
+        let status = libadwaita::StatusPage::builder()
             .icon_name("notifications-disabled-symbolic")
             .title("No Notifications")
             .vexpand(true)
             .build();
         container.append(&status);
         container.append(&scroll);
-        let controls = gtk::CenterBox::new();
+        let controls = gtk4::CenterBox::new();
         controls.set_widget_name("notifications-list-controls");
-        let dnd = adw::SwitchRow::new();
+        let dnd = libadwaita::SwitchRow::new();
         dnd.set_title("Do Not Disturb");
         dnd.set_size_request(200, -1);
         dnd.add_css_class("notifications-list-dnd");
-        let dnd_list = gtk::ListBox::new();
+        let dnd_list = gtk4::ListBox::new();
         dnd_list.add_css_class("notifications-list-dnd-container");
-        dnd_list.set_selection_mode(gtk::SelectionMode::None);
+        dnd_list.set_selection_mode(gtk4::SelectionMode::None);
         dnd_list.append(&dnd);
         controls.set_start_widget(Some(&dnd_list));
-        let clear = gtk::Button::with_label("Clear");
+        let clear = gtk4::Button::with_label("Clear");
         clear.add_css_class("notifications-list-clear");
         controls.set_end_widget(Some(&clear));
         container.append(&controls);
@@ -161,17 +161,17 @@ impl NotificationsList {
         this.rebuild();
         this
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
     pub fn set_height_budget(&self, budget: i32) {
         self.height_budget.set(budget);
         self.resize();
     }
-    pub fn clear_button(&self) -> &gtk::Button {
+    pub fn clear_button(&self) -> &gtk4::Button {
         &self.clear
     }
-    pub fn dnd_switch(&self) -> &adw::SwitchRow {
+    pub fn dnd_switch(&self) -> &libadwaita::SwitchRow {
         &self.dnd
     }
     pub fn is_dnd(&self) -> bool {
@@ -190,7 +190,7 @@ impl NotificationsList {
     pub fn is_empty(&self) -> bool {
         self.groups.borrow().is_empty() && self.media.borrow().is_empty()
     }
-    pub fn set_media_widgets(self: &Rc<Self>, widgets: Vec<gtk::Widget>) {
+    pub fn set_media_widgets(self: &Rc<Self>, widgets: Vec<gtk4::Widget>) {
         self.update(Update::Media(widgets));
     }
     pub fn collapse(self: &Rc<Self>) {
@@ -326,7 +326,7 @@ impl NotificationsList {
             .chain(
                 groups
                     .iter()
-                    .map(|group| group.widget().clone().upcast::<gtk::Widget>()),
+                    .map(|group| group.widget().clone().upcast::<gtk4::Widget>()),
             )
             .collect();
         for child in widget_children(&self.list) {
@@ -334,7 +334,7 @@ impl NotificationsList {
                 self.list.remove(&child);
             }
         }
-        let mut previous: Option<&gtk::Widget> = None;
+        let mut previous: Option<&gtk4::Widget> = None;
         for widget in &desired {
             if widget.parent().is_none() {
                 self.list.append(widget);
@@ -350,12 +350,12 @@ impl NotificationsList {
         if self.stopped.get() {
             return;
         }
-        let (_, controls_height, _, _) = self.controls.measure(gtk::Orientation::Vertical, -1);
+        let (_, controls_height, _, _) = self.controls.measure(gtk4::Orientation::Vertical, -1);
         self.scroll.set_max_content_height(scroll_height_limit(
             self.height_budget.get(),
             controls_height,
         ));
-        let (_, natural, _, _) = self.list.measure(gtk::Orientation::Vertical, -1);
+        let (_, natural, _, _) = self.list.measure(gtk4::Orientation::Vertical, -1);
         (self.fit_height)(tray_height(
             natural,
             controls_height,

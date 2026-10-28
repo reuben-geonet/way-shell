@@ -4,8 +4,8 @@ use crate::services::{
     audio::{AudioService, AudioState},
     brightness::{BrightnessService, ControlKind},
 };
-use adw::prelude::*;
 use gtk4_layer_shell::{Edge, LayerShell};
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -78,18 +78,18 @@ fn volume_icon(volume: f64, muted: bool) -> &'static str {
 }
 
 struct Row {
-    widget: gtk::Box,
-    icon: gtk::Image,
-    scale: gtk::Scale,
+    widget: gtk4::Box,
+    icon: gtk4::Image,
+    scale: gtk4::Scale,
 }
 impl Row {
     fn new(icon_name: &str, maximum: f64, step: f64) -> Self {
-        let widget = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let widget = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         widget.set_widget_name("osd-container");
         widget.set_visible(false);
-        let icon = gtk::Image::from_icon_name(icon_name);
+        let icon = gtk4::Image::from_icon_name(icon_name);
         icon.set_pixel_size(32);
-        let scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, maximum, step);
+        let scale = gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, maximum, step);
         scale.set_hexpand(true);
         scale.set_sensitive(false);
         widget.append(&icon);
@@ -112,7 +112,7 @@ pub struct LevelOsd {
     last_audio: Cell<Option<AudioLevel>>,
     active: Cell<Option<Kind>>,
     phase: Cell<Phase>,
-    animation: RefCell<Option<adw::TimedAnimation>>,
+    animation: RefCell<Option<libadwaita::TimedAnimation>>,
     timeout: RefCell<Option<glib::SourceId>>,
     revision: Cell<u64>,
     closed: Cell<bool>,
@@ -127,8 +127,8 @@ impl LevelOsd {
     ) -> Result<Rc<Self>, String> {
         let surface = LayerWindow::new(WindowRole::LevelOsd, None)?;
         surface.window().set_widget_name("osd");
-        let overlay = gtk::Overlay::new();
-        overlay.set_child(Some(&gtk::Box::new(gtk::Orientation::Vertical, 0)));
+        let overlay = gtk4::Overlay::new();
+        overlay.set_child(Some(&gtk4::Box::new(gtk4::Orientation::Vertical, 0)));
         let keyboard_max = brightness
             .snapshot(ControlKind::Keyboard)
             .map_or(1, |device| device.maximum.max(1));
@@ -213,7 +213,7 @@ impl LevelOsd {
         });
         Ok(this)
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.surface.window()
     }
     pub fn hide(&self) {
@@ -352,12 +352,12 @@ impl LevelOsd {
             Phase::Hiding
         });
         let weak = Rc::downgrade(self);
-        let target = adw::CallbackAnimationTarget::new(move |value| {
+        let target = libadwaita::CallbackAnimationTarget::new(move |value| {
             if let Some(this) = weak.upgrade().filter(|this| this.current(revision)) {
                 this.window().set_margin(Edge::Bottom, value as i32);
             }
         });
-        let animation = adw::TimedAnimation::new(
+        let animation = libadwaita::TimedAnimation::new(
             self.window(),
             f64::from(self.window().margin(Edge::Bottom)),
             if showing { 120.0 } else { 0.0 },
