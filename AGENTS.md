@@ -19,6 +19,7 @@ For loading feedback, retain useful content and stable controls during backgroun
 
 ## Development
 
+- Use canonical package names as Cargo dependency keys and their default crate names in Rust. Avoid dependency-renaming aliases in Cargo and whole-crate aliases in Rust so Dependabot can recognise direct dependencies and propose updates.
 - For CSS edits, verify live against the installed shell: export with `way-sh theme dump-dark` / `dump-light`, edit `$XDG_CONFIG_HOME/way-shell/way-shell-{dark,light}.css` (normally `~/.config/way-shell/`), then reload with `way-sh theme dark` / `light`. Repeating the same command still reloads. Do not rebuild, reinstall, or restart the user service (`systemctl --user`) for CSS-only verification. Copy the result back to `data/theme/` only when finished.
 - For building and validation, use the Nix environment (`nix develop`, `nix build`, `nix flake check`, `nix run ...`). Do not build manually with plain `cargo`/toolbox/make.
 - If a Nix command fails, stop. Fix it only when the fix is simple and report the Nix change to the user; otherwise stop and discuss with the user before proceeding.
