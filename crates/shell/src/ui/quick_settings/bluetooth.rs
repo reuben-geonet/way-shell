@@ -2,17 +2,17 @@
 use super::{QuickSettingsWindow, grid::GridButton, menu::Menu};
 use crate::services::bluetooth::{BluetoothDevice, BluetoothService, settings};
 use crate::ui::progress::Progress;
-use gtk::{accessible::Property, prelude::*};
+use gtk4::{accessible::Property, prelude::*};
 use std::{
     cell::{Cell, RefCell},
     collections::{HashMap, HashSet},
     rc::{Rc, Weak},
 };
 struct Row {
-    button: gtk::Button,
-    icon: gtk::Image,
-    name: gtk::Label,
-    action: gtk::Label,
+    button: gtk4::Button,
+    icon: gtk4::Image,
+    name: gtk4::Label,
+    action: gtk4::Label,
     progress: Progress,
 }
 /// Paired devices shown before the device list starts scrolling.
@@ -23,8 +23,8 @@ pub struct BluetoothControls {
     window: Weak<QuickSettingsWindow>,
     tile: Rc<GridButton>,
     menu: Menu,
-    placeholder: gtk::Label,
-    error: gtk::Label,
+    placeholder: gtk4::Label,
+    error: gtk4::Label,
     rows: RefCell<HashMap<String, Row>>,
     handlers: RefCell<Vec<glib::SignalHandlerId>>,
     observers: RefCell<Vec<Rc<dyn Fn()>>>,
@@ -42,31 +42,31 @@ impl BluetoothControls {
         window: &Rc<QuickSettingsWindow>,
     ) -> Rc<Self> {
         let menu = Menu::new("Bluetooth", "bluetooth-active-symbolic");
-        let placeholder = gtk::Label::builder()
+        let placeholder = gtk4::Label::builder()
             .wrap(true)
             .max_width_chars(20)
-            .justify(gtk::Justification::Center)
+            .justify(gtk4::Justification::Center)
             .css_classes(["bluetooth-placeholder"])
             .build();
         menu.options().append(&placeholder);
-        let separator = gtk::Separator::new(gtk::Orientation::Horizontal);
+        let separator = gtk4::Separator::new(gtk4::Orientation::Horizontal);
         separator.add_css_class("bluetooth-separator");
         menu.options().append(&separator);
-        let settings_button = gtk::Button::with_label("Bluetooth Settings");
+        let settings_button = gtk4::Button::with_label("Bluetooth Settings");
         settings_button.add_css_class("bluetooth-settings");
         settings_button
             .child()
             .unwrap()
-            .downcast::<gtk::Label>()
+            .downcast::<gtk4::Label>()
             .unwrap()
             .set_xalign(0.0);
         menu.options().append(&settings_button);
-        let error = gtk::Label::builder()
+        let error = gtk4::Label::builder()
             .wrap(true)
-            .wrap_mode(gtk::pango::WrapMode::WordChar)
+            .wrap_mode(gtk4::pango::WrapMode::WordChar)
             .max_width_chars(24)
             .build();
-        let dismiss = gtk::Button::builder()
+        let dismiss = gtk4::Button::builder()
             .child(&error)
             .css_classes(["failure-banner"])
             .build();
@@ -221,26 +221,26 @@ impl BluetoothControls {
         }
     }
     fn row(self: &Rc<Self>, device: &BluetoothDevice) -> Row {
-        let button = gtk::Button::new();
+        let button = gtk4::Button::new();
         button.add_css_class("quick-settings-menu-option-bluetooth");
-        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let icon = gtk::Image::new();
+        let contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let icon = gtk4::Image::new();
         icon.set_pixel_size(20);
-        let name = gtk::Label::builder()
+        let name = gtk4::Label::builder()
             .hexpand(true)
             .xalign(0.0)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .ellipsize(gtk4::pango::EllipsizeMode::End)
             .max_width_chars(24)
             .build();
-        let action = gtk::Label::new(None);
+        let action = gtk4::Label::new(None);
         action.add_css_class("bluetooth-action");
         action.set_width_chars(10);
-        let spinner = gtk::Spinner::new();
+        let spinner = gtk4::Spinner::new();
         spinner.set_size_request(16, 16);
-        spinner.set_halign(gtk::Align::Center);
-        spinner.set_valign(gtk::Align::Center);
+        spinner.set_halign(gtk4::Align::Center);
+        spinner.set_valign(gtk4::Align::Center);
         spinner.set_opacity(0.0);
-        let feedback = gtk::Overlay::new();
+        let feedback = gtk4::Overlay::new();
         feedback.set_child(Some(&action));
         feedback.add_overlay(&spinner);
         contents.append(&icon);
@@ -304,7 +304,7 @@ impl BluetoothControls {
                 self.menu.list().remove(&row.button);
             }
         }
-        let mut previous: Option<gtk::Button> = None;
+        let mut previous: Option<gtk4::Button> = None;
         for device in &state.devices {
             if !self.rows.borrow().contains_key(&device.path) {
                 let row = self.row(device);
@@ -470,7 +470,7 @@ mod tests {
         };
         let row = controls.row(&device);
         row.action.set_label("Disconnect");
-        let width = row.button.measure(gtk::Orientation::Horizontal, -1);
+        let width = row.button.measure(gtk4::Orientation::Horizontal, -1);
         row.progress.begin();
         pause(40);
         row.progress.finish(|| {});
@@ -480,7 +480,7 @@ mod tests {
         row.progress.begin();
         pause(320);
         assert_eq!(row.action.opacity(), 0.0);
-        assert_eq!(row.button.measure(gtk::Orientation::Horizontal, -1), width);
+        assert_eq!(row.button.measure(gtk4::Orientation::Horizontal, -1), width);
         row.progress.finish(|| {});
         pause(100);
         assert!(row.progress.visible());

@@ -4,7 +4,7 @@ use crate::{
     services::notifications::{Notification, NotificationEvent, NotificationsService},
     ui::window::{LayerWindow, WindowRole},
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
@@ -19,9 +19,9 @@ enum Update {
 }
 pub struct NotificationOsd {
     window: LayerWindow,
-    content: gtk::Box,
-    revealer: gtk::Revealer,
-    motion: gtk::EventControllerMotion,
+    content: gtk4::Box,
+    revealer: gtk4::Revealer,
+    motion: gtk4::EventControllerMotion,
     service: NotificationsService,
     settings: gio::Settings,
     service_handler: RefCell<Option<glib::SignalHandlerId>>,
@@ -38,15 +38,15 @@ impl NotificationOsd {
     pub fn new(service: NotificationsService, settings: gio::Settings) -> Result<Rc<Self>, String> {
         let window = LayerWindow::new(WindowRole::NotificationOsd, None)?;
         window.window().set_widget_name("notifications-osd");
-        let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let content = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         content.set_widget_name("notifications-osd-container");
-        let revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideDown)
+        let revealer = gtk4::Revealer::builder()
+            .transition_type(gtk4::RevealerTransitionType::SlideDown)
             .transition_duration(350)
             .child(&content)
             .build();
         window.window().set_content(Some(&revealer));
-        let motion = gtk::EventControllerMotion::new();
+        let motion = gtk4::EventControllerMotion::new();
         window.window().add_controller(motion.clone());
         let this = Rc::new(Self {
             window,
@@ -93,7 +93,7 @@ impl NotificationOsd {
         this.service_handler.replace(Some(handler));
         Ok(this)
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.window.window()
     }
     pub fn card(&self) -> Option<Rc<NotificationCard>> {

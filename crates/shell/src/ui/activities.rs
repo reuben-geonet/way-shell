@@ -3,7 +3,7 @@ use crate::{
     services::apps::{AppCatalog, Application, matches},
     ui::window::{LayerWindow, Transition, Visibility, VisibilityController, WindowRole},
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::{HashMap, VecDeque},
@@ -24,14 +24,14 @@ struct Inner {
     catalog: AppCatalog,
     catalog_handler: RefCell<Option<glib::SignalHandlerId>>,
     handlers: RefCell<Vec<(glib::Object, glib::SignalHandlerId)>>,
-    revealer: gtk::Revealer,
-    search: gtk::SearchEntry,
-    results: gtk::FlowBox,
-    scrolled: gtk::ScrolledWindow,
-    carousel: adw::Carousel,
-    dots: adw::CarouselIndicatorDots,
-    pages: RefCell<Vec<gtk::Grid>>,
-    apps: RefCell<HashMap<gtk::FlowBoxChild, Application>>,
+    revealer: gtk4::Revealer,
+    search: gtk4::SearchEntry,
+    results: gtk4::FlowBox,
+    scrolled: gtk4::ScrolledWindow,
+    carousel: libadwaita::Carousel,
+    dots: libadwaita::CarouselIndicatorDots,
+    pages: RefCell<Vec<gtk4::Grid>>,
+    apps: RefCell<HashMap<gtk4::FlowBoxChild, Application>>,
     inventory_revision: Cell<u64>,
     rebuilding: Cell<bool>,
     pending_rebuild: Cell<bool>,
@@ -56,39 +56,39 @@ impl Activities {
         surface.window().set_hexpand(true);
         surface.window().set_vexpand(true);
         let visibility = VisibilityController::new(surface, None);
-        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         container.set_widget_name("activities-container");
-        let revealer = gtk::Revealer::new();
-        revealer.set_transition_type(gtk::RevealerTransitionType::SlideDown);
+        let revealer = gtk4::Revealer::new();
+        revealer.set_transition_type(gtk4::RevealerTransitionType::SlideDown);
         revealer.set_transition_duration(300);
         revealer.set_hexpand(true);
         revealer.set_vexpand(true);
         revealer.set_child(Some(&container));
-        let search_container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let search_container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         search_container.set_widget_name("search-container");
         search_container.set_hexpand(true);
-        let search = gtk::SearchEntry::new();
+        let search = gtk4::SearchEntry::new();
         search.set_widget_name("search-entry");
-        search.set_halign(gtk::Align::Center);
+        search.set_halign(gtk4::Align::Center);
         search.set_size_request(480, 120);
         search.set_placeholder_text(Some(
             "Search Applications...ctrl-g for next, ctrl-s-g for prev",
         ));
         search_container.append(&search);
         container.append(&search_container);
-        let results = gtk::FlowBox::new();
+        let results = gtk4::FlowBox::new();
         results.set_column_spacing(20);
         results.set_row_spacing(20);
-        results.set_halign(gtk::Align::Center);
-        results.set_valign(gtk::Align::Start);
+        results.set_halign(gtk4::Align::Center);
+        results.set_valign(gtk4::Align::Start);
         results.set_homogeneous(true);
-        let scrolled = gtk::ScrolledWindow::new();
+        let scrolled = gtk4::ScrolledWindow::new();
         scrolled.set_child(Some(&results));
         scrolled.set_vexpand(true);
         scrolled.set_visible(false);
         container.append(&scrolled);
-        let carousel = adw::Carousel::new();
-        let dots = adw::CarouselIndicatorDots::new();
+        let carousel = libadwaita::Carousel::new();
+        let dots = libadwaita::CarouselIndicatorDots::new();
         dots.set_carousel(Some(&carousel));
         container.append(&carousel);
         container.append(&dots);
@@ -138,7 +138,7 @@ impl Activities {
             self.show();
         }
     }
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         self.0.visibility.main().window()
     }
     pub fn visibility_controller(&self) -> &VisibilityController {
@@ -225,7 +225,7 @@ impl Inner {
                 .get(child)
                 .is_some_and(|app| query.is_empty() || matches(&query, &app.name))
         });
-        let controller = gtk::EventControllerKey::new();
+        let controller = gtk4::EventControllerKey::new();
         let weak = Rc::downgrade(self);
         let handler = controller.connect_key_pressed(move |_, key, _, modifiers| {
             if let Some(direction) = navigation(key, modifiers)
@@ -400,7 +400,7 @@ impl Inner {
                 while let Some(next) = child {
                     child = next.next_sibling();
                     if next.is_child_visible() {
-                        if let Ok(child) = next.downcast::<gtk::FlowBoxChild>() {
+                        if let Ok(child) = next.downcast::<gtk4::FlowBoxChild>() {
                             self.results.select_child(&child);
                         }
                         break;
@@ -430,7 +430,7 @@ impl Inner {
                 child.prev_sibling()
             };
             if child.is_child_visible() {
-                if let Ok(child) = child.downcast::<gtk::FlowBoxChild>() {
+                if let Ok(child) = child.downcast::<gtk4::FlowBoxChild>() {
                     self.results.select_child(&child);
                 }
                 break;
@@ -455,17 +455,17 @@ impl Inner {
         });
         self.hide();
     }
-    fn app_widget(self: &Rc<Self>, app: &Application, revision: u64) -> gtk::Box {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    fn app_widget(self: &Rc<Self>, app: &Application, revision: u64) -> gtk4::Box {
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.add_css_class("activities-app-widget");
-        root.set_halign(gtk::Align::Center);
-        root.set_valign(gtk::Align::Center);
-        let button = gtk::Button::new();
+        root.set_halign(gtk4::Align::Center);
+        root.set_valign(gtk4::Align::Center);
+        let button = gtk4::Button::new();
         button.set_size_request(192, 192);
-        let contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        contents.set_halign(gtk::Align::Center);
-        contents.set_valign(gtk::Align::Center);
-        let icon = gtk::Image::from_icon_name("image-missing");
+        let contents = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        contents.set_halign(gtk4::Align::Center);
+        contents.set_valign(gtk4::Align::Center);
+        let icon = gtk4::Image::from_icon_name("image-missing");
         icon.add_css_class("activities-app-widget-icon");
         icon.set_pixel_size(78);
         if let Some(serialized) = &app.icon
@@ -473,7 +473,7 @@ impl Inner {
         {
             icon.set_from_gicon(&value);
         }
-        let label = gtk::Label::new(Some(&app.name));
+        let label = gtk4::Label::new(Some(&app.name));
         label.add_css_class("activities-app-widget-display-name");
         contents.append(&icon);
         contents.append(&label);
@@ -512,16 +512,16 @@ impl Inner {
                     break;
                 }
                 let search_widget = self.app_widget(&app, revision);
-                let child = gtk::FlowBoxChild::new();
+                let child = gtk4::FlowBoxChild::new();
                 child.set_child(Some(&search_widget));
                 self.apps.borrow_mut().insert(child.clone(), app.clone());
                 self.results.insert(&child, -1);
                 if index % 24 == 0 {
-                    let page = gtk::Grid::new();
+                    let page = gtk4::Grid::new();
                     page.set_column_spacing(20);
                     page.set_row_spacing(20);
-                    page.set_halign(gtk::Align::Center);
-                    page.set_valign(gtk::Align::Start);
+                    page.set_halign(gtk4::Align::Center);
+                    page.set_valign(gtk4::Align::Start);
                     page.set_hexpand(true);
                     page.set_vexpand(true);
                     pages.push(page);
@@ -576,8 +576,8 @@ impl Drop for Inner {
         self.visibility.close();
     }
 }
-fn navigation(key: gtk::gdk::Key, modifiers: gtk::gdk::ModifierType) -> Option<i32> {
-    use gtk::gdk::{Key, ModifierType};
+fn navigation(key: gtk4::gdk::Key, modifiers: gtk4::gdk::ModifierType) -> Option<i32> {
+    use gtk4::gdk::{Key, ModifierType};
     if key == Key::Tab || key == Key::n && modifiers.contains(ModifierType::CONTROL_MASK) {
         Some(1)
     } else if key == Key::ISO_Left_Tab && modifiers.contains(ModifierType::SHIFT_MASK)
@@ -602,7 +602,7 @@ mod tests {
     use super::*;
     #[test]
     fn navigation_preserves_tab_and_control_keys_without_claiming_escape() {
-        use gtk::gdk::{Key, ModifierType};
+        use gtk4::gdk::{Key, ModifierType};
         assert_eq!(navigation(Key::Tab, ModifierType::empty()), Some(1));
         assert_eq!(
             navigation(Key::ISO_Left_Tab, ModifierType::SHIFT_MASK),

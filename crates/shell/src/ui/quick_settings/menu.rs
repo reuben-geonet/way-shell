@@ -1,5 +1,5 @@
 //! Shared quick-settings menu layout; service controllers own their options.
-use gtk::prelude::*;
+use gtk4::prelude::*;
 
 /// Viewport height used before row measurements are available.
 const FALLBACK_MAX_CONTENT_HEIGHT: i32 = 360;
@@ -18,58 +18,58 @@ fn capped_height(natural_heights: &[i32], max_visible: usize) -> Option<i32> {
 
 #[derive(Clone)]
 pub struct Menu {
-    root: gtk::Box,
-    heading: gtk::Box,
-    title: gtk::Label,
-    icon: gtk::Image,
-    banner: gtk::Revealer,
-    options: gtk::Box,
-    scroll: gtk::ScrolledWindow,
-    list: gtk::Box,
+    root: gtk4::Box,
+    heading: gtk4::Box,
+    title: gtk4::Label,
+    icon: gtk4::Image,
+    banner: gtk4::Revealer,
+    options: gtk4::Box,
+    scroll: gtk4::ScrolledWindow,
+    list: gtk4::Box,
 }
 
 impl Menu {
     pub fn new(title: &str, icon: &str) -> Self {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.set_widget_name("quick-settings-menu");
         root.set_vexpand(false);
-        let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let container = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         container.set_widget_name("container");
         container.set_vexpand(false);
         root.append(&container);
 
-        let heading = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let heading = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         heading.set_widget_name("title-container");
-        let icon_container = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let icon_container = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         icon_container.set_widget_name("icon-container");
-        let icon = gtk::Image::from_icon_name(icon);
+        let icon = gtk4::Image::from_icon_name(icon);
         icon.set_pixel_size(24);
         icon_container.append(&icon);
         heading.append(&icon_container);
-        let title = gtk::Label::new(Some(title));
+        let title = gtk4::Label::new(Some(title));
         heading.append(&title);
         container.append(&heading);
 
-        let banner = gtk::Revealer::new();
+        let banner = gtk4::Revealer::new();
         banner.set_widget_name("banner");
-        banner.set_transition_type(gtk::RevealerTransitionType::SwingDown);
+        banner.set_transition_type(gtk4::RevealerTransitionType::SwingDown);
         banner.set_transition_duration(400);
         container.append(&banner);
 
-        let options = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let options = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         options.set_widget_name("options-container");
         options.set_vexpand(false);
         container.append(&options);
 
-        let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        let scroll = gtk::ScrolledWindow::builder()
+        let list = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+        let scroll = gtk4::ScrolledWindow::builder()
             .min_content_height(0)
             .max_content_height(FALLBACK_MAX_CONTENT_HEIGHT)
             .propagate_natural_height(true)
             .vexpand(false)
             .child(&list)
             .build();
-        scroll.set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+        scroll.set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
         scroll.set_visible(false);
         options.append(&scroll);
         Self {
@@ -84,20 +84,20 @@ impl Menu {
         }
     }
 
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
     /// Scrollable rows. Footers and placeholders stay in `options()`.
-    pub fn list(&self) -> &gtk::Box {
+    pub fn list(&self) -> &gtk4::Box {
         &self.list
     }
-    pub fn options(&self) -> &gtk::Box {
+    pub fn options(&self) -> &gtk4::Box {
         &self.options
     }
-    pub fn heading(&self) -> &gtk::Box {
+    pub fn heading(&self) -> &gtk4::Box {
         &self.heading
     }
-    pub fn banner(&self) -> &gtk::Revealer {
+    pub fn banner(&self) -> &gtk4::Revealer {
         &self.banner
     }
     /// Fit the viewport to the first `max_visible` rows, scrolling the rest.
@@ -109,7 +109,7 @@ impl Menu {
     pub fn update_viewport_rows(
         &self,
         max_visible: usize,
-        rows: impl IntoIterator<Item = gtk::Widget>,
+        rows: impl IntoIterator<Item = gtk4::Widget>,
     ) {
         self.scroll.set_min_content_height(0);
         let mut heights = Vec::new();
@@ -117,7 +117,7 @@ impl Menu {
         for widget in rows {
             count += 1;
             if heights.len() < max_visible {
-                heights.push(widget.measure(gtk::Orientation::Vertical, -1).1);
+                heights.push(widget.measure(gtk4::Orientation::Vertical, -1).1);
             }
         }
         if let Some(height) = capped_height(&heights, max_visible) {
@@ -128,11 +128,11 @@ impl Menu {
         }
         self.scroll.set_visible(count > 0);
         self.scroll.set_policy(
-            gtk::PolicyType::Never,
+            gtk4::PolicyType::Never,
             if count > max_visible {
-                gtk::PolicyType::Automatic
+                gtk4::PolicyType::Automatic
             } else {
-                gtk::PolicyType::Never
+                gtk4::PolicyType::Never
             },
         );
     }
@@ -145,7 +145,7 @@ impl Menu {
         let available = self
             .root
             .root()
-            .and_downcast::<gtk::Window>()
+            .and_downcast::<gtk4::Window>()
             .and_then(|window| {
                 let surface = window.surface()?;
                 let monitor = self.root.display().monitor_at_surface(&surface)?;
@@ -156,13 +156,13 @@ impl Menu {
                 })
             })
             .unwrap_or(UNMAPPED_MAX_CONTENT_HEIGHT);
-        let minimum = self.scroll.measure(gtk::Orientation::Vertical, -1).0;
+        let minimum = self.scroll.measure(gtk4::Orientation::Vertical, -1).0;
         let height = preferred.min(available.max(minimum));
         self.scroll.set_max_content_height(height);
         self.scroll.set_min_content_height(height);
         if height < preferred {
             self.scroll
-                .set_policy(gtk::PolicyType::Never, gtk::PolicyType::Automatic);
+                .set_policy(gtk4::PolicyType::Never, gtk4::PolicyType::Automatic);
         }
     }
     pub fn set_title(&self, title: &str) {

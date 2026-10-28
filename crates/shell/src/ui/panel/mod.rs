@@ -20,7 +20,7 @@ use crate::{
     },
     ui::window::{LayerWindow, WindowRole},
 };
-use adw::prelude::*;
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     collections::{HashMap, HashSet},
@@ -41,34 +41,34 @@ pub struct PanelServices {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PanelAction {
-    ToggleClipboard(gtk::gdk::Monitor),
+    ToggleClipboard(gtk4::gdk::Monitor),
     ClipboardSettings,
     ToggleMessageTray,
     ToggleQuickSettings,
-    ToggleShortcuts(gtk::gdk::Monitor),
+    ToggleShortcuts(gtk4::gdk::Monitor),
 }
 
 struct Panel {
     _clipboard: clipboard::ClipboardIndicator,
     window: LayerWindow,
-    container: gtk::CenterBox,
+    container: gtk4::CenterBox,
     clock: PanelClock,
     status: StatusBar,
-    help: gtk::Button,
+    help: gtk4::Button,
     help_handler: Option<glib::SignalHandlerId>,
     _workspaces: WorkspacesBar,
     _tray: Option<TrayBar>,
     _recording: RecordingIndicator,
 }
 impl Panel {
-    fn new(monitor: &gtk::gdk::Monitor, owner: &Inner) -> Result<Self, String> {
+    fn new(monitor: &gtk4::gdk::Monitor, owner: &Inner) -> Result<Self, String> {
         let window = LayerWindow::new(WindowRole::Panel, Some(monitor))?;
-        let container = gtk::CenterBox::new();
+        let container = gtk4::CenterBox::new();
         container.set_widget_name("panel");
-        let left = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let center = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let right = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        center.set_halign(gtk::Align::Center);
+        let left = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let center = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let right = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        center.set_halign(gtk4::Align::Center);
         container.set_start_widget(Some(&left));
         container.set_center_widget(Some(&center));
         container.set_end_widget(Some(&right));
@@ -91,10 +91,10 @@ impl Panel {
                 StatusAction::ToggleQuickSettings => action(PanelAction::ToggleQuickSettings),
             },
         );
-        let help = gtk::Button::from_icon_name("help-about-symbolic");
+        let help = gtk4::Button::from_icon_name("help-about-symbolic");
         help.add_css_class("panel-shortcuts");
         help.set_tooltip_text(Some("Keyboard shortcuts"));
-        help.update_property(&[gtk::accessible::Property::Label("Keyboard shortcuts")]);
+        help.update_property(&[gtk4::accessible::Property::Label("Keyboard shortcuts")]);
         let action = owner.action.clone();
         let output = monitor.clone();
         let stopped = owner.stopped.clone();
@@ -164,7 +164,7 @@ impl Drop for Panel {
 struct Inner {
     monitors: gio::ListModel,
     monitor_handler: RefCell<Option<glib::SignalHandlerId>>,
-    panels: RefCell<HashMap<gtk::gdk::Monitor, Rc<Panel>>>,
+    panels: RefCell<HashMap<gtk4::gdk::Monitor, Rc<Panel>>>,
     services: PanelServices,
     panel_settings: gio::Settings,
     notification_settings: gio::Settings,
@@ -191,7 +191,7 @@ impl Inner {
                 // additions at the same position. GDK monitor identity is stable.
                 let monitors = (0..self.monitors.n_items())
                     .filter_map(|index| self.monitors.item(index))
-                    .filter_map(|object| object.downcast::<gtk::gdk::Monitor>().ok())
+                    .filter_map(|object| object.downcast::<gtk4::gdk::Monitor>().ok())
                     .filter(|monitor| monitor.is_valid())
                     .collect::<Vec<_>>();
                 let wanted = monitors.iter().collect::<HashSet<_>>();
@@ -250,7 +250,7 @@ impl Drop for Inner {
 pub struct Panels(Rc<Inner>);
 impl Panels {
     pub fn new(
-        display: &gtk::gdk::Display,
+        display: &gtk4::gdk::Display,
         services: PanelServices,
         panel_settings: gio::Settings,
         notification_settings: gio::Settings,
@@ -312,7 +312,7 @@ impl Panels {
             panel.set_activities_visible(self.0.activities_visible.get());
         }
     }
-    pub fn windows(&self) -> Vec<adw::Window> {
+    pub fn windows(&self) -> Vec<libadwaita::Window> {
         self.0
             .snapshot()
             .iter()

@@ -1,14 +1,14 @@
 use super::*;
 use crate::services::clipboard::{now, preview};
-use gtk::pango;
+use gtk4::pango;
 impl ClipboardDialog {
-    pub(super) fn card(self: &Rc<Self>, entry: &Entry) -> gtk::Box {
+    pub(super) fn card(self: &Rc<Self>, entry: &Entry) -> gtk4::Box {
         let settings = &self.service.settings;
         let dynamic = settings.boolean("dynamic-item-height")
             && settings.string("clipboard-orientation") == "vertical";
-        let card = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let card = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
         card.add_css_class("clipboard-card");
-        card.set_overflow(gtk::Overflow::Hidden);
+        card.set_overflow(gtk4::Overflow::Hidden);
         card.set_size_request(
             settings.int("item-width"),
             if dynamic {
@@ -17,15 +17,15 @@ impl ClipboardDialog {
                 settings.int("item-height")
             },
         );
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let header = gtk4::Box::new(gtk4::Orientation::Horizontal, 4);
         header.add_css_class("clipboard-card-header");
         if let Some(tag) = &entry.tag {
             header.add_css_class(&format!("clipboard-tag-{tag}"));
         }
-        let icon = gtk::Image::from_icon_name(entry.content.kind.icon());
+        let icon = gtk4::Image::from_icon_name(entry.content.kind.icon());
         icon.set_visible(settings.boolean("show-header"));
         header.append(&icon);
-        let name = gtk::Label::new(Some(
+        let name = gtk4::Label::new(Some(
             if settings.boolean("show-item-title") && !entry.title.is_empty() {
                 &entry.title
             } else {
@@ -40,13 +40,13 @@ impl ClipboardDialog {
                 || (settings.boolean("show-item-title") && !entry.title.is_empty()),
         );
         header.append(&name);
-        let time = gtk::Label::new(Some(&relative_time(entry.copied)));
+        let time = gtk4::Label::new(Some(&relative_time(entry.copied)));
         time.add_css_class("clipboard-time");
         time.set_hexpand(true);
         time.set_xalign(0.0);
         time.set_visible(settings.boolean("show-header") && entry.title.is_empty());
         header.append(&time);
-        let menu = gtk::MenuButton::new();
+        let menu = gtk4::MenuButton::new();
         menu.set_icon_name("view-more-symbolic");
         menu.set_tooltip_text(Some("Item actions and tag"));
         menu.set_popover(Some(&self.item_menu(entry.id)));
@@ -55,8 +55,8 @@ impl ClipboardDialog {
         let weak = Rc::downgrade(self);
         let id = entry.id;
         let force = Rc::new(Cell::new(false));
-        let gesture = gtk::GestureClick::new();
-        gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let gesture = gtk4::GestureClick::new();
+        gesture.set_propagation_phase(gtk4::PropagationPhase::Capture);
         let pressed = force.clone();
         gesture.connect_pressed(move |gesture, _, _, _| {
             pressed.set(
@@ -72,7 +72,7 @@ impl ClipboardDialog {
         });
         delete.add_controller(gesture);
         header.append(&delete);
-        let pin = gtk::ToggleButton::new();
+        let pin = gtk4::ToggleButton::new();
         pin.set_icon_name("way-shell-pin-symbolic");
         pin.set_active(entry.pinned);
         pin.set_tooltip_text(Some("Pin item"));
@@ -100,14 +100,14 @@ impl ClipboardDialog {
             card.append(&header);
         }
         if settings.string("header-controls-visibility") != "visible" {
-            let buttons = [menu.upcast::<gtk::Widget>(), delete.upcast(), pin.upcast()];
+            let buttons = [menu.upcast::<gtk4::Widget>(), delete.upcast(), pin.upcast()];
             let hover = settings.string("header-controls-visibility") == "visible-on-hover";
             for button in &buttons {
                 button.set_opacity(0.0);
                 button.set_can_target(false);
             }
             if hover {
-                let motion = gtk::EventControllerMotion::new();
+                let motion = gtk4::EventControllerMotion::new();
                 let showing = buttons.clone();
                 motion.connect_enter(move |_, _, _| {
                     for button in &showing {
@@ -124,12 +124,12 @@ impl ClipboardDialog {
                 card.add_controller(motion);
             }
         }
-        let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let content = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
         content.set_hexpand(true);
         content.set_vexpand(true);
         content.add_css_class("clipboard-content");
-        let clip = gtk::ScrolledWindow::new();
-        clip.set_policy(gtk::PolicyType::External, gtk::PolicyType::External);
+        let clip = gtk4::ScrolledWindow::new();
+        clip.set_policy(gtk4::PolicyType::External, gtk4::PolicyType::External);
         clip.set_propagate_natural_height(dynamic);
         clip.set_max_content_height(
             (settings.int("item-height") - if show_header { 45 } else { 17 }).max(20),
@@ -137,12 +137,12 @@ impl ClipboardDialog {
         clip.set_hexpand(true);
         clip.set_vexpand(!dynamic);
         clip.set_child(Some(&content));
-        let overlay = gtk::Overlay::new();
+        let overlay = gtk4::Overlay::new();
         overlay.set_child(Some(&clip));
         overlay.set_vexpand(true);
         if !show_header {
-            header.set_halign(gtk::Align::End);
-            header.set_valign(gtk::Align::Start);
+            header.set_halign(gtk4::Align::End);
+            header.set_valign(gtk4::Align::Start);
             overlay.add_overlay(&header);
         }
         card.append(&overlay);
@@ -153,7 +153,7 @@ impl ClipboardDialog {
                     picture.set_size_request(-1, settings.int("item-height") - 17);
                 }
                 content.append(&picture);
-                let info = gtk::Label::new(Some(&format!(
+                let info = gtk4::Label::new(Some(&format!(
                     "{} · {}",
                     entry.content.mime,
                     glib::format_size(entry.content.bytes.len() as u64)
@@ -170,7 +170,7 @@ impl ClipboardDialog {
             }
             Kind::Color => {
                 let text = entry.content.text.clone();
-                let drawing = gtk::DrawingArea::new();
+                let drawing = gtk4::DrawingArea::new();
                 drawing.set_vexpand(true);
                 drawing.set_content_height(
                     settings.int("item-height") - if show_header { 45 } else { 17 },
@@ -193,9 +193,9 @@ impl ClipboardDialog {
                         let _ = cr.fill();
                     });
                 }
-                let swatch = gtk::Overlay::new();
+                let swatch = gtk4::Overlay::new();
                 swatch.add_css_class("clipboard-color-preview");
-                swatch.set_overflow(gtk::Overflow::Hidden);
+                swatch.set_overflow(gtk4::Overflow::Hidden);
                 swatch.set_child(Some(&drawing));
                 let caption = label(&text);
                 caption.add_css_class("clipboard-color-label");
@@ -203,8 +203,8 @@ impl ClipboardDialog {
                     "<b><span foreground='{foreground}'>{}</span></b>",
                     glib::markup_escape_text(&text)
                 ));
-                caption.set_halign(gtk::Align::Center);
-                caption.set_valign(gtk::Align::Center);
+                caption.set_halign(gtk4::Align::Center);
+                caption.set_valign(gtk4::Align::Center);
                 swatch.add_overlay(&caption);
                 content.append(&swatch);
             }
@@ -213,7 +213,7 @@ impl ClipboardDialog {
                 text.add_css_class("clipboard-character");
                 text.set_wrap(false);
                 text.set_ellipsize(pango::EllipsizeMode::None);
-                text.set_valign(gtk::Align::Center);
+                text.set_valign(gtk4::Align::Center);
                 text.set_vexpand(true);
                 text.set_xalign(0.5);
                 let height = f64::from(
@@ -267,7 +267,7 @@ impl ClipboardDialog {
             Kind::Text => {
                 let text = label(&entry.content.text);
                 text.set_vexpand(true);
-                text.set_valign(gtk::Align::Start);
+                text.set_valign(gtk4::Align::Start);
                 content.append(&text);
                 self.text_info(
                     &content,
@@ -278,15 +278,15 @@ impl ClipboardDialog {
             }
         }
         if dynamic {
-            let (minimum, _, _, _) = content.measure(gtk::Orientation::Horizontal, -1);
+            let (minimum, _, _, _) = content.measure(gtk4::Orientation::Horizontal, -1);
             let (_, natural, _, _) = content.measure(
-                gtk::Orientation::Vertical,
+                gtk4::Orientation::Vertical,
                 (settings.int("item-width") - 20).max(minimum),
             );
             let maximum = (settings.int("item-height") - if show_header { 45 } else { 17 }).max(20);
             clip.set_min_content_height(natural.clamp(16, maximum));
         }
-        let click = gtk::GestureClick::new();
+        let click = gtk4::GestureClick::new();
         click.set_button(0);
         let weak = Rc::downgrade(self);
         let id = entry.id;
@@ -299,10 +299,10 @@ impl ClipboardDialog {
                 return;
             };
             if card
-                .pick(x, y, gtk::PickFlags::DEFAULT)
+                .pick(x, y, gtk4::PickFlags::DEFAULT)
                 .is_some_and(|picked| {
-                    picked.ancestor(gtk::Button::static_type()).is_some()
-                        || picked.ancestor(gtk::MenuButton::static_type()).is_some()
+                    picked.ancestor(gtk4::Button::static_type()).is_some()
+                        || picked.ancestor(gtk4::MenuButton::static_type()).is_some()
                 })
             {
                 return;
@@ -339,12 +339,12 @@ impl ClipboardDialog {
         card.add_controller(click);
         card
     }
-    fn code(self: &Rc<Self>, container: &gtk::Box, entry: &Entry, file: bool) {
+    fn code(self: &Rc<Self>, container: &gtk4::Box, entry: &Entry, file: bool) {
         let settings = self
             .service
             .settings
             .child(if file { "file-item" } else { "code-item" });
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
         let text = entry.content.text.replace(
             '\t',
             &" ".repeat(self.service.settings.int("tab-width") as usize),
@@ -360,13 +360,13 @@ impl ClipboardDialog {
             numbers.add_css_class("clipboard-time");
             numbers.add_css_class("monospace");
             numbers.set_xalign(1.0);
-            numbers.set_valign(gtk::Align::Start);
+            numbers.set_valign(gtk4::Align::Start);
             row.append(&numbers);
         }
         let code = label(&excerpt);
         code.set_wrap(false);
         code.set_hexpand(true);
-        code.set_valign(gtk::Align::Start);
+        code.set_valign(gtk4::Align::Start);
         code.add_css_class("monospace");
         row.append(&code);
         container.append(&row);
@@ -419,7 +419,7 @@ impl ClipboardDialog {
             self.text_info(container, &entry.content.text, &settings, "show-code-info");
         }
     }
-    fn text_info(&self, container: &gtk::Box, text: &str, settings: &gio::Settings, key: &str) {
+    fn text_info(&self, container: &gtk4::Box, text: &str, settings: &gio::Settings, key: &str) {
         if !settings.boolean(key) {
             return;
         }
@@ -434,24 +434,25 @@ impl ClipboardDialog {
     }
     fn image(
         &self,
-        picture: &gtk::Picture,
+        picture: &gtk4::Picture,
         bytes: Vec<u8>,
         cover: bool,
-        info: Option<&gtk::Label>,
+        info: Option<&gtk4::Label>,
     ) {
         picture.set_content_fit(if cover {
-            gtk::ContentFit::Cover
+            gtk4::ContentFit::Cover
         } else {
-            gtk::ContentFit::Contain
+            gtk4::ContentFit::Contain
         });
         let weak = picture.downgrade();
         let info = info.map(|info| (info.downgrade(), info.text().to_string()));
         glib::spawn_future_local(async move {
             let stream = gio::MemoryInputStream::from_bytes(&glib::Bytes::from_owned(bytes));
             let result = if info.is_some() {
-                gtk::gdk_pixbuf::Pixbuf::from_stream_future(&stream).await
+                gtk4::gdk_pixbuf::Pixbuf::from_stream_future(&stream).await
             } else {
-                gtk::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(&stream, 1000, 600, true).await
+                gtk4::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(&stream, 1000, 600, true)
+                    .await
             };
             if let Ok(pixbuf) = result
                 && let Some(picture) = weak.upgrade()
@@ -469,7 +470,7 @@ impl ClipboardDialog {
             }
         });
     }
-    fn link_preview(self: &Rc<Self>, card: &gtk::Box, container: &gtk::Box, entry: &Entry) {
+    fn link_preview(self: &Rc<Self>, card: &gtk4::Box, container: &gtk4::Box, entry: &Entry) {
         let settings = self.service.settings.child("link-item");
         if !settings.boolean("show-link-preview")
             || settings
@@ -482,11 +483,11 @@ impl ClipboardDialog {
         {
             return;
         }
-        let preview_box = gtk::Box::new(
+        let preview_box = gtk4::Box::new(
             if settings.string("link-preview-orientation") == "horizontal" {
-                gtk::Orientation::Horizontal
+                gtk4::Orientation::Horizontal
             } else {
-                gtk::Orientation::Vertical
+                gtk4::Orientation::Vertical
             },
             4,
         );
@@ -542,7 +543,7 @@ impl ClipboardDialog {
                     );
                     container.append(&picture);
                 }
-                let labels = gtk::Box::new(gtk::Orientation::Vertical, 2);
+                let labels = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
                 let title = label(&preview.title);
                 title.add_css_class("heading");
                 labels.append(&title);
@@ -552,7 +553,7 @@ impl ClipboardDialog {
             }
         });
     }
-    fn files(self: &Rc<Self>, card: &gtk::Box, container: &gtk::Box, entry: &Entry) {
+    fn files(self: &Rc<Self>, card: &gtk4::Box, container: &gtk4::Box, entry: &Entry) {
         let files = entry
             .content
             .text
@@ -572,7 +573,7 @@ impl ClipboardDialog {
                 container.append(&path);
             }
             let count = ((self.service.settings.int("item-height") - 60) / 23).max(1) as usize;
-            let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let list = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
             list.add_css_class("clipboard-files-list");
             container.append(&list);
             for file in files.iter().take(count) {
@@ -616,7 +617,7 @@ impl ClipboardDialog {
         let cover = settings.string("background-size") == "cover";
         let info = label("");
         info.add_css_class("clipboard-time");
-        let preview_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
+        let preview_box = gtk4::Box::new(gtk4::Orientation::Vertical, 2);
         preview_box.set_vexpand(true);
         container.append(&preview_box);
         container.append(&info);
@@ -646,15 +647,15 @@ impl ClipboardDialog {
                     if show_image && kind.starts_with("image/") {
                         let picture = picture();
                         picture.set_content_fit(if cover {
-                            gtk::ContentFit::Cover
+                            gtk4::ContentFit::Cover
                         } else {
-                            gtk::ContentFit::Contain
+                            gtk4::ContentFit::Contain
                         });
                         container.append(&picture);
                         let stream = file.read_future(glib::Priority::DEFAULT).await;
                         if let Ok(stream) = stream
                             && let Ok(pixbuf) =
-                                gtk::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(
+                                gtk4::gdk_pixbuf::Pixbuf::from_stream_at_scale_future(
                                     &stream, 400, 250, true,
                                 )
                                 .await
@@ -710,7 +711,7 @@ impl ClipboardDialog {
                     } else if thumbnail
                         && let Some(path) = metadata.attribute_byte_string("thumbnail::path")
                     {
-                        let picture = gtk::Picture::for_filename(path.as_str());
+                        let picture = gtk4::Picture::for_filename(path.as_str());
                         picture.set_can_shrink(true);
                         container.append(&picture);
                         previewed = true;
@@ -719,7 +720,7 @@ impl ClipboardDialog {
                 if kind.starts_with("image/")
                     && let Some(path) = file.path()
                     && let Ok(Some((_, width, height))) =
-                        gtk::gdk_pixbuf::Pixbuf::file_info_future(path).await
+                        gtk4::gdk_pixbuf::Pixbuf::file_info_future(path).await
                 {
                     description.push_str(&format!(" · {width} × {height}"));
                 }
@@ -788,7 +789,7 @@ impl ClipboardDialog {
         if !title_only && !matches!(entry.content.kind, Kind::Text | Kind::Code) {
             return;
         }
-        let dialog = adw::MessageDialog::new(
+        let dialog = libadwaita::MessageDialog::new(
             Some(self.window()),
             Some(if title_only {
                 "Edit title"
@@ -798,16 +799,16 @@ impl ClipboardDialog {
             None,
         );
         dialog.add_css_class("clipboard-edit-dialog");
-        let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
-        let editor = gtk::TextView::new();
+        let content = gtk4::Box::new(gtk4::Orientation::Vertical, 8);
+        let editor = gtk4::TextView::new();
         editor.set_monospace(entry.content.kind == Kind::Code);
-        editor.set_wrap_mode(gtk::WrapMode::WordChar);
+        editor.set_wrap_mode(gtk4::WrapMode::WordChar);
         editor.buffer().set_text(if title_only {
             &entry.title
         } else {
             &entry.content.text
         });
-        let scroller = gtk::ScrolledWindow::new();
+        let scroller = gtk4::ScrolledWindow::new();
         scroller.set_min_content_height(if title_only { 60 } else { 250 });
         scroller.set_min_content_width(400);
         scroller.set_child(Some(&editor));
@@ -821,7 +822,7 @@ impl ClipboardDialog {
             )
             .collect::<Vec<_>>();
         let names = languages.iter().map(String::as_str).collect::<Vec<_>>();
-        let language = gtk::DropDown::from_strings(&names);
+        let language = gtk4::DropDown::from_strings(&names);
         language.set_enable_search(true);
         if let Some(current) = entry.content.metadata["language"].as_str() {
             language.set_selected(
@@ -842,8 +843,8 @@ impl ClipboardDialog {
         self.present_dialog(&dialog);
     }
 }
-pub(super) fn label(text: &str) -> gtk::Label {
-    let label = gtk::Label::new(Some(text));
+pub(super) fn label(text: &str) -> gtk4::Label {
+    let label = gtk4::Label::new(Some(text));
     label.set_xalign(0.0);
     label.set_wrap(true);
     label.set_wrap_mode(pango::WrapMode::WordChar);
@@ -851,10 +852,10 @@ pub(super) fn label(text: &str) -> gtk::Label {
     label.set_lines(8);
     label
 }
-fn picture() -> gtk::Picture {
-    let picture = gtk::Picture::new();
+fn picture() -> gtk4::Picture {
+    let picture = gtk4::Picture::new();
     picture.add_css_class("clipboard-image-preview");
-    picture.set_overflow(gtk::Overflow::Hidden);
+    picture.set_overflow(gtk4::Overflow::Hidden);
     picture.set_can_shrink(true);
     picture.set_hexpand(true);
     picture.set_vexpand(true);

@@ -24,14 +24,14 @@ serde_json.workspace = true
 libc.workspace = true
 glib.workspace = true
 gio.workspace = true
-gtk.workspace = true
-adw.workspace = true
+gtk4.workspace = true
+libadwaita.workspace = true
 gtk4-layer-shell.workspace = true
 wayland-client.workspace = true
 wayland-protocols-wlr.workspace = true
 wireplumber.workspace = true
-pulse.workspace = true
-pulse-glib.workspace = true
+libpulse-sys.workspace = true
+libpulse-mainloop-glib-sys.workspace = true
 
 [build-dependencies]
 pkg-config.workspace = true

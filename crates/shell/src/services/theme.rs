@@ -64,13 +64,13 @@ pub fn run_hook(directory: &Path, theme: Theme) -> Result<(), glib::Error> {
 }
 
 pub(super) struct ThemeStyle {
-    display: gtk::gdk::Display,
-    provider: gtk::CssProvider,
+    display: gtk4::gdk::Display,
+    provider: gtk4::CssProvider,
 }
 
 impl Drop for ThemeStyle {
     fn drop(&mut self) {
-        gtk::style_context_remove_provider_for_display(&self.display, &self.provider);
+        gtk4::style_context_remove_provider_for_display(&self.display, &self.provider);
     }
 }
 
@@ -154,9 +154,9 @@ impl ThemeService {
         Ok(())
     }
 
-    pub fn attach_display(&self, display: &gtk::gdk::Display) {
+    pub fn attach_display(&self, display: &gtk4::gdk::Display) {
         crate::resources::get();
-        let provider = gtk::CssProvider::new();
+        let provider = gtk4::CssProvider::new();
         provider.connect_parsing_error(|_, section, error| {
             let location = section.start_location();
             glib::g_warning!(
@@ -168,10 +168,10 @@ impl ThemeService {
         });
         // Remove the previous provider before installing the replacement.
         self.imp().style.borrow_mut().take();
-        gtk::style_context_add_provider_for_display(
+        gtk4::style_context_add_provider_for_display(
             display,
             &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_THEME,
+            gtk4::STYLE_PROVIDER_PRIORITY_THEME,
         );
         self.imp().style.replace(Some(ThemeStyle {
             display: display.clone(),
@@ -195,10 +195,12 @@ impl ThemeService {
         let style = self.imp().style.borrow();
         if let Some(style) = style.as_ref() {
             // Keep native GTK/libadwaita controls in step with the shell CSS.
-            adw::StyleManager::for_display(&style.display).set_color_scheme(match self.theme() {
-                Theme::Light => adw::ColorScheme::ForceLight,
-                Theme::Dark => adw::ColorScheme::ForceDark,
-            });
+            libadwaita::StyleManager::for_display(&style.display).set_color_scheme(
+                match self.theme() {
+                    Theme::Light => libadwaita::ColorScheme::ForceLight,
+                    Theme::Dark => libadwaita::ColorScheme::ForceDark,
+                },
+            );
             match self.theme().source(self.imp().directory.get().unwrap()) {
                 ThemeSource::File(path) => {
                     style.provider.load_from_file(&gio::File::for_path(path))

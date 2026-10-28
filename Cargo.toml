@@ -33,8 +33,8 @@ glob = "=0.3.4"
 shlex = "=2.0.1"
 glib = "=0.21.5"
 gio = "=0.21.5"
-gtk = { package = "gtk4", version = "=0.10.3", features = ["v4_8"] }
-adw = { package = "libadwaita", version = "=0.8.1", features = ["v1_4"] }
+gtk4 = { version = "=0.10.3", features = ["v4_8"] }
+libadwaita = { version = "=0.8.1", features = ["v1_4"] }
 gtk4-layer-shell = "=0.7.1"
 clap = { version = "=4.6.7", features = ["derive"] }
 serde = { version = "=1.0.229", features = ["derive"] }
@@ -45,8 +45,8 @@ wayland-protocols-wlr = { version = "=0.3.12", features = ["client"] }
 wireplumber = { git = "https://github.com/saivert/wireplumber.rs", rev = "04fbbc6ea157cdd7061f6a5f2a6b22e102fccbcc", default-features = false, features = ["v0_5", "futures"] }
 pkg-config = "=0.3.34"
 
-pulse = { package = "libpulse-sys", version = "=1.23.0" }
-pulse-glib = { package = "libpulse-mainloop-glib-sys", version = "=1.22.0" }
+libpulse-sys = "=1.23.0"
+libpulse-mainloop-glib-sys = "=1.22.0"
 
 [profile.dev]
 debug = 1

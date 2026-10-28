@@ -1,7 +1,7 @@
 //! Session actions retain inline confirmation and the separate confirmation dialog.
 use super::{controls::Subscription, menu::Menu};
 use crate::services::logind::{LoginState, LogindService, PowerAction};
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -66,9 +66,9 @@ pub fn suspend_action(preference: &str, state: &LoginState) -> Option<PowerActio
         .find(|action| state.capabilities[*action as usize])
 }
 struct Row {
-    button: gtk::Button,
-    confirm: gtk::Button,
-    revealer: gtk::Revealer,
+    button: gtk4::Button,
+    confirm: gtk4::Button,
+    revealer: gtk4::Revealer,
 }
 pub struct PowerMenu {
     menu: Menu,
@@ -95,18 +95,18 @@ impl PowerMenu {
         let rows = SystemAction::ALL
             .into_iter()
             .map(|action| {
-                let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-                let button = gtk::Button::with_label(action.label());
+                let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
+                let button = gtk4::Button::with_label(action.label());
                 button.set_hexpand(true);
-                if let Some(label) = button.child().and_downcast::<gtk::Label>() {
+                if let Some(label) = button.child().and_downcast::<gtk4::Label>() {
                     label.set_xalign(0.0);
                 }
                 root.append(&button);
-                let revealer = gtk::Revealer::builder()
-                    .transition_type(gtk::RevealerTransitionType::SwingDown)
+                let revealer = gtk4::Revealer::builder()
+                    .transition_type(gtk4::RevealerTransitionType::SwingDown)
                     .transition_duration(250)
                     .build();
-                let confirm = gtk::Button::with_label("Confirm");
+                let confirm = gtk4::Button::with_label("Confirm");
                 confirm.set_hexpand(true);
                 confirm.add_css_class("confirm-button");
                 revealer.set_child(Some(&confirm));
@@ -168,13 +168,13 @@ impl PowerMenu {
         this.refresh();
         this
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         self.menu.widget()
     }
-    pub fn action_button(&self, action: SystemAction) -> &gtk::Button {
+    pub fn action_button(&self, action: SystemAction) -> &gtk4::Button {
         &self.rows[action as usize].button
     }
-    pub fn confirmation_button(&self, action: SystemAction) -> &gtk::Button {
+    pub fn confirmation_button(&self, action: SystemAction) -> &gtk4::Button {
         &self.rows[action as usize].confirm
     }
     pub fn hide_confirmations(&self) {

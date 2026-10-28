@@ -1,6 +1,6 @@
 //! Bounded grim acquisition and PNG/file workers. No shell command expansion.
 use gio::prelude::*;
-use gtk::gdk_pixbuf::{Colorspace, InterpType, Pixbuf, PixbufLoader, prelude::*};
+use gtk4::gdk_pixbuf::{Colorspace, InterpType, Pixbuf, PixbufLoader, prelude::*};
 use std::{
     ffi::OsStr,
     io::Write,

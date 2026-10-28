@@ -8,15 +8,15 @@ use super::{
 use crate::services::{
     logind::LogindService, notifications::NotificationsService, power::PowerService,
 };
-use gtk::prelude::*;
+use gtk4::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
 };
 
 pub struct MixerSlot {
-    pub button: gtk::Button,
-    pub content: gtk::Widget,
+    pub button: gtk4::Button,
+    pub content: gtk4::Widget,
     pub revealed: Rc<dyn Fn(bool)>,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -26,21 +26,21 @@ pub enum HeaderMenu {
     Battery,
 }
 pub struct SystemHeader {
-    root: gtk::Box,
+    root: gtk4::Box,
     power: PowerService,
     notifications: NotificationsService,
-    battery_button: gtk::Button,
-    battery_icon: gtk::Image,
-    battery_label: gtk::Label,
+    battery_button: gtk4::Button,
+    battery_icon: gtk4::Image,
+    battery_label: gtk4::Label,
     battery_menu: Menu,
-    battery_scale: gtk::Scale,
-    battery_time: gtk::Label,
-    battery_percent: gtk::Label,
-    power_button: gtk::Button,
-    screenshot_button: gtk::Button,
+    battery_scale: gtk4::Scale,
+    battery_time: gtk4::Label,
+    battery_percent: gtk4::Label,
+    power_button: gtk4::Button,
+    screenshot_button: gtk4::Button,
     power_menu: Rc<PowerMenu>,
     mixer: Option<MixerSlot>,
-    revealers: [gtk::Revealer; 3],
+    revealers: [gtk4::Revealer; 3],
     subscriptions: RefCell<Vec<Subscription>>,
     warnings: RefCell<WarningTracker>,
     selected: Cell<Option<HeaderMenu>>,
@@ -61,45 +61,46 @@ impl SystemHeader {
         focused: impl Fn(bool) + 'static,
         confirmation: impl Fn(Confirmation) + 'static,
     ) -> Rc<Self> {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let root = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         root.set_widget_name("quick-settings-header-container");
-        let center = gtk::CenterBox::new();
+        let center = gtk4::CenterBox::new();
         center.set_widget_name("quick-settings-header");
         root.append(&center);
-        let battery_button = gtk::Button::new();
+        let battery_button = gtk4::Button::new();
         battery_button.add_css_class("battery-button");
-        let contents = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let contents = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         contents.set_widget_name("quick-settings-header-bat-button");
-        let battery_icon = gtk::Image::from_icon_name("battery-missing-symbolic");
-        let battery_label = gtk::Label::new(Some("—"));
+        let battery_icon = gtk4::Image::from_icon_name("battery-missing-symbolic");
+        let battery_label = gtk4::Label::new(Some("—"));
         contents.append(&battery_icon);
         contents.append(&battery_label);
         battery_button.set_child(Some(&contents));
         center.set_start_widget(Some(&battery_button));
-        let end = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        let screenshot_button = gtk::Button::from_icon_name("camera-photo-symbolic");
+        let end = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
+        let screenshot_button = gtk4::Button::from_icon_name("camera-photo-symbolic");
         screenshot_button.add_css_class("circular");
         screenshot_button.set_tooltip_text(Some("Take a screenshot"));
-        screenshot_button.update_property(&[gtk::accessible::Property::Label("Take a screenshot")]);
+        screenshot_button
+            .update_property(&[gtk4::accessible::Property::Label("Take a screenshot")]);
         end.append(&screenshot_button);
         if let Some(mixer) = &mixer {
             end.append(&mixer.button);
         }
-        let power_button = gtk::Button::from_icon_name("system-shutdown-symbolic");
+        let power_button = gtk4::Button::from_icon_name("system-shutdown-symbolic");
         power_button.add_css_class("circular");
         end.append(&power_button);
         center.set_end_widget(Some(&end));
         let battery_menu = Menu::new("Battery", "battery-full-symbolic");
-        let battery_contents = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let battery_contents = gtk4::Box::new(gtk4::Orientation::Vertical, 0);
         battery_contents.set_widget_name("battery-menu");
-        let battery_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);
+        let battery_scale = gtk4::Scale::with_range(gtk4::Orientation::Horizontal, 0.0, 100.0, 1.0);
         battery_scale.set_sensitive(false);
         battery_contents.append(&battery_scale);
-        let stats = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let battery_time = gtk::Label::new(None);
+        let stats = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
+        let battery_time = gtk4::Label::new(None);
         battery_time.set_xalign(0.0);
-        battery_time.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        let battery_percent = gtk::Label::new(None);
+        battery_time.set_ellipsize(gtk4::pango::EllipsizeMode::End);
+        let battery_percent = gtk4::Label::new(None);
         battery_percent.set_xalign(1.0);
         stats.append(&battery_time);
         stats.append(&battery_percent);
@@ -107,8 +108,8 @@ impl SystemHeader {
         battery_menu.options().append(&battery_contents);
         let power_menu = PowerMenu::new(logind, system_settings, confirmation);
         let revealers = std::array::from_fn(|_| {
-            gtk::Revealer::builder()
-                .transition_type(gtk::RevealerTransitionType::SlideDown)
+            gtk4::Revealer::builder()
+                .transition_type(gtk4::RevealerTransitionType::SlideDown)
                 .transition_duration(250)
                 .build()
         });
@@ -171,16 +172,16 @@ impl SystemHeader {
         this.refresh();
         this
     }
-    pub fn screenshot_button(&self) -> &gtk::Button {
+    pub fn screenshot_button(&self) -> &gtk4::Button {
         &self.screenshot_button
     }
-    pub fn widget(&self) -> &gtk::Box {
+    pub fn widget(&self) -> &gtk4::Box {
         &self.root
     }
-    pub fn battery_button(&self) -> &gtk::Button {
+    pub fn battery_button(&self) -> &gtk4::Button {
         &self.battery_button
     }
-    pub fn power_button(&self) -> &gtk::Button {
+    pub fn power_button(&self) -> &gtk4::Button {
         &self.power_button
     }
     pub fn power_menu(&self) -> &Rc<PowerMenu> {

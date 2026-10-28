@@ -18,14 +18,14 @@ fn wait(context: &glib::MainContext, condition: impl Fn() -> bool) {
 #[test]
 #[ignore = "requires an isolated two-output Wayland compositor"]
 fn two_output_capture_retry_clipboard_and_cleanup() {
-    adw::init().unwrap();
+    libadwaita::init().unwrap();
     resources::get();
     let context = glib::MainContext::default();
     let audio_test = std::env::var_os("WAY_SHELL_RECORDING_AUDIO_TEST").is_some();
     let _policy = audio_test
         .then(|| recording_policy::Policy::new(&std::env::var("PIPEWIRE_REMOTE").unwrap()));
     let display = gdk::Display::default().unwrap();
-    let provider = gtk::CssProvider::new();
+    let provider = gtk4::CssProvider::new();
     provider.load_from_path(
         std::env::var_os("WAY_SHELL_SCREENSHOT_TEST_CSS")
             .map(PathBuf::from)
@@ -34,10 +34,10 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
                     .join("../../data/theme/way-shell-dark.css")
             }),
     );
-    gtk::style_context_add_provider_for_display(
+    gtk4::style_context_add_provider_for_display(
         &display,
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
     let source =
         gio::SettingsSchemaSource::from_directory(env!("WAY_SHELL_TEST_SCHEMAS"), None, false)
@@ -80,12 +80,12 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
     }
     .unwrap();
     let notifications = NotificationsService::new();
-    let sample = gtk::Window::builder()
+    let sample = gtk4::Window::builder()
         .title("Screenshot geometry sample")
         .default_width(460)
         .default_height(260)
         .build();
-    let canvas = gtk::DrawingArea::new();
+    let canvas = gtk4::DrawingArea::new();
     canvas.set_draw_func(|_, cr, w, h| {
         cr.set_source_rgb(0.15, 0.38, 0.55);
         let _ = cr.paint();
@@ -153,7 +153,7 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
         .find_map(|i| {
             controllers
                 .item(i)
-                .and_downcast::<gtk::EventControllerMotion>()
+                .and_downcast::<gtk4::EventControllerMotion>()
         })
         .unwrap();
     let (area, output) = {
@@ -395,7 +395,7 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
             .as_ref()
             .unwrap()
             .root
-            .measure(gtk::Orientation::Vertical, -1);
+            .measure(gtk4::Orientation::Vertical, -1);
         screenshot.progress.begin();
         context.block_on(glib::timeout_future(Duration::from_millis(320)));
         assert_eq!(
@@ -409,7 +409,7 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
                 .as_ref()
                 .unwrap()
                 .root
-                .measure(gtk::Orientation::Vertical, -1),
+                .measure(gtk4::Orientation::Vertical, -1),
             height
         );
         if outcome == "error" {
@@ -596,7 +596,7 @@ fn two_output_capture_retry_clipboard_and_cleanup() {
                 .unwrap()
                 .first_child()
                 .unwrap()
-                .downcast::<gtk::Label>()
+                .downcast::<gtk4::Label>()
                 .unwrap();
             assert_eq!(label.text(), frozen);
             assert!(!label.text().contains("Saving"));

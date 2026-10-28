@@ -7,7 +7,7 @@ impl ClipboardDialog {
             window.present();
             return;
         }
-        let window = adw::PreferencesWindow::new();
+        let window = libadwaita::PreferencesWindow::new();
         // This window is independent of the history popup and panel controls.
         window.set_modal(false);
         window.set_title(Some("Clipboard Preferences"));
@@ -62,13 +62,13 @@ impl ClipboardDialog {
         );
         group(&general, "Automatic Paste", settings, &["terminal-apps"]);
         let customization = page(&window, "Customization", "applications-graphics-symbolic");
-        let profiles = adw::PreferencesGroup::new();
+        let profiles = libadwaita::PreferencesGroup::new();
         profiles.set_title("Profiles");
-        let row = adw::ActionRow::new();
+        let row = libadwaita::ActionRow::new();
         row.set_title("Layout profile");
         for (name, compact) in [("Default", false), ("Compact", true)] {
-            let button = gtk::Button::with_label(name);
-            button.set_valign(gtk::Align::Center);
+            let button = gtk4::Button::with_label(name);
+            button.set_valign(gtk4::Align::Center);
             let settings = settings.clone();
             button.connect_clicked(move |_| apply_profile(&settings, compact));
             row.add_suffix(&button);
@@ -187,10 +187,10 @@ impl ClipboardDialog {
             &["custom-css"],
         );
         let shortcuts = page(&window, "Shortcuts", "input-keyboard-symbolic");
-        let global = adw::PreferencesGroup::new();
+        let global = libadwaita::PreferencesGroup::new();
         global.set_title("Global Shortcuts");
         global.set_description(Some("Global bindings are configured in Sway or Niri. Use way-sh clipboard open and way-sh clipboard incognito-toggle."));
-        let detected = gtk::Label::new(None);
+        let detected = gtk4::Label::new(None);
         detected.set_wrap(true);
         detected.set_xalign(0.0);
         global.add(&detected);
@@ -246,7 +246,7 @@ impl ClipboardDialog {
             settings,
             &["toggle-pinned-search-shortcut", "swap-scroll-shortcut"],
         );
-        let navigation = adw::PreferencesGroup::new();
+        let navigation = libadwaita::PreferencesGroup::new();
         navigation.set_title("Navigation");
         for (title, keys) in [
             (
@@ -261,14 +261,14 @@ impl ClipboardDialog {
             ("Cycle item tag", "Ctrl+` / Ctrl+Shift+`"),
             ("Choose tag in item menu", "0 … 9"),
         ] {
-            let row = adw::ActionRow::new();
+            let row = libadwaita::ActionRow::new();
             row.set_title(title);
             row.set_subtitle(keys);
             navigation.add(&row);
         }
         shortcuts.add(&navigation);
         let actions = page(&window, "Actions", "system-run-symbolic");
-        let group = adw::PreferencesGroup::new();
+        let group = libadwaita::PreferencesGroup::new();
         group.set_title("Clipboard Actions");
         actions.add(&group);
         let config = Rc::new(RefCell::new(self.service.actions()));
@@ -285,22 +285,26 @@ impl ClipboardDialog {
         window.present();
     }
 }
-fn page(window: &adw::PreferencesWindow, title: &str, icon: &str) -> adw::PreferencesPage {
-    let page = adw::PreferencesPage::new();
+fn page(
+    window: &libadwaita::PreferencesWindow,
+    title: &str,
+    icon: &str,
+) -> libadwaita::PreferencesPage {
+    let page = libadwaita::PreferencesPage::new();
     page.set_title(title);
     page.set_icon_name(Some(icon));
     window.add(&page);
     page
 }
-fn group(page: &adw::PreferencesPage, title: &str, settings: &gio::Settings, keys: &[&str]) {
-    let group = adw::PreferencesGroup::new();
+fn group(page: &libadwaita::PreferencesPage, title: &str, settings: &gio::Settings, keys: &[&str]) {
+    let group = libadwaita::PreferencesGroup::new();
     group.set_title(title);
     for key in keys {
         setting_row(&group, settings, key);
     }
     page.add(&group);
 }
-fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &str) {
+fn setting_row(group: &libadwaita::PreferencesGroup, settings: &gio::Settings, key: &str) {
     let schema = settings.settings_schema().unwrap();
     let definition = schema.key(key);
     let title = definition
@@ -314,7 +318,7 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
         && let Some(values) = payload.get::<Vec<String>>()
     {
         for flag in values {
-            let row = adw::SwitchRow::new();
+            let row = libadwaita::SwitchRow::new();
             row.set_title(&format!("{flag} previews"));
             let matching = flag.clone();
             let source = settings.clone();
@@ -345,10 +349,10 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
     if range_type == "enum"
         && let Some(values) = payload.get::<Vec<String>>()
     {
-        let row = adw::ComboRow::new();
+        let row = libadwaita::ComboRow::new();
         row.set_title(&title);
         let strings = values.iter().map(String::as_str).collect::<Vec<_>>();
-        row.set_model(Some(&gtk::StringList::new(&strings)));
+        row.set_model(Some(&gtk4::StringList::new(&strings)));
         let reverse = values.clone();
         settings
             .bind(key, &row, "selected")
@@ -373,7 +377,7 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
     }
     match settings.value(key).type_().as_str() {
         "b" => {
-            let row = adw::SwitchRow::new();
+            let row = libadwaita::SwitchRow::new();
             row.set_title(&title);
             settings.bind(key, &row, "active").build();
             group.add(&row);
@@ -388,10 +392,10 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
                 payload.get::<(f64, f64)>()
             }
             .unwrap_or((0.0, 10000.0));
-            let adjustment = gtk::Adjustment::new(0.0, bounds.0, bounds.1, 1.0, 10.0, 0.0);
-            let spin = gtk::SpinButton::new(Some(&adjustment), 1.0, if integer { 0 } else { 1 });
-            spin.set_valign(gtk::Align::Center);
-            let row = adw::ActionRow::new();
+            let adjustment = gtk4::Adjustment::new(0.0, bounds.0, bounds.1, 1.0, 10.0, 0.0);
+            let spin = gtk4::SpinButton::new(Some(&adjustment), 1.0, if integer { 0 } else { 1 });
+            spin.set_valign(gtk4::Align::Center);
+            let row = libadwaita::ActionRow::new();
             row.set_title(&title);
             row.add_suffix(&spin);
             settings
@@ -420,7 +424,7 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
         }
         "s" | "as" => {
             let array = settings.value(key).type_().as_str() == "as";
-            let row = adw::EntryRow::new();
+            let row = libadwaita::EntryRow::new();
             row.set_title(&title);
             settings
                 .bind(key, &row, "text")
@@ -457,9 +461,9 @@ fn setting_row(group: &adw::PreferencesGroup, settings: &gio::Settings, key: &st
         _ => {}
     }
 }
-fn add_reset(row: &impl IsA<adw::ActionRow>, settings: &gio::Settings, key: &str) {
+fn add_reset(row: &impl IsA<libadwaita::ActionRow>, settings: &gio::Settings, key: &str) {
     let button = icon_button("edit-undo-symbolic", "Reset to default");
-    button.set_valign(gtk::Align::Center);
+    button.set_valign(gtk4::Align::Center);
     let settings = settings.clone();
     let key = key.to_owned();
     button.connect_clicked(move |_| settings.reset(&key));
@@ -539,14 +543,14 @@ fn at_mut<'a>(actions: &'a mut [Action], path: &[usize]) -> Option<&'a mut Actio
     }
 }
 fn render_actions(
-    group: &adw::PreferencesGroup,
+    group: &libadwaita::PreferencesGroup,
     service: Rc<ClipboardService>,
-    window: &adw::PreferencesWindow,
+    window: &libadwaita::PreferencesWindow,
     config: Rc<RefCell<ActionConfig>>,
 ) {
     // Replace only this group's list, retaining the window's search/navigation state.
-    let list = gtk::ListBox::new();
-    list.set_selection_mode(gtk::SelectionMode::None);
+    let list = gtk4::ListBox::new();
+    list.set_selection_mode(gtk4::SelectionMode::None);
     list.add_css_class("boxed-list");
     group.add(&list);
     action_rows(
@@ -557,7 +561,7 @@ fn render_actions(
         &config.borrow().actions,
         &[],
     );
-    let add = gtk::Button::with_label("Add Action");
+    let add = gtk4::Button::with_label("Add Action");
     let service_add = service.clone();
     let window_add = window.clone();
     let config_add = config.clone();
@@ -573,10 +577,10 @@ fn render_actions(
         )
     });
     group.add(&add);
-    let defaults = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    let defaults = gtk4::Box::new(gtk4::Orientation::Vertical, 4);
     for kind in Kind::ALL {
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        let label = gtk::Label::new(Some(&format!("{} default action", kind.name())));
+        let row = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
+        let label = gtk4::Label::new(Some(&format!("{} default action", kind.name())));
         label.set_hexpand(true);
         label.set_xalign(0.0);
         row.append(&label);
@@ -591,7 +595,7 @@ fn render_actions(
         let names = std::iter::once("None")
             .chain(actions.iter().map(|action| action.name.as_str()))
             .collect::<Vec<_>>();
-        let dropdown = gtk::DropDown::from_strings(&names);
+        let dropdown = gtk4::DropDown::from_strings(&names);
         let ids = actions
             .iter()
             .map(|action| action.id.clone())
@@ -635,7 +639,7 @@ fn render_actions(
                         .collect::<Vec<_>>();
                     updating.set(true);
                     ids.replace(actions.iter().map(|action| action.id.clone()).collect());
-                    dropdown.set_model(Some(&gtk::StringList::new(&names)));
+                    dropdown.set_model(Some(&gtk4::StringList::new(&names)));
                     dropdown.set_selected(
                         current
                             .defaults
@@ -681,9 +685,9 @@ fn render_actions(
     group.add(&defaults);
 }
 fn action_rows(
-    list: &gtk::ListBox,
+    list: &gtk4::ListBox,
     service: &Rc<ClipboardService>,
-    window: &adw::PreferencesWindow,
+    window: &libadwaita::PreferencesWindow,
     config: &Rc<RefCell<ActionConfig>>,
     actions: &[Action],
     prefix: &[usize],
@@ -691,7 +695,7 @@ fn action_rows(
     for (index, action) in actions.iter().enumerate() {
         let mut path = prefix.to_vec();
         path.push(index);
-        let row = adw::ActionRow::new();
+        let row = libadwaita::ActionRow::new();
         row.set_title(&action.name);
         row.set_subtitle(if !action.is_group() {
             &action.kind
@@ -699,7 +703,7 @@ fn action_rows(
             "Submenu"
         });
         let edit = icon_button("document-edit-symbolic", "Edit action");
-        edit.set_valign(gtk::Align::Center);
+        edit.set_valign(gtk4::Align::Center);
         let edit_service = service.clone();
         let edit_window = window.clone();
         let edit_config = config.clone();
@@ -721,7 +725,7 @@ fn action_rows(
             ("go-down-symbolic", "Move down", 1),
         ] {
             let button = icon_button(icon, title);
-            button.set_valign(gtk::Align::Center);
+            button.set_valign(gtk4::Align::Center);
             button.set_sensitive(
                 (index as isize + delta) >= 0 && (index as isize + delta) < actions.len() as isize,
             );
@@ -754,7 +758,7 @@ fn action_rows(
         }
         if action.is_group() {
             let add = icon_button("list-add-symbolic", "Add action to submenu");
-            add.set_valign(gtk::Align::Center);
+            add.set_valign(gtk4::Align::Center);
             let service = service.clone();
             let window = window.clone();
             let config = config.clone();
@@ -779,9 +783,9 @@ fn action_rows(
     }
 }
 fn refresh_actions(
-    list: &gtk::ListBox,
+    list: &gtk4::ListBox,
     service: &Rc<ClipboardService>,
-    window: &adw::PreferencesWindow,
+    window: &libadwaita::PreferencesWindow,
     config: &Rc<RefCell<ActionConfig>>,
 ) {
     while let Some(row) = list.first_child() {
@@ -791,18 +795,18 @@ fn refresh_actions(
 }
 fn edit_action(
     service: Rc<ClipboardService>,
-    window: &adw::PreferencesWindow,
+    window: &libadwaita::PreferencesWindow,
     config: Rc<RefCell<ActionConfig>>,
     path: Option<Vec<usize>>,
-    list: glib::WeakRef<gtk::ListBox>,
+    list: glib::WeakRef<gtk4::ListBox>,
     parent: Option<Vec<usize>>,
 ) {
     let existing = path
         .as_ref()
         .and_then(|path| at_mut(&mut config.borrow_mut().actions, path).cloned());
     let action=existing.unwrap_or_else(||serde_json::from_value(serde_json::json!({"kind":"command","id":format!("action-{}",glib::monotonic_time()),"name":"New Action","output":"ignore"})).unwrap());
-    let dialog = adw::MessageDialog::new(Some(window), Some("Clipboard Action"), None);
-    let fields = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    let dialog = libadwaita::MessageDialog::new(Some(window), Some("Clipboard Action"), None);
+    let fields = gtk4::Box::new(gtk4::Orientation::Vertical, 8);
     let entries = [
         ("Name", action.name.clone()),
         ("Command", action.command.clone()),
@@ -814,7 +818,7 @@ fn edit_action(
     ]
     .into_iter()
     .map(|(title, value)| {
-        let row = adw::EntryRow::new();
+        let row = libadwaita::EntryRow::new();
         row.set_title(title);
         row.set_text(&value);
         fields.append(&row);
@@ -824,7 +828,7 @@ fn edit_action(
     let kinds = [
         "command", "color", "qrcode", "open", "files", "path", "submenu",
     ];
-    let kind = gtk::DropDown::from_strings(&[
+    let kind = gtk4::DropDown::from_strings(&[
         "Command",
         "Color conversion",
         "QR Code",
@@ -842,7 +846,7 @@ fn edit_action(
     kind.set_sensitive(!action.is_group());
     fields.append(&kind);
     let outputs = ["ignore", "copy", "paste"];
-    let output = gtk::DropDown::from_strings(&outputs);
+    let output = gtk4::DropDown::from_strings(&outputs);
     output.set_selected(
         outputs
             .iter()
@@ -851,7 +855,7 @@ fn edit_action(
     );
     fields.append(&output);
     let spaces = ["hex", "rgb", "hsl", "hwb", "lab", "lch", "oklab", "oklch"];
-    let space = gtk::DropDown::from_strings(&spaces);
+    let space = gtk4::DropDown::from_strings(&spaces);
     space.set_selected(
         spaces
             .iter()
@@ -862,13 +866,13 @@ fn edit_action(
     let checks = Kind::ALL
         .iter()
         .map(|kind| {
-            let check = gtk::CheckButton::with_label(kind.name());
+            let check = gtk4::CheckButton::with_label(kind.name());
             check.set_active(action.types.contains(kind));
             fields.append(&check);
             (*kind, check)
         })
         .collect::<Vec<_>>();
-    let error = gtk::Label::new(None);
+    let error = gtk4::Label::new(None);
     error.set_wrap(true);
     error.add_css_class("error");
     fields.append(&error);
@@ -876,7 +880,7 @@ fn edit_action(
     dialog.add_responses(&[("cancel", "Cancel"), ("save", "Save")]);
     if path.is_some() {
         dialog.add_response("delete", "Delete");
-        dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
+        dialog.set_response_appearance("delete", libadwaita::ResponseAppearance::Destructive);
     }
     dialog.set_close_response("cancel");
     let weak_dialog = dialog.downgrade();

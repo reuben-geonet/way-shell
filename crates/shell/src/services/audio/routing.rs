@@ -1,7 +1,7 @@
 //! PulseAudio routing on the application's GLib context. Native callbacks only
 //! collect results; owned futures cancel operations before freeing callback data.
 use glib::translate::ToGlibPtr;
-use pulse::{context::*, operation::*, proplist::*};
+use libpulse_sys::{context::*, operation::*, proplist::*};
 use std::{
     cell::{Cell, RefCell},
     ffi::{CStr, CString, c_void},
@@ -177,7 +177,7 @@ impl ConnectionState {
 
 pub(super) struct Connection {
     context: NonNull<pa_context>,
-    mainloop: NonNull<pulse_glib::pa_glib_mainloop>,
+    mainloop: NonNull<libpulse_mainloop_glib_sys::pa_glib_mainloop>,
     state: Box<ConnectionState>,
     // Keep the owning GLib context alive and make this wrapper thread-local.
     _owner: glib::MainContext,
@@ -190,9 +190,10 @@ extern "C" fn state_changed(_: *mut pa_context, data: *mut c_void) {
 }
 fn native_error(context: *mut pa_context) -> RouteError {
     // SAFETY: callers own the live context; pa_strerror returns a static string.
-    let message = unsafe { CStr::from_ptr(pulse::error::pa_strerror(pa_context_errno(context))) }
-        .to_string_lossy()
-        .into_owned();
+    let message =
+        unsafe { CStr::from_ptr(libpulse_sys::error::pa_strerror(pa_context_errno(context))) }
+            .to_string_lossy()
+            .into_owned();
     RouteError::Failed(message)
 }
 impl Connection {
@@ -203,18 +204,19 @@ impl Connection {
             .map_err(|_| RouteError::InvalidName)?;
         let owner = glib::MainContext::ref_thread_default();
         // SAFETY: the mainloop is attached to and only used on this owning context.
-        let mainloop =
-            NonNull::new(unsafe { pulse_glib::pa_glib_mainloop_new(owner.to_glib_none().0) })
-                .ok_or(RouteError::Unavailable)?;
+        let mainloop = NonNull::new(unsafe {
+            libpulse_mainloop_glib_sys::pa_glib_mainloop_new(owner.to_glib_none().0)
+        })
+        .ok_or(RouteError::Unavailable)?;
         let context = NonNull::new(unsafe {
             pa_context_new(
-                pulse_glib::pa_glib_mainloop_get_api(mainloop.as_ptr()),
+                libpulse_mainloop_glib_sys::pa_glib_mainloop_get_api(mainloop.as_ptr()),
                 c"org.ldelossa.way-shell".as_ptr(),
             )
         });
         let Some(context) = context else {
             unsafe {
-                pulse_glib::pa_glib_mainloop_free(mainloop.as_ptr());
+                libpulse_mainloop_glib_sys::pa_glib_mainloop_free(mainloop.as_ptr());
             }
             return Err(RouteError::Unavailable);
         };
@@ -347,7 +349,7 @@ impl Drop for Connection {
             pa_context_set_state_callback(self.context.as_ptr(), None, std::ptr::null_mut());
             pa_context_disconnect(self.context.as_ptr());
             pa_context_unref(self.context.as_ptr());
-            pulse_glib::pa_glib_mainloop_free(self.mainloop.as_ptr());
+            libpulse_mainloop_glib_sys::pa_glib_mainloop_free(self.mainloop.as_ptr());
         }
     }
 }

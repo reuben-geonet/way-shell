@@ -1,7 +1,7 @@
 //! Shared native presentation helpers for tray items and menus.
 use crate::services::tray::{RgbaImage, menu::MenuNode};
 use gio::prelude::*;
-use gtk::gdk_pixbuf::{Colorspace, Pixbuf};
+use gtk4::gdk_pixbuf::{Colorspace, Pixbuf};
 
 pub fn rgba_pixbuf(image: &RgbaImage) -> Option<Pixbuf> {
     let width = i32::try_from(image.width).ok().filter(|width| *width > 0)?;

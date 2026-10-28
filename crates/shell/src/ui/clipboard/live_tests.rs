@@ -13,10 +13,10 @@ fn wait(context: &glib::MainContext, condition: impl Fn() -> bool) {
     }
 }
 
-fn response_button(dialog: &adw::MessageDialog, text: &str) -> gtk::Button {
-    let mut pending = vec![dialog.clone().upcast::<gtk::Widget>()];
+fn response_button(dialog: &libadwaita::MessageDialog, text: &str) -> gtk4::Button {
+    let mut pending = vec![dialog.clone().upcast::<gtk4::Widget>()];
     while let Some(widget) = pending.pop() {
-        if let Some(button) = widget.downcast_ref::<gtk::Button>()
+        if let Some(button) = widget.downcast_ref::<gtk4::Button>()
             && button.label().as_deref() == Some(text)
         {
             assert!(button.is_sensitive() && button.is_mapped());
@@ -34,19 +34,20 @@ fn response_button(dialog: &adw::MessageDialog, text: &str) -> gtk::Button {
 #[test]
 #[ignore = "requires an isolated Wayland compositor"]
 fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
-    adw::init().unwrap();
+    libadwaita::init().unwrap();
     crate::resources::get();
     let context = glib::MainContext::default();
     let display = gdk::Display::default().unwrap();
-    adw::StyleManager::for_display(&display).set_color_scheme(adw::ColorScheme::ForceDark);
-    let provider = gtk::CssProvider::new();
+    libadwaita::StyleManager::for_display(&display)
+        .set_color_scheme(libadwaita::ColorScheme::ForceDark);
+    let provider = gtk4::CssProvider::new();
     provider.load_from_path(
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../data/theme/way-shell-dark.css"),
     );
-    gtk::style_context_add_provider_for_display(
+    gtk4::style_context_add_provider_for_display(
         &display,
         &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
     let schemas =
         gio::SettingsSchemaSource::from_directory(env!("WAY_SHELL_TEST_SCHEMAS"), None, false)
@@ -101,8 +102,8 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     let wayland = WaylandService::with_settings(wm.clone()).unwrap();
     let service = ClipboardService::with_settings(wayland.clone(), settings.clone(), None);
     let shortcuts = ShortcutsService::new(manager.clone(), wm);
-    let editor = gtk::TextView::new();
-    let sample = gtk::Window::builder()
+    let editor = gtk4::TextView::new();
+    let sample = gtk4::Window::builder()
         .title("Clipboard paste target")
         .default_width(500)
         .default_height(300)
@@ -169,7 +170,7 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
         "changing restart policy keeps current history"
     );
     let image =
-        gtk::gdk_pixbuf::Pixbuf::new(gtk::gdk_pixbuf::Colorspace::Rgb, true, 8, 64, 64).unwrap();
+        gtk4::gdk_pixbuf::Pixbuf::new(gtk4::gdk_pixbuf::Colorspace::Rgb, true, 8, 64, 64).unwrap();
     image.fill(0x3584e4ff);
     let image = image.save_to_bufferv("png", &[]).unwrap();
     service.change(move |store| {
@@ -209,11 +210,11 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     assert!(!dialog.light_scheme());
     dialog
         .style_manager
-        .set_color_scheme(adw::ColorScheme::ForceLight);
+        .set_color_scheme(libadwaita::ColorScheme::ForceLight);
     assert!(dialog.light_scheme());
     dialog
         .style_manager
-        .set_color_scheme(adw::ColorScheme::ForceDark);
+        .set_color_scheme(libadwaita::ColorScheme::ForceDark);
     wait(&context, || {
         dialog.panel.width() > 100 && dialog.model.n_items() == 9
     });
@@ -225,20 +226,20 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     let mut child = card.first_child().unwrap().first_child();
     while let Some(widget) = child {
         child = widget.next_sibling();
-        if widget.is::<gtk::Button>() {
+        if widget.is::<gtk4::Button>() {
             controls.push(widget);
-        } else if widget.is::<gtk::MenuButton>() {
+        } else if widget.is::<gtk4::MenuButton>() {
             controls.push(widget.first_child().unwrap());
         }
     }
     assert_eq!(controls.len(), 3);
     for button in &controls {
         assert_eq!(button.width(), button.height());
-        button.set_state_flags(gtk::StateFlags::PRELIGHT, false);
+        button.set_state_flags(gtk4::StateFlags::PRELIGHT, false);
     }
     screenshot("card-controls-hover.png");
     for button in &controls {
-        button.unset_state_flags(gtk::StateFlags::PRELIGHT);
+        button.unset_state_flags(gtk4::StateFlags::PRELIGHT);
     }
     let card_bounds = card.compute_bounds(&dialog.panel).unwrap();
     let search_bounds = dialog.search_box.compute_bounds(&dialog.panel).unwrap();
@@ -256,10 +257,10 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     assert!(bounds.x() + bounds.width() <= dialog.panel.width() as f32 - 18.0);
     let thickness = scrollbar.height();
     assert_eq!(thickness, 8);
-    scrollbar.set_state_flags(gtk::StateFlags::PRELIGHT, false);
+    scrollbar.set_state_flags(gtk4::StateFlags::PRELIGHT, false);
     screenshot("scrollbar-hover.png");
     assert_eq!(scrollbar.height(), thickness);
-    scrollbar.unset_state_flags(gtk::StateFlags::PRELIGHT);
+    scrollbar.unset_state_flags(gtk4::StateFlags::PRELIGHT);
     assert!(dialog.search_box.width() <= 360);
     let bounds = dialog.search_box.compute_bounds(&dialog.panel).unwrap();
     assert!((bounds.x() + bounds.width() / 2.0 - dialog.panel.width() as f32 / 2.0).abs() <= 1.0);
@@ -287,7 +288,7 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
         .unwrap()
         .last_child()
         .unwrap()
-        .downcast::<gtk::ListView>()
+        .downcast::<gtk4::ListView>()
         .unwrap();
     dialog.kind.set_selected(1);
     type_list.emit_by_name::<()>("activate", &[&1u32]);
@@ -312,7 +313,7 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     );
     dialog
         .style_manager
-        .set_color_scheme(adw::ColorScheme::ForceLight);
+        .set_color_scheme(libadwaita::ColorScheme::ForceLight);
     screenshot("light.png");
     dialog.filter_menu.popup();
     screenshot("search-menu-light.png");
@@ -322,7 +323,7 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     );
     dialog
         .style_manager
-        .set_color_scheme(adw::ColorScheme::ForceDark);
+        .set_color_scheme(libadwaita::ColorScheme::ForceDark);
     assert!(!dialog.empty.is_visible());
     dialog.pinned.set_active(true);
     wait(&context, || {
@@ -365,7 +366,7 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     preferences::apply_profile(&settings, true);
     dialog.show(Some(&monitor)).unwrap();
     wait(&context, || {
-        dialog.list.orientation() == gtk::Orientation::Vertical
+        dialog.list.orientation() == gtk4::Orientation::Vertical
     });
     context.block_on(glib::timeout_future(Duration::from_millis(500)));
     dialog.search.set_text("First captured");
@@ -399,22 +400,22 @@ fn clipboard_capture_privacy_restore_profiles_and_cleanup() {
     wait(&context, || dialog.preferences.borrow().is_none());
     dialog.show(Some(&monitor)).unwrap();
     dialog.edit(first, false);
-    let edit = gtk::Window::list_toplevels()
+    let edit = gtk4::Window::list_toplevels()
         .into_iter()
         .find(|window| window.has_css_class("clipboard-edit-dialog"))
         .unwrap()
-        .downcast::<adw::MessageDialog>()
+        .downcast::<libadwaita::MessageDialog>()
         .unwrap();
     wait(&context, || edit.is_mapped());
     screenshot("edit.png");
     response_button(&edit, "Cancel").emit_clicked();
     wait(&context, || !edit.is_visible());
     dialog.run_action(first, service.actions().find("qrcode").unwrap().clone());
-    let qr = gtk::Window::list_toplevels()
+    let qr = gtk4::Window::list_toplevels()
         .into_iter()
         .find(|window| window.has_css_class("clipboard-qr-dialog"))
         .unwrap()
-        .downcast::<adw::MessageDialog>()
+        .downcast::<libadwaita::MessageDialog>()
         .unwrap();
     wait(&context, || qr.is_mapped());
     screenshot("qr.png");

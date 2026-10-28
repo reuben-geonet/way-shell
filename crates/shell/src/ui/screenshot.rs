@@ -9,9 +9,9 @@ use crate::{
     },
     ui::window::{LayerWindow, WindowRole},
 };
-use adw::prelude::*;
-use gtk::{gdk, gdk_pixbuf::Pixbuf};
+use gtk4::{gdk, gdk_pixbuf::Pixbuf};
 use gtk4_layer_shell::{KeyboardMode, LayerShell};
+use libadwaita::prelude::*;
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
@@ -104,19 +104,19 @@ impl Drag {
 }
 struct Surface {
     layer: LayerWindow,
-    canvas: gtk::DrawingArea,
+    canvas: gtk4::DrawingArea,
     pointer: Cell<Option<(f64, f64)>>,
 }
 struct Controls {
-    label: gtk::Label,
-    status: gtk::Label,
-    capture: gtk::Button,
-    modes: Vec<(Mode, gtk::ToggleButton)>,
-    photo: gtk::ToggleButton,
-    video: gtk::ToggleButton,
-    audio: gtk::DropDown,
-    audio_row: gtk::Box,
-    root: gtk::Overlay,
+    label: gtk4::Label,
+    status: gtk4::Label,
+    capture: gtk4::Button,
+    modes: Vec<(Mode, gtk4::ToggleButton)>,
+    photo: gtk4::ToggleButton,
+    video: gtk4::ToggleButton,
+    audio: gtk4::DropDown,
+    audio_row: gtk4::Box,
+    root: gtk4::Overlay,
 }
 type ActiveCallback = Box<dyn Fn(bool)>;
 pub struct Screenshot {
@@ -412,13 +412,13 @@ impl Screenshot {
                 .ok_or_else(|| format!("GTK cannot find display {}", output.connector))?;
             let layer = LayerWindow::new(WindowRole::Screenshot, Some(monitor))?;
             layer.window().add_css_class("screenshot-overlay");
-            let overlay = gtk::Overlay::new();
-            let canvas = gtk::DrawingArea::builder()
+            let overlay = gtk4::Overlay::new();
+            let canvas = gtk4::DrawingArea::builder()
                 .hexpand(true)
                 .vexpand(true)
                 .focusable(true)
                 .build();
-            canvas.update_property(&[gtk::accessible::Property::Label(
+            canvas.update_property(&[gtk4::accessible::Property::Label(
                 "Screenshot selection canvas",
             )]);
             canvas.set_cursor_from_name(Some("crosshair"));
@@ -465,18 +465,18 @@ impl Screenshot {
         Ok(())
     }
     fn build_controls(self: &Rc<Self>, no_windows: bool) -> Controls {
-        let root = gtk::Overlay::new();
-        root.set_halign(gtk::Align::Center);
-        root.set_valign(gtk::Align::End);
+        let root = gtk4::Overlay::new();
+        root.set_halign(gtk4::Align::Center);
+        root.set_valign(gtk4::Align::End);
         root.set_margin_bottom(32);
         root.set_margin_start(16);
         root.set_margin_end(16);
-        let panel = gtk::Box::new(gtk::Orientation::Vertical, 10);
+        let panel = gtk4::Box::new(gtk4::Orientation::Vertical, 10);
         panel.add_css_class("screenshot-toolbar");
         panel.set_margin_top(12);
         panel.set_margin_end(12);
         root.set_child(Some(&panel));
-        let modes_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let modes_box = gtk4::Box::new(gtk4::Orientation::Horizontal, 4);
         modes_box.set_homogeneous(true);
         let mut modes = Vec::new();
         for (mode, label, icon, key) in [
@@ -490,16 +490,16 @@ impl Screenshot {
                 "A",
             ),
         ] {
-            let button = gtk::ToggleButton::new();
+            let button = gtk4::ToggleButton::new();
             button.add_css_class("screenshot-mode");
-            let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
-            content.set_halign(gtk::Align::Center);
-            let image = gtk::Image::from_icon_name(icon);
+            let content = gtk4::Box::new(gtk4::Orientation::Vertical, 8);
+            content.set_halign(gtk4::Align::Center);
+            let image = gtk4::Image::from_icon_name(icon);
             image.set_pixel_size(28);
             content.append(&image);
-            content.append(&gtk::Label::new(Some(label)));
+            content.append(&gtk4::Label::new(Some(label)));
             button.set_child(Some(&content));
-            button.update_property(&[gtk::accessible::Property::Label(label)]);
+            button.update_property(&[gtk4::accessible::Property::Label(label)]);
             button.set_tooltip_text(Some(&format!("{label} ({key})")));
             if mode == Mode::Window && no_windows {
                 button.set_sensitive(false);
@@ -515,29 +515,29 @@ impl Screenshot {
             modes.push((mode, button));
         }
         panel.append(&modes_box);
-        let label = gtk::Label::new(None);
+        let label = gtk4::Label::new(None);
         label.add_css_class("screenshot-details");
-        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
         label.set_max_width_chars(38);
         panel.append(&label);
-        let status = gtk::Label::new(None);
+        let status = gtk4::Label::new(None);
         status.set_wrap(true);
         status.set_max_width_chars(38);
         status.add_css_class("screenshot-status");
         status.set_text(" ");
         status.set_opacity(0.0);
-        let cancel = gtk::Button::from_icon_name("window-close-symbolic");
+        let cancel = gtk4::Button::from_icon_name("window-close-symbolic");
         cancel.add_css_class("screenshot-cancel");
-        cancel.set_halign(gtk::Align::End);
-        cancel.set_valign(gtk::Align::Start);
+        cancel.set_halign(gtk4::Align::End);
+        cancel.set_valign(gtk4::Align::Start);
         cancel.set_tooltip_text(Some("Cancel (Esc)"));
-        cancel.update_property(&[gtk::accessible::Property::Label("Cancel screenshot")]);
-        let capture = gtk::Button::new();
+        cancel.update_property(&[gtk4::accessible::Property::Label("Cancel screenshot")]);
+        let capture = gtk4::Button::new();
         capture.add_css_class("screenshot-capture");
-        capture.set_halign(gtk::Align::Center);
+        capture.set_halign(gtk4::Align::Center);
         capture.set_tooltip_text(Some("Capture (Enter)"));
-        capture.update_property(&[gtk::accessible::Property::Label("Capture screenshot")]);
-        let shutter = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        capture.update_property(&[gtk4::accessible::Property::Label("Capture screenshot")]);
+        let shutter = gtk4::Box::new(gtk4::Orientation::Horizontal, 0);
         shutter.add_css_class("screenshot-shutter");
         capture.set_child(Some(&shutter));
         let weak = Rc::downgrade(self);
@@ -552,18 +552,18 @@ impl Screenshot {
                 this.capture();
             }
         });
-        let media = gtk::Box::new(gtk::Orientation::Horizontal, 3);
+        let media = gtk4::Box::new(gtk4::Orientation::Horizontal, 3);
         media.add_css_class("screenshot-media");
-        media.set_valign(gtk::Align::Center);
-        let photo = gtk::ToggleButton::new();
+        media.set_valign(gtk4::Align::Center);
+        let photo = gtk4::ToggleButton::new();
         photo.set_icon_name("camera-photo-symbolic");
         photo.set_active(true);
         photo.set_tooltip_text(Some("Take Screenshot (V)"));
-        photo.update_property(&[gtk::accessible::Property::Label("Take Screenshot")]);
-        let video = gtk::ToggleButton::new();
+        photo.update_property(&[gtk4::accessible::Property::Label("Take Screenshot")]);
+        let video = gtk4::ToggleButton::new();
         video.set_icon_name("camera-web-symbolic");
         video.set_group(Some(&photo));
-        video.update_property(&[gtk::accessible::Property::Label("Record Screen")]);
+        video.update_property(&[gtk4::accessible::Property::Label("Record Screen")]);
         for (button, recording) in [(&photo, false), (&video, true)] {
             button.add_css_class("screenshot-media-button");
             media.append(button);
@@ -574,14 +574,14 @@ impl Screenshot {
                 }
             });
         }
-        let audio_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        audio_row.set_halign(gtk::Align::Center);
-        audio_row.append(&gtk::Label::new(Some("Audio")));
-        let audio = gtk::DropDown::from_strings(&["Off", "Microphone", "Desktop"]);
-        audio.update_property(&[gtk::accessible::Property::Label("Recording audio")]);
+        let audio_row = gtk4::Box::new(gtk4::Orientation::Horizontal, 8);
+        audio_row.set_halign(gtk4::Align::Center);
+        audio_row.append(&gtk4::Label::new(Some("Audio")));
+        let audio = gtk4::DropDown::from_strings(&["Off", "Microphone", "Desktop"]);
+        audio.update_property(&[gtk4::accessible::Property::Label("Recording audio")]);
         audio_row.append(&audio);
         panel.append(&audio_row);
-        let bottom = gtk::CenterBox::new();
+        let bottom = gtk4::CenterBox::new();
         bottom.set_size_request(264, -1);
         bottom.set_start_widget(Some(&media));
         bottom.set_center_widget(Some(&capture));
@@ -668,7 +668,7 @@ impl Screenshot {
             }));
             controls
                 .capture
-                .update_property(&[gtk::accessible::Property::Label(if video {
+                .update_property(&[gtk4::accessible::Property::Label(if video {
                     "Start recording"
                 } else {
                     "Capture screenshot"
@@ -754,7 +754,7 @@ impl Screenshot {
         &self,
         index: usize,
         pixels: &Pixbuf,
-        cr: &gtk::cairo::Context,
+        cr: &gtk4::cairo::Context,
         width: i32,
         height: i32,
     ) {
@@ -786,7 +786,7 @@ impl Screenshot {
         );
         if let Some(bounds) = p.selection.bounds(&p.layout) {
             cr.rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
-            cr.set_fill_rule(gtk::cairo::FillRule::EvenOdd);
+            cr.set_fill_rule(gtk4::cairo::FillRule::EvenOdd);
         }
         let _ = cr.fill();
         if p.selection.mode == Mode::Window {
@@ -836,8 +836,8 @@ impl Screenshot {
         }
         let _ = cr.restore();
     }
-    fn install_keys(self: &Rc<Self>, window: &adw::Window) {
-        let keys = gtk::EventControllerKey::new();
+    fn install_keys(self: &Rc<Self>, window: &libadwaita::Window) {
+        let keys = gtk4::EventControllerKey::new();
         let weak = Rc::downgrade(self);
         keys.connect_key_pressed(move |_, key, _, modifiers| {
             let Some(this) = weak.upgrade() else {
@@ -885,10 +885,10 @@ impl Screenshot {
         });
         window.add_controller(keys);
     }
-    fn install_gestures(self: &Rc<Self>, index: usize, canvas: &gtk::DrawingArea) {
-        let motion = gtk::EventControllerMotion::new();
+    fn install_gestures(self: &Rc<Self>, index: usize, canvas: &gtk4::DrawingArea) {
+        let motion = gtk4::EventControllerMotion::new();
         let weak = Rc::downgrade(self);
-        let track_pointer = move |_: &gtk::EventControllerMotion, x, y| {
+        let track_pointer = move |_: &gtk4::EventControllerMotion, x, y| {
             if let Some(this) = weak.upgrade() {
                 if let Some(surface) = this.surfaces.borrow().get(index) {
                     surface.pointer.set(Some((x, y)));
@@ -908,7 +908,7 @@ impl Screenshot {
             }
         });
         canvas.add_controller(motion);
-        let gesture = gtk::GestureDrag::new();
+        let gesture = gtk4::GestureDrag::new();
         gesture.set_button(1);
         let weak = Rc::downgrade(self);
         gesture.connect_drag_begin(move |gesture, x, y| {
@@ -941,7 +941,7 @@ impl Screenshot {
             if let Some(surface) = this.surfaces.borrow().get(launch) {
                 surface.canvas.grab_focus();
             }
-            gesture.set_state(gtk::EventSequenceState::Claimed);
+            gesture.set_state(gtk4::EventSequenceState::Claimed);
             this.refresh();
         });
         let weak = Rc::downgrade(self);

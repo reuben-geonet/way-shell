@@ -6,8 +6,8 @@
 mod underlay;
 pub use underlay::UnderlaySet;
 
-use adw::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
+use libadwaita::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::rc::{Rc, Weak};
@@ -37,7 +37,7 @@ pub enum WindowRole {
 }
 
 impl WindowRole {
-    fn configure(self, window: &adw::Window) {
+    fn configure(self, window: &libadwaita::Window) {
         let (namespace, layer, anchors, keyboard) = match self {
             Self::Clipboard => (
                 "way-shell-clipboard",
@@ -193,11 +193,11 @@ pub enum CloseReason {
 type CloseCallback = Box<dyn Fn(CloseReason)>;
 
 struct LayerWindowInner {
-    window: adw::Window,
+    window: libadwaita::Window,
     closed: Cell<Option<CloseReason>>,
     close_callbacks: RefCell<Vec<CloseCallback>>,
     window_handlers: RefCell<Vec<glib::SignalHandlerId>>,
-    monitor: Option<gtk::gdk::Monitor>,
+    monitor: Option<gtk4::gdk::Monitor>,
     monitor_handler: RefCell<Option<glib::SignalHandlerId>>,
 }
 
@@ -237,8 +237,8 @@ impl Drop for LayerWindowInner {
 pub struct LayerWindow(Rc<LayerWindowInner>);
 
 impl LayerWindow {
-    pub fn new(role: WindowRole, monitor: Option<&gtk::gdk::Monitor>) -> Result<Self, String> {
-        if !gtk::is_initialized_main_thread() {
+    pub fn new(role: WindowRole, monitor: Option<&gtk4::gdk::Monitor>) -> Result<Self, String> {
+        if !gtk4::is_initialized_main_thread() {
             return Err("Layer windows must be created on the initialized GTK main thread".into());
         }
         if !gtk4_layer_shell::is_supported() {
@@ -247,7 +247,7 @@ impl LayerWindow {
         if monitor.is_some_and(|monitor| !monitor.is_valid()) {
             return Err("Cannot create a layer window on a removed monitor".into());
         }
-        let window = adw::Window::new();
+        let window = libadwaita::Window::new();
         window.init_layer_shell();
         role.configure(&window);
         window.set_monitor(monitor);
@@ -279,7 +279,7 @@ impl LayerWindow {
         Ok(Self(inner))
     }
 
-    pub fn window(&self) -> &adw::Window {
+    pub fn window(&self) -> &libadwaita::Window {
         &self.0.window
     }
 
