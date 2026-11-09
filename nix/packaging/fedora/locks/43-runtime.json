@@ -1,7 +1,7 @@
 {
   "arch": "x86_64",
   "format": 1,
-  "nixpkgsRevision": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
+  "nixpkgsRevision": "0bb2eedc20e4739f29e8045034f2828ad7054f8f",
   "release": "43",
   "repositories": [
     {
